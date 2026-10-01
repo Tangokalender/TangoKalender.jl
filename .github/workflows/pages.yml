@@ -31,6 +31,8 @@ jobs:
       - name: Instantiate
         run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
       - name: Build site (validates first)
+        env:
+          TZ: Europe/Oslo   # the "Generert" timestamp uses local time; runners default to UTC
         run: julia --project=. -m TangoKalender build events _site/index.html
       - name: Add schema
         run: |
