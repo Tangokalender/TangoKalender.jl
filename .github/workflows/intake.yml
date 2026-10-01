@@ -35,7 +35,7 @@ jobs:
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: >-
           julia --project=. -m TangoKalender from-issue "$RUNNER_TEMP/issue.md"
-          --issue-url="$ISSUE_URL" --report="$RUNNER_TEMP/report.md"
+          --issue-url="$ISSUE_URL" --report="$RUNNER_TEMP/report.md" --outputs="$GITHUB_OUTPUT"
       - name: PR body
         if: steps.convert.outcome == 'success'
         env:
@@ -50,7 +50,7 @@ jobs:
           branch: arrangement/issue-${{ github.event.issue.number }}
           add-paths: events/**
           commit-message: 'Nytt arrangement fra #${{ github.event.issue.number }}'
-          title: 'Nytt arrangement: ${{ github.event.issue.title }}'
+          title: 'Nytt arrangement: ${{ steps.convert.outputs.title }}'
           body-path: ${{ runner.temp }}/pr-body.md
           labels: nytt-arrangement
           delete-branch: true
@@ -61,6 +61,7 @@ jobs:
           NUMBER: ${{ github.event.issue.number }}
           OUTCOME: ${{ steps.convert.outcome }}
           PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          TITLE: ${{ steps.convert.outputs.title }}
         run: |
           report="$RUNNER_TEMP/report.md"
           [ -f "$report" ] || echo "⚠️ Noe gikk galt under behandlingen av skjemaet. En redaktør ser på det." > "$report"
@@ -69,6 +70,7 @@ jobs:
           fi
           gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$report"
           if [ "$OUTCOME" = success ]; then
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --title "Arrangement: $TITLE"
             gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label trenger-retting || true
           else
             gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --add-label trenger-retting
