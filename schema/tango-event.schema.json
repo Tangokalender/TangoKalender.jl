@@ -1,0 +1,236 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Tango event",
+    "description": "One dated tango event (v2). Stored one file per event under events/YYYY/MM-month/. Repeating events are one file per date sharing a `series` id.",
+    "type": "object",
+    "required": [
+        "id",
+        "title",
+        "type",
+        "start"
+    ],
+    "additionalProperties": false,
+    "definitions": {
+        "datetime": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2}))?$"
+        },
+        "nok": {
+            "type": [
+                "integer",
+                "null"
+            ],
+            "minimum": 0
+        },
+        "text": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "url": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "pattern": "^https?://"
+        },
+        "day": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        }
+    },
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "title": {
+            "type": "string",
+            "minLength": 1
+        },
+        "type": {
+            "enum": [
+                "milonga",
+                "practica",
+                "festival",
+                "marathon",
+                "class",
+                "workshop",
+                "class_and_social",
+                "class_and_practica",
+                "other"
+            ]
+        },
+        "status": {
+            "enum": [
+                "scheduled",
+                "cancelled",
+                null
+            ],
+            "description": "Missing or null means scheduled. Mark cancelled dates instead of deleting the file."
+        },
+        "series": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "description": "Shared id for all dates of a repeating event (weekly milonga, course)."
+        },
+        "start": {
+            "allOf": [
+                {
+                    "$ref": "#/definitions/datetime"
+                }
+            ],
+            "type": "string"
+        },
+        "end": {
+            "$ref": "#/definitions/datetime"
+        },
+        "venue": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "$ref": "#/definitions/text"
+                },
+                "address": {
+                    "$ref": "#/definitions/text"
+                },
+                "city": {
+                    "$ref": "#/definitions/text"
+                }
+            }
+        },
+        "organizer": {
+            "$ref": "#/definitions/text"
+        },
+        "dj": {
+            "$ref": "#/definitions/text"
+        },
+        "teachers": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "items": {
+                "type": "string"
+            }
+        },
+        "music_style": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "uniqueItems": true,
+            "items": {
+                "enum": [
+                    "traditional",
+                    "alternative",
+                    "live_orchestra"
+                ]
+            }
+        },
+        "price_nok": {
+            "$ref": "#/definitions/nok"
+        },
+        "student_price_nok": {
+            "$ref": "#/definitions/nok"
+        },
+        "class_price_nok": {
+            "$ref": "#/definitions/nok"
+        },
+        "description": {
+            "$ref": "#/definitions/text"
+        },
+        "flyer_url": {
+            "$ref": "#/definitions/url"
+        },
+        "video": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "required": [
+                "platform",
+                "id"
+            ],
+            "additionalProperties": false,
+            "properties": {
+                "platform": {
+                    "enum": [
+                        "youtube",
+                        "vimeo"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "if": {
+                "properties": {
+                    "platform": {
+                        "const": "youtube"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "id": {
+                        "pattern": "^[A-Za-z0-9_-]{11}$"
+                    }
+                }
+            },
+            "else": {
+                "properties": {
+                    "id": {
+                        "pattern": "^[0-9]+$"
+                    }
+                }
+            }
+        },
+        "link": {
+            "$ref": "#/definitions/url"
+        },
+        "source": {
+            "$ref": "#/definitions/text"
+        },
+        "source_url": {
+            "$ref": "#/definitions/url"
+        },
+        "published_date": {
+            "$ref": "#/definitions/day"
+        },
+        "first_seen": {
+            "$ref": "#/definitions/day"
+        },
+        "last_verified": {
+            "$ref": "#/definitions/day"
+        },
+        "crawl_timestamp": {
+            "$ref": "#/definitions/datetime"
+        },
+        "confidence": {
+            "type": [
+                "number",
+                "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+        }
+    }
+}

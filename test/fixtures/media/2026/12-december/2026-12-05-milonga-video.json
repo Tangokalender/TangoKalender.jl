@@ -1,0 +1,13 @@
+{
+    "$schema": "../../../../../schema/tango-event.schema.json",
+    "id": "milonga-video",
+    "title": "Milonga med video",
+    "type": "milonga",
+    "start": "2026-12-05T20:30:00+01:00",
+    "venue": {"name": "Kulturhuset", "address": "Storgata 1, 0155 Oslo", "city": "Oslo"},
+    "music_style": ["traditional", "live_orchestra"],
+    "flyer_url": "https://example.org/flyer.png",
+    "video": {"platform": "youtube", "id": "dQw4w9WgXcQ"},
+    "link": "https://example.org/milonga",
+    "description": "DJ og orkester."
+}

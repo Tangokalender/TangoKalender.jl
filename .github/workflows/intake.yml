@@ -1,0 +1,75 @@
+# Issue form (nytt-arrangement) → event files → pull request for review.
+# SECURITY: the issue body/title are untrusted. Pass them only through `env:` or action inputs,
+# never via ${{ }} inside `run:` scripts. The Julia parser treats the body as data.
+name: Intake
+on:
+  issues:
+    types: [opened, edited]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+concurrency:
+  group: intake-${{ github.event.issue.number }}
+  cancel-in-progress: true
+jobs:
+  from-issue:
+    if: github.event.issue.state == 'open' && contains(github.event.issue.labels.*.name, 'nytt-arrangement')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v2
+      - name: Instantiate
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+      - name: Save issue body
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: printf '%s' "$BODY" > "$RUNNER_TEMP/issue.md"
+      - name: Convert form to events
+        id: convert
+        continue-on-error: true
+        env:
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: >-
+          julia --project=. -m TangoKalender from-issue "$RUNNER_TEMP/issue.md"
+          --issue-url="$ISSUE_URL" --report="$RUNNER_TEMP/report.md"
+      - name: PR body
+        if: steps.convert.outcome == 'success'
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          { cat "$RUNNER_TEMP/report.md"; printf '\nCloses #%s\n' "$NUMBER"; } > "$RUNNER_TEMP/pr-body.md"
+      - name: Open or update pull request
+        id: pr
+        if: steps.convert.outcome == 'success'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: arrangement/issue-${{ github.event.issue.number }}
+          add-paths: events/**
+          commit-message: 'Nytt arrangement fra #${{ github.event.issue.number }}'
+          title: 'Nytt arrangement: ${{ github.event.issue.title }}'
+          body-path: ${{ runner.temp }}/pr-body.md
+          labels: nytt-arrangement
+          delete-branch: true
+      - name: Comment on issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          OUTCOME: ${{ steps.convert.outcome }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+        run: |
+          report="$RUNNER_TEMP/report.md"
+          [ -f "$report" ] || echo "⚠️ Noe gikk galt under behandlingen av skjemaet. En redaktør ser på det." > "$report"
+          if [ "$OUTCOME" = success ] && [ -n "$PR_URL" ]; then
+            printf '\nForslag til endring: %s\n' "$PR_URL" >> "$report"
+          fi
+          gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$report"
+          if [ "$OUTCOME" = success ]; then
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label trenger-retting || true
+          else
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --add-label trenger-retting
+          fi

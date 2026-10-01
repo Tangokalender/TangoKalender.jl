@@ -1,0 +1,159 @@
+# Field labels are the keys read by src/issue.jl (parse_issue_form/events_from_form) – rename both together.
+name: Nytt arrangement
+description: Legg til en milonga, practica, et kurs eller en festival i tangokalenderen.
+title: "[Arrangement]: "
+labels: ["nytt-arrangement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Takk for at du deler arrangementet ditt! Når du sender inn skjemaet, lager en robot et forslag
+        som en redaktør ser over før det publiseres. Du får svar som en kommentar her.
+
+        Faste arrangementer (f.eks. hver tirsdag) kan legges inn på én gang med «Gjentas: Ukentlig».
+        Hver dato blir et eget arrangement, så DJ, pris eller avlysninger kan endres for én kveld senere.
+  - type: input
+    id: tittel
+    attributes:
+      label: Tittel
+      placeholder: f.eks. Milonga Sentimental
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Milonga
+        - Practica
+        - Kurs
+        - Kurs og milonga
+        - Kurs og practica
+        - Workshop
+        - Festival
+        - Maraton
+        - Annet
+    validations:
+      required: true
+  - type: input
+    id: dato
+    attributes:
+      label: Dato
+      description: Første dato, på formen ÅÅÅÅ-MM-DD.
+      placeholder: 2026-11-14
+    validations:
+      required: true
+  - type: input
+    id: starttid
+    attributes:
+      label: Starttid
+      placeholder: "20:30"
+    validations:
+      required: true
+  - type: input
+    id: sluttid
+    attributes:
+      label: Sluttid
+      description: Etter midnatt er greit (f.eks. 01:00).
+      placeholder: "23:30"
+  - type: dropdown
+    id: gjentas
+    attributes:
+      label: Gjentas
+      options:
+        - Nei
+        - Ukentlig
+      default: 0
+  - type: input
+    id: gjentas_til
+    attributes:
+      label: Gjentas til
+      description: Siste dato for ukentlige arrangementer (ÅÅÅÅ-MM-DD), høyst ett år frem.
+      placeholder: 2026-12-15
+  - type: input
+    id: unntatt
+    attributes:
+      label: Unntatt datoer
+      description: Datoer uten arrangement, skilt med komma.
+      placeholder: 2026-11-03, 2026-11-10
+  - type: input
+    id: sted
+    attributes:
+      label: Sted
+      placeholder: f.eks. Kulturhuset
+    validations:
+      required: true
+  - type: input
+    id: adresse
+    attributes:
+      label: Adresse
+      placeholder: f.eks. Storgata 1, 0155 Oslo
+    validations:
+      required: true
+  - type: input
+    id: arrangor
+    attributes:
+      label: Arrangør
+    validations:
+      required: true
+  - type: input
+    id: dj
+    attributes:
+      label: DJ
+  - type: input
+    id: laerere
+    attributes:
+      label: Lærere
+      description: Skilt med komma.
+  - type: input
+    id: pris
+    attributes:
+      label: Pris (kr)
+      placeholder: "150"
+  - type: input
+    id: studentpris
+    attributes:
+      label: Studentpris (kr)
+  - type: input
+    id: kurspris
+    attributes:
+      label: Kurspris (kr)
+  - type: checkboxes
+    id: musikk
+    attributes:
+      label: Musikk
+      options:
+        - label: Tradisjonell
+        - label: Alternativ / neo
+        - label: Levende orkester
+  - type: textarea
+    id: flyer
+    attributes:
+      label: Flyer
+      description: Dra og slipp et bilde hit, eller lim inn en bildelenke.
+  - type: input
+    id: video
+    attributes:
+      label: Video
+      description: Lenke til YouTube eller Vimeo.
+      placeholder: https://youtu.be/...
+  - type: input
+    id: lenke
+    attributes:
+      label: Lenke
+      description: Arrangementets nettside eller Facebook-arrangement.
+      placeholder: https://
+    validations:
+      required: true
+  - type: textarea
+    id: beskrivelse
+    attributes:
+      label: Beskrivelse
+      description: Kort beskrivelse – nivå, inngang, dresscode osv.
+  - type: checkboxes
+    id: samtykke
+    attributes:
+      label: Samtykke
+      options:
+        - label: Personer som er nevnt (DJ, lærere, arrangør) har godtatt å bli oppført i den offentlige kalenderen.
+          required: true
