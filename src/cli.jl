@@ -13,12 +13,14 @@ Options (build):
   --no-validate        render even if validation fails
   --title=TEXT         page title (default: "Oslo Tango")
   --subtitle=TEXT      page subtitle
+  --submit-url=URL     target of the «Legg til arrangement» link (default: the repo's issue form; empty hides it)
 
 Options (from-issue):
   --root=DIR           events directory to write into (default: events)
   --issue-url=URL      recorded as the events' source_url
   --report=FILE        write a Norwegian markdown report (for the issue comment)
   --today=YYYY-MM-DD   reference date for "date has passed" checks (default: today)
+  --outputs=FILE       append `title=<event title and date>` (e.g. \$GITHUB_OUTPUT) on success
 
   -h, --help           show this help
 """
@@ -30,6 +32,11 @@ function _issue_report(events,files,errs)
  "✅ Takk! Skjemaet ble lest uten feil. $(length(events)==1 ? "Dette arrangementet" : "Disse $(length(events)) arrangementene") blir foreslått lagt til:\n\n"*
   "| Dato | Tittel | Sted |\n|---|---|---|\n$rows\n\n<details><summary>Filer</summary>\n\n"*join(("- `$f`" for f in files),"\n")*
   "\n</details>\n\nEn redaktør ser over forslaget før det publiseres."
+end
+"Short one-line summary for PR/issue titles: «Milonga X (2. okt)» or «Kurs Y (8 datoer fra 20. okt)»."
+function _summary_title(events)
+ t=replace(string(events[1]["title"]),r"\s+"=>" "); d=Date(first(string(events[1]["start"]),10)); day_="$(day(d)). $(_MO[month(d)])"
+ length(events)==1 ? "$t ($day_)" : "$t ($(length(events)) datoer fra $day_)"
 end
 function _from_issue(body_file,opts)
  root=get(opts,"root","events")
@@ -43,7 +50,9 @@ function _from_issue(body_file,opts)
  isempty(errs) || (foreach(rm,files); events=empty(events); files=String[])
  report=_issue_report(events,files,errs)
  haskey(opts,"report") ? write(opts["report"],report*"\n") : println(report)
- isempty(errs) ? (foreach(println,files); 0) : (println(stderr,report); 1)
+ isempty(errs) || (println(stderr,report); return 1)
+ haskey(opts,"outputs") && open(io->println(io,"title=",_summary_title(events)),opts["outputs"],"a")
+ foreach(println,files); 0
 end
 _report(problems)=(for (f,m) in problems; println(stderr,"$f: $m"); end; isempty(problems) || println(stderr,"$(length(problems)) problem(s)"))
 """
@@ -61,7 +70,8 @@ function (@main)(args)
   k,v=occursin('=',a) ? split(a[3:end],'=';limit=2) : (a[3:end],"")
   if cmd=="build" && k=="no-validate" && isempty(v); novalidate=true
   elseif cmd=="build" && k in ("title","subtitle"); opts[k]=v
-  elseif cmd=="from-issue" && k in ("root","issue-url","report","today") && !isempty(v); opts[k]=v
+  elseif cmd=="build" && k=="submit-url"; opts["submit_url"]=v
+  elseif cmd=="from-issue" && k in ("root","issue-url","report","today","outputs") && !isempty(v); opts[k]=v
   else println(stderr,"unknown option $a\n"); print(stderr,USAGE); return 2 end
  end
  maxpos=cmd in ("validate","from-issue") ? 1 : 2

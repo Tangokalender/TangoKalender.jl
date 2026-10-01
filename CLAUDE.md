@@ -35,6 +35,8 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 - `src/validate.jl`: `validate_event` checks one event against `schema/tango-event.schema.json` with JSONSchema.jl. `validate_event_tree` also flags duplicate ids and files not at their `event_path`.
 - `src/render/html.jl`: all of the rendering. Julia string interpolation builds the markup directly; there is no templating library.
   - Private helpers (prefixed `_`): `_esc` (HTML escaping; every interpolated field must go through it), `_val` (a `get` that also maps JSON `null`/`nothing` to the default), `_date_label`, `_price`, `_card`.
+  - `_date_label` shows the start and, when there is an `end`, the closing time (`21:00–01:30`). An end at or before 06:00 the next day still counts as the same evening, and a later end date shows as a range (`– søndag 11. okt`).
+  - `SUBMIT_URL` (the repo's issue form) is linked from the hero and the footer. Override it with `submit_url=` or `build --submit-url=` (empty hides it).
   - `render_events_html` returns the whole document as one triple-quoted string. The CSS and the client-side filter JS are inlined in it.
 
 ### Event data contract
@@ -61,7 +63,7 @@ The repo is `github.com/Tangokalender/TangoKalender.jl`, and the site is publish
 
 - `ci.yml`: tests on the latest Julia release (`'1'`; the compat floor is 1.12, which Pkg apps need), plus `validate events`, on PRs and on `main`.
 - `pages.yml`: builds `_site/index.html` (plus `_site/schema/`, served at the schema's `$id`, `https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json`) and deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
-- `intake.yml`: issue opened or edited with the label `nytt-arrangement` → `from-issue` → `peter-evans/create-pull-request` on branch `arrangement/issue-<n>`, then a comment on the issue with the report. Failures get the `trenger-retting` label.
+- `intake.yml`: issue opened or edited with the label `nytt-arrangement` → `from-issue` → `peter-evans/create-pull-request` on branch `arrangement/issue-<n>`, then a comment on the issue with the report. `from-issue --outputs=$GITHUB_OUTPUT` emits a one-line `title` (event + date), which names the PR and renames the issue. Failures get the `trenger-retting` label.
   - **Security:** the issue body and title are untrusted. Only pass them through `env:` or action inputs, never with `${{ }}` inside `run:`.
   - Bot PRs made with `GITHUB_TOKEN` don't trigger `ci.yml`. That's why `from-issue` validates the whole tree itself.
   - Lint with `actionlint` (and `shellcheck`) after editing workflows.

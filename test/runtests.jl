@@ -98,8 +98,20 @@ end
  end
 end
 @testset "date labels" begin
+ L(st,en=nothing)=TangoKalender._date_label(isnothing(en) ? Dict("start"=>st) : Dict("start"=>st,"end"=>en))
+ @test L("2026-10-02T21:00:00+02:00","2026-10-03T01:30:00+02:00")=="fredag 2. okt · 21:00–01:30"     # past midnight
+ @test L("2026-10-06T20:00:00+02:00","2026-10-06T23:00:00+02:00")=="tirsdag 6. okt · 20:00–23:00"
+ @test L("2026-10-09T17:00:00+02:00","2026-10-12T00:00:00+02:00")=="fredag 9. okt · 17:00 – søndag 11. okt"
+ @test L("2026-10-02","2026-10-06")=="fredag 2. okt – tirsdag 6. okt"
+ @test L("2026-10-05T20:00:00+02:00","2026-10-04T00:00:00+02:00")=="mandag 5. okt · 20:00"            # end before start ignored
  @test occursin("<aside>fredag 15. jan</aside>",render_events_html([Dict("title"=>"x","type"=>"festival","start"=>"2027-01-15")]))
  @test occursin("<aside>fredag 9. okt · 17:00</aside>",render_events_html([Dict("title"=>"x","type"=>"festival","start"=>"2026-10-09T17:00:00+02:00")]))
+end
+@testset "submit link" begin
+ h=render_events_html([Dict("title"=>"a","type"=>"milonga","start"=>"2026-10-01")])
+ @test count(TangoKalender.SUBMIT_URL,h)==2 && occursin("+ Legg til arrangement</a>",h)
+ @test !occursin("Legg til arrangement",render_events_html([Dict("title"=>"a","type"=>"milonga","start"=>"2026-10-01")]; submit_url=""))
+ @test !occursin("javascript:",render_events_html([Dict("title"=>"a","type"=>"milonga","start"=>"2026-10-01")]; submit_url="javascript:alert(1)"))
 end
 @testset "norwegian labels" begin
  h=render_events_html([Dict("title"=>"a","type"=>"class_and_social","start"=>"2026-10-01"),Dict("title"=>"b","type"=>"class","start"=>"2026-10-02")])
@@ -145,10 +157,12 @@ end
  ISSUES=joinpath(@__DIR__,"fixtures","issues")
  mktempdir() do d
   root=joinpath(d,"events"); rep=joinpath(d,"r.md")
-  run1()=TangoKalender.main(["from-issue",joinpath(ISSUES,"weekly.md"),"--root=$root","--report=$rep","--issue-url=https://github.com/o/r/issues/9","--today=2026-10-01"])
+  out=joinpath(d,"gh_output"); write(out,"earlier=1\n")
+  run1()=TangoKalender.main(["from-issue",joinpath(ISSUES,"weekly.md"),"--root=$root","--report=$rep","--issue-url=https://github.com/o/r/issues/9","--today=2026-10-01","--outputs=$out"])
   @test redirect_stdout(run1,devnull)==0
+  @test read(out,String)=="earlier=1\ntitle=Øvingskveld på Løkka (4 datoer fra 20. okt)\n"
   @test length(load_events(root))==4 && isempty(validate_event_tree(root))
-  r=read(rep,String); @test startswith(r,"✅") && occursin("| tirsdag 20. okt · 19:00 | Øvingskveld på Løkka | Løkka Dans |",r)
+  r=read(rep,String); @test startswith(r,"✅") && occursin("| tirsdag 20. okt · 19:00–22:00 | Øvingskveld på Løkka | Løkka Dans |",r)
   @test redirect_stdout(()->redirect_stderr(run1,devnull),devnull)==1      # refuses to overwrite
   @test occursin("finnes allerede",read(rep,String)) && length(load_events(root))==4
   bad()=TangoKalender.main(["from-issue",joinpath(ISSUES,"invalid.md"),"--root=$root","--report=$rep","--today=2026-10-01"])
