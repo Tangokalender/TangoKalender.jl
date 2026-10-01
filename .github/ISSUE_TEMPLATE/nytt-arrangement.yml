@@ -40,7 +40,7 @@ body:
     attributes:
       label: Dato
       description: Første dato, på formen ÅÅÅÅ-MM-DD.
-      placeholder: 2026-11-14
+      placeholder: "2026-11-14"
     validations:
       required: true
   - type: input
@@ -69,13 +69,13 @@ body:
     attributes:
       label: Gjentas til
       description: Siste dato for ukentlige arrangementer (ÅÅÅÅ-MM-DD), høyst ett år frem.
-      placeholder: 2026-12-15
+      placeholder: "2026-12-15"
   - type: input
     id: unntatt
     attributes:
       label: Unntatt datoer
       description: Datoer uten arrangement, skilt med komma.
-      placeholder: 2026-11-03, 2026-11-10
+      placeholder: "2026-11-03, 2026-11-10"
   - type: input
     id: sted
     attributes:
