@@ -135,6 +135,8 @@ end
  tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement.yml"),String)
  labels=[strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl)]
  @test Set(labels)==Set(TangoKalender.FORM_FIELDS)
+ # GitHub's YAML loader rejects the whole form if a scalar parses as a Date/Time ("Tried to load unspecified class: Date")
+ @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
  opts=Set(strip(m[1]) for m in eachmatch(r"^        - (?!label:)(.+)$"m,tmpl))
  @test all(v in opts for v in values(TangoKalender._TYPES))
  @test all(v in Set(strip(m[1]) for m in eachmatch(r"^        - label: (.+)$"m,tmpl)) for v in values(TangoKalender._MUSIC))
