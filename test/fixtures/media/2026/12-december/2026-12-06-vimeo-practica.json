@@ -1,0 +1,9 @@
+{
+    "id": "vimeo-practica",
+    "title": "Practica med Vimeo",
+    "type": "practica",
+    "start": "2026-12-06",
+    "venue": null,
+    "music_style": ["alternative"],
+    "video": {"platform": "vimeo", "id": "123456789"}
+}

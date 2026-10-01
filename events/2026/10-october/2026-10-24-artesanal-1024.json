@@ -1,0 +1,33 @@
+{
+    "id": "artesanal-1024",
+    "title": "Milonga Artesanal",
+    "type": "milonga",
+    "series": "artesanal",
+    "start": "2026-10-24T19:30:00+02:00",
+    "end": "2026-10-25T00:00:00+02:00",
+    "venue": {
+        "name": "Oslo Dance Hub / Ewa Trela Dans",
+        "address": "Waldemar Thranes gate 3C, 0171 Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Tango Puente",
+    "dj": null,
+    "teachers": [
+        "Romina Tidoni"
+    ],
+    "price_nok": 200,
+    "student_price_nok": null,
+    "class_price_nok": 300,
+    "description": "Chacarera Doble-klasse og tradisjonell milonga.",
+    "source": "Tango Puente",
+    "source_url": "https://happeningnext.com/event/milonga-artesanal-24oct-dance-hub-oslo-eid3a0dxhp6no",
+    "published_date": null,
+    "first_seen": "2026-09-30",
+    "last_verified": "2026-09-30",
+    "crawl_timestamp": "2026-09-30T16:51:00+02:00",
+    "confidence": 0.9,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": null
+}

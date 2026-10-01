@@ -1,0 +1,36 @@
+{
+    "id": "oslotango-tue-2026-11-17",
+    "title": "Oslo Tango høstkurs - tirsdag",
+    "type": "class",
+    "status": "scheduled",
+    "series": "oslotango-tue",
+    "start": "2026-11-17T18:00:00+01:00",
+    "end": "2026-11-17T20:00:00+01:00",
+    "venue": {
+        "name": "Sletta Kafé",
+        "address": "Ballplassveien 2, Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Oslo Tango",
+    "dj": null,
+    "teachers": [
+        "Ina Eriksen",
+        "Espen Gees",
+        "Ole Nylund Hagen"
+    ],
+    "price_nok": 2000,
+    "student_price_nok": null,
+    "class_price_nok": null,
+    "description": "Nybegynnerkurs og praktisering.",
+    "source": "Oslo Tango",
+    "source_url": "https://www.oslotango.com/",
+    "published_date": null,
+    "first_seen": "2026-09-30",
+    "last_verified": "2026-09-30",
+    "crawl_timestamp": "2026-09-30T16:51:00+02:00",
+    "confidence": 0.9,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": null
+}

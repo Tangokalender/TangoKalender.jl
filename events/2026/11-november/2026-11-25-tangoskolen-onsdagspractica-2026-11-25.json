@@ -1,0 +1,32 @@
+{
+    "id": "tangoskolen-onsdagspractica-2026-11-25",
+    "title": "OnsdagsPractica",
+    "type": "practica",
+    "status": "scheduled",
+    "series": "tangoskolen-onsdagspractica",
+    "start": "2026-11-25T19:00:00+01:00",
+    "end": "2026-11-25T22:00:00+01:00",
+    "venue": {
+        "name": "Tangoskolen",
+        "address": "Nordahl Bruns gate 22, 0165 Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Tangoskolen",
+    "dj": null,
+    "teachers": [],
+    "price_nok": 50,
+    "student_price_nok": null,
+    "class_price_nok": null,
+    "description": "Øvingskveld for alle nivåer, de fleste kommer alene. Ingen påmelding. Demo-data: utledet fra Tangoskolens ukeplan for januar 2026 – sjekk Tangoskolen på Facebook for gjeldende program.",
+    "source": "Tangoskolen",
+    "source_url": "https://tangoskolenoslo.wordpress.com/",
+    "published_date": null,
+    "first_seen": "2026-10-01",
+    "last_verified": "2026-10-01",
+    "crawl_timestamp": "2026-10-01T21:55:00+02:00",
+    "confidence": 0.3,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": "https://tangoskolenoslo.wordpress.com/onsdagspractica/"
+}

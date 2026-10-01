@@ -1,0 +1,30 @@
+{
+    "id": "wiese",
+    "title": "Åpen kveld på Wiese - lynkurs og sosial dans",
+    "type": "class_and_social",
+    "start": "2026-10-08T19:00:00+02:00",
+    "end": null,
+    "venue": {
+        "name": "Wiese",
+        "address": null,
+        "city": "Oslo"
+    },
+    "organizer": "Tango Banco",
+    "dj": null,
+    "teachers": [],
+    "price_nok": null,
+    "student_price_nok": null,
+    "class_price_nok": null,
+    "description": "Åpen kveld med lynkurs og sosial dans.",
+    "source": "Tangokalender.no",
+    "source_url": "https://tangokalender.no/",
+    "published_date": null,
+    "first_seen": "2026-09-30",
+    "last_verified": "2026-09-30",
+    "crawl_timestamp": "2026-09-30T16:51:00+02:00",
+    "confidence": 0.9,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": null
+}

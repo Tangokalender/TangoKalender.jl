@@ -1,0 +1,30 @@
+{
+    "id": "social-1113",
+    "title": "Milonga Social",
+    "type": "milonga",
+    "start": "2026-11-13T20:00:00+01:00",
+    "end": "2026-11-13T23:45:00+01:00",
+    "venue": {
+        "name": "Arkitektenes hus",
+        "address": "Josefines gate 32, 0351 Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Unni Hermansen",
+    "dj": "TBA",
+    "teachers": [],
+    "price_nok": 200,
+    "student_price_nok": 100,
+    "class_price_nok": null,
+    "description": "Sosial milonga med kaffe, te og snacks.",
+    "source": "Tango Events in Oslo / AllEvents",
+    "source_url": "https://allevents.in/oslo/milonga-social-tdj-tba/200030696278404",
+    "published_date": null,
+    "first_seen": "2026-09-30",
+    "last_verified": "2026-09-30",
+    "crawl_timestamp": "2026-09-30T16:51:00+02:00",
+    "confidence": 0.9,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": null
+}

@@ -1,0 +1,35 @@
+{
+    "id": "ktw-2026-10-09",
+    "title": "Kavakava Tango Weekend Autumn Edition",
+    "type": "festival",
+    "status": "scheduled",
+    "series": "ktw",
+    "start": "2026-10-09T17:00:00+02:00",
+    "end": "2026-10-12T00:00:00+02:00",
+    "venue": {
+        "name": "Sentralen",
+        "address": "Øvre Slottsgate 3, 0157 Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Kavakava",
+    "dj": null,
+    "teachers": [
+        "Mariano Chicho Frumboli",
+        "Juana Sepúlveda"
+    ],
+    "price_nok": 4200,
+    "student_price_nok": null,
+    "class_price_nok": 3600,
+    "description": "Seminar fredag 17–20, lørdag og søndag 12–17, med milonga hver kveld. Full pass 4200 kr, seminarpass 3600 kr, milongapass 900 kr. Full pass og seminarpass er utsolgt/stengt for påmelding.",
+    "link": "https://www.kavakava.no/ktw/ktw-2026-autumn-edition",
+    "source": "Kavakava",
+    "source_url": "https://www.kavakava.no/ktw/ktw-2026-autumn-edition",
+    "published_date": null,
+    "first_seen": "2026-10-01",
+    "last_verified": "2026-10-01",
+    "crawl_timestamp": "2026-10-01T21:46:00+02:00",
+    "confidence": 0.95,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null
+}

@@ -1,0 +1,31 @@
+{
+    "id": "esa-2026-10-13",
+    "title": "Milonga ESA",
+    "type": "milonga",
+    "series": "esa",
+    "start": "2026-10-13T20:00:00+02:00",
+    "end": "2026-10-13T23:00:00+02:00",
+    "venue": {
+        "name": "Halvorsens Conditori",
+        "address": "Prinsens gate 26, Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Patrycja Jablonska",
+    "dj": "Varierer",
+    "teachers": [],
+    "price_nok": 170,
+    "student_price_nok": 100,
+    "class_price_nok": null,
+    "description": "Sosial milonga etter kurs.",
+    "source": "Tango Traveller",
+    "source_url": "https://www.tangotraveller.co/tango-events-in-oslo",
+    "published_date": "2026-09-15",
+    "first_seen": "2026-09-30",
+    "last_verified": "2026-09-30",
+    "crawl_timestamp": "2026-09-30T16:51:00+02:00",
+    "confidence": 0.9,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": null
+}

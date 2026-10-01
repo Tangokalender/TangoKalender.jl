@@ -1,0 +1,32 @@
+{
+    "id": "ktw-milonga-2026-10-10",
+    "title": "KTW Milonga – lørdag",
+    "type": "milonga",
+    "status": "scheduled",
+    "series": "ktw-milonga",
+    "start": "2026-10-10T21:00:00+02:00",
+    "end": "2026-10-11T02:00:00+02:00",
+    "venue": {
+        "name": "Sentralen",
+        "address": "Øvre Slottsgate 3, 0157 Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Kavakava",
+    "dj": null,
+    "teachers": [],
+    "price_nok": 600,
+    "student_price_nok": null,
+    "class_price_nok": null,
+    "description": "Milonga under Kavakava Tango Weekend. Enkeltbillett 600 kr, milongapass (alle tre kveldene) 900 kr.",
+    "link": "https://www.kavakava.no/ktw/ktw-2026-autumn-edition",
+    "source": "Kavakava",
+    "source_url": "https://www.kavakava.no/ktw/ktw-2026-autumn-edition",
+    "published_date": null,
+    "first_seen": "2026-10-01",
+    "last_verified": "2026-10-01",
+    "crawl_timestamp": "2026-10-01T21:46:00+02:00",
+    "confidence": 0.95,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null
+}
