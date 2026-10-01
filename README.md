@@ -8,6 +8,9 @@ Statisk, responsiv og filtrerbar tango-kalender basert på `JSON.jl`, publisert 
 - **Skjema (anbefalt):** Issues → New issue → «Nytt arrangement». En robot gjør skjemaet om til
   arrangementsfiler og åpner en pull request; svaret (eller feil som må rettes) kommer som kommentar.
   Faste arrangementer legges inn med «Gjentas: Ukentlig».
+- **Rette opp:** klikk «Rett opp» på arrangementet. Skjemaet åpnes ferdig utfylt; endre det som er feil
+  (tomt felt = ingen endring, `-` fjerner en opplysning), velg om endringen gjelder bare denne datoen eller
+  også alle senere i serien, og send inn. Avlysninger meldes med «Status: Avlyst».
 - **Pull request:** legg til eller endre filer under `events/` direkte. CI validerer alle filer.
 
 En redaktør ser over og merger; siden bygges og publiseres automatisk fra `main`.
@@ -21,7 +24,7 @@ En redaktør ser over og merger; siden bygges og publiseres automatisk fra `main
 
 Engangsoppsett på GitHub: Settings → Pages → Source: *GitHub Actions*; Settings → Actions → General →
 Workflow permissions: *Read and write* og *Allow GitHub Actions to create and approve pull requests*;
-opprett etikettene `nytt-arrangement` og `trenger-retting`.
+opprett etikettene `nytt-arrangement`, `rettelse` og `trenger-retting`.
 
 ## Utvikling
 

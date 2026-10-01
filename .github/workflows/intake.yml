@@ -1,4 +1,4 @@
-# Issue form (nytt-arrangement) → event files → pull request for review.
+# Issue forms (nytt-arrangement, rettelse) → event files → pull request for review.
 # SECURITY: the issue body/title are untrusted. Pass them only through `env:` or action inputs,
 # never via ${{ }} inside `run:` scripts. The Julia parser treats the body as data.
 name: Intake
@@ -14,7 +14,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   from-issue:
-    if: github.event.issue.state == 'open' && contains(github.event.issue.labels.*.name, 'nytt-arrangement')
+    if: >-
+      github.event.issue.state == 'open' &&
+      (contains(github.event.issue.labels.*.name, 'nytt-arrangement') || contains(github.event.issue.labels.*.name, 'rettelse'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,11 +50,11 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           branch: arrangement/issue-${{ github.event.issue.number }}
-          add-paths: events/**
-          commit-message: 'Nytt arrangement fra #${{ github.event.issue.number }}'
-          title: 'Nytt arrangement: ${{ steps.convert.outputs.title }}'
+          add-paths: events   # a directory, so moved/removed event files are committed too
+          commit-message: '${{ steps.convert.outputs.pr_title }} (#${{ github.event.issue.number }})'
+          title: ${{ steps.convert.outputs.pr_title }}
           body-path: ${{ runner.temp }}/pr-body.md
-          labels: nytt-arrangement
+          labels: ${{ contains(github.event.issue.labels.*.name, 'rettelse') && 'rettelse' || 'nytt-arrangement' }}
           delete-branch: true
       - name: Comment on issue
         if: always()
@@ -61,7 +63,7 @@ jobs:
           NUMBER: ${{ github.event.issue.number }}
           OUTCOME: ${{ steps.convert.outcome }}
           PR_URL: ${{ steps.pr.outputs.pull-request-url }}
-          TITLE: ${{ steps.convert.outputs.title }}
+          TITLE: ${{ steps.convert.outputs.issue_title }}
         run: |
           report="$RUNNER_TEMP/report.md"
           [ -f "$report" ] || echo "⚠️ Noe gikk galt under behandlingen av skjemaet. En redaktør ser på det." > "$report"
@@ -70,7 +72,7 @@ jobs:
           fi
           gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$report"
           if [ "$OUTCOME" = success ]; then
-            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --title "Arrangement: $TITLE"
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --title "$TITLE"
             gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label trenger-retting || true
           else
             gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --add-label trenger-retting

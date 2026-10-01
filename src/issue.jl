@@ -38,6 +38,41 @@ function _video_from_url(s)
  isnothing(m) ? nothing : JSON.Object{String,Any}("platform"=>"vimeo","id"=>String(m[1]))
 end
 _lookup(d,label)=(k=findfirst(==(label),d); isnothing(k) ? nothing : k)
+const PRICE_FIELDS=["price_nok"=>"Pris (kr)","student_price_nok"=>"Studentpris (kr)","class_price_nok"=>"Kurspris (kr)"]
+"""
+    _parse_field(label, s) -> (value, error)
+
+Parse one non-empty form field into its event value. `error` is a Norwegian message or `nothing`.
+Fields without special syntax are returned as text. Shared by new-event and correction forms.
+"""
+function _parse_field(label::AbstractString,s::AbstractString)
+ bad(m)=(nothing,m)
+ if label=="Type"
+  t=_lookup(_TYPES,s); isnothing(t) ? bad("Ukjent «Type»: $s.") : (t,nothing)
+ elseif label in ("Dato","Gjentas til")
+  d=_date(s); isnothing(d) ? bad("«$label» må være på formen ÅÅÅÅ-MM-DD (fikk «$s»).") : (d,nothing)
+ elseif label in ("Starttid","Sluttid")
+  t=_time(s;allow24=label=="Sluttid"); isnothing(t) ? bad("«$label» må være på formen TT:MM (fikk «$s»).") : (t,nothing)
+ elseif label=="Lenke"
+  occursin(r"^https?://\S+$",s) ? (s,nothing) : bad("«Lenke» må være en nettadresse som begynner med https://.")
+ elseif label in last.(PRICE_FIELDS)
+  v=_parse_int(s); isnothing(v) || v<0 ? bad("«$label» må være et helt tall (fikk «$s»).") : (v,nothing)
+ elseif label=="Flyer"
+  u=_image_url(s); isnothing(u) ? bad("Fant ingen bildelenke i «Flyer». Dra og slipp bildet i feltet, eller lim inn en https-lenke.") : (u,nothing)
+ elseif label=="Video"
+  v=_video_from_url(s); isnothing(v) ? bad("«Video» må være en lenke til YouTube eller Vimeo.") : (v,nothing)
+ elseif label=="Lærere"
+  (Any[String(strip(t)) for t in split(s,',') if !isempty(strip(t))],nothing)
+ elseif label=="Musikk"
+  music=Any[]
+  for l in _checked(s)
+   m=_lookup(_MUSIC,l); isnothing(m) && return bad("Ukjent «Musikk»: $l."); push!(music,m)
+  end
+  (music,nothing)
+ else
+  (s,nothing)
+ end
+end
 """
     events_from_form(fields; issue_url=nothing, today=Dates.today()) -> (events, errors)
 
@@ -48,21 +83,14 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  errs=String[]; err(m)=push!(errs,m)
  get_(k)=String(strip(get(f,k,"")))
  req(k)=(v=get_(k); isempty(v) && err("«$k» må fylles ut."); v)
- title=req("Tittel"); typelabel=req("Type"); datestr=req("Dato"); ststr=req("Starttid")
- venue=req("Sted"); address=req("Adresse"); org=req("Arrangør"); link=req("Lenke")
- typ=_lookup(_TYPES,typelabel); !isempty(typelabel) && isnothing(typ) && err("Ukjent «Type»: $typelabel.")
- date=isempty(datestr) ? nothing : _date(datestr)
- !isempty(datestr) && isnothing(date) && err("«Dato» må være på formen ÅÅÅÅ-MM-DD (fikk «$datestr»).")
+ val(k;required=false)=(s=required ? req(k) : get_(k); isempty(s) ? nothing : ((v,e)=_parse_field(k,s); isnothing(e) || err(e); v))
+ title=req("Tittel"); typ=val("Type";required=true); date=val("Dato";required=true); st=val("Starttid";required=true)
+ venue=req("Sted"); address=req("Adresse"); org=req("Arrangør"); link=val("Lenke";required=true)
  !isnothing(date) && date<today && err("«Dato» ($date) har allerede vært.")
- st=isempty(ststr) ? nothing : _time(ststr)
- !isempty(ststr) && isnothing(st) && err("«Starttid» må være på formen TT:MM (fikk «$ststr»).")
- etstr=get_("Sluttid"); et=isempty(etstr) ? nothing : _time(etstr;allow24=true)
- !isempty(etstr) && isnothing(et) && err("«Sluttid» må være på formen TT:MM (fikk «$etstr»).")
- !isempty(link) && !occursin(r"^https?://\S+$",link) && err("«Lenke» må være en nettadresse som begynner med https://.")
+ et=val("Sluttid")
  weekly=get_("Gjentas")=="Ukentlig"; until=nothing; except=Date[]
  if weekly
-  u=req("Gjentas til"); until=isempty(u) ? nothing : _date(u)
-  !isempty(u) && isnothing(until) && err("«Gjentas til» må være på formen ÅÅÅÅ-MM-DD (fikk «$u»).")
+  until=val("Gjentas til";required=true)
   if !isnothing(until) && !isnothing(date)
    until<date && err("«Gjentas til» ($until) er før «Dato» ($date).")
    until>date+Week(MAX_WEEKS-1) && err("«Gjentas til» kan være høyst ett år etter «Dato».")
@@ -73,27 +101,15 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  elseif !isempty(get_("Gjentas til")) || !isempty(get_("Unntatt datoer"))
   err("«Gjentas til»/«Unntatt datoer» brukes bare når «Gjentas» er «Ukentlig».")
  end
- prices=Dict{String,Any}()
- for (k,field) in ("price_nok"=>"Pris (kr)","student_price_nok"=>"Studentpris (kr)","class_price_nok"=>"Kurspris (kr)")
-  s=get_(field); v=isempty(s) ? nothing : _parse_int(s)
-  !isempty(s) && (isnothing(v) || v<0) && err("«$field» må være et helt tall (fikk «$s»).")
-  prices[k]=v
- end
- music=Any[]
- for l in _checked(get_("Musikk"))
-  m=_lookup(_MUSIC,l); isnothing(m) ? err("Ukjent «Musikk»: $l.") : push!(music,m)
- end
- fl=get_("Flyer"); flyer=isempty(fl) ? nothing : _image_url(fl)
- !isempty(fl) && isnothing(flyer) && err("Fant ingen bildelenke i «Flyer». Dra og slipp bildet i feltet, eller lim inn en https-lenke.")
- vs=get_("Video"); video=isempty(vs) ? nothing : _video_from_url(vs)
- !isempty(vs) && isnothing(video) && err("«Video» må være en lenke til YouTube eller Vimeo.")
+ prices=Dict{String,Any}(k=>val(field) for (k,field) in PRICE_FIELDS)
+ music=something(val("Musikk"),Any[]); flyer=val("Flyer"); video=val("Video")
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  isempty(errs) || return (JSON.Object{String,Any}[],errs)
  slug=_slug(title); none(s)=isempty(s) ? nothing : s
  base=JSON.Object{String,Any}("id"=>"$slug-$(Dates.format(date,"yyyy-mm-dd"))","title"=>title,"type"=>typ,"status"=>"scheduled","series"=>weekly ? slug : nothing,
   "start"=>_stamp(date,st),"end"=>isnothing(et) ? nothing : _end_stamp(date,st,et),
   "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>"Oslo"),"organizer"=>org,"dj"=>none(get_("DJ")),
-  "teachers"=>Any[String(strip(t)) for t in split(get_("Lærere"),',') if !isempty(strip(t))],
+  "teachers"=>something(val("Lærere"),Any[]),
   "price_nok"=>prices["price_nok"],"student_price_nok"=>prices["student_price_nok"],"class_price_nok"=>prices["class_price_nok"],
   "description"=>none(get_("Beskrivelse")),"music_style"=>music,"flyer_url"=>flyer,"video"=>video,"link"=>link,
   "source"=>"Innsendt via skjema","source_url"=>isnothing(issue_url) ? nothing : string(issue_url),"published_date"=>string(today),

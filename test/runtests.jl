@@ -13,7 +13,7 @@ end
 @testset "event tree" begin
  tree=load_events(TREE)
  ids=Set(e["id"] for e in tree)
- @test length(tree)==125
+ @test length(ids)==length(tree) && length(tree)>=49   # unique ids; grows as events are submitted
  @test all(e["id"] in ids for e in load_events(V1) if !isnothing(e["start"]) && e["id"]!="ktw")
  @test count(startswith("oslotango-tue-"),ids)==11 && count(startswith("oslotango-thu-"),ids)==12
  @test all(get(e,"series",nothing)=="esa" for e in tree if startswith(e["id"],"esa-"))
@@ -160,7 +160,7 @@ end
   out=joinpath(d,"gh_output"); write(out,"earlier=1\n")
   run1()=TangoKalender.main(["from-issue",joinpath(ISSUES,"weekly.md"),"--root=$root","--report=$rep","--issue-url=https://github.com/o/r/issues/9","--today=2026-10-01","--outputs=$out"])
   @test redirect_stdout(run1,devnull)==0
-  @test read(out,String)=="earlier=1\ntitle=Øvingskveld på Løkka (4 datoer fra 20. okt)\n"
+  @test read(out,String)=="earlier=1\npr_title=Nytt arrangement: Øvingskveld på Løkka (4 datoer fra 20. okt)\nissue_title=Arrangement: Øvingskveld på Løkka (4 datoer fra 20. okt)\n"
   @test length(load_events(root))==4 && isempty(validate_event_tree(root))
   r=read(rep,String); @test startswith(r,"✅") && occursin("| tirsdag 20. okt · 19:00–22:00 | Øvingskveld på Løkka | Løkka Dans |",r)
   @test redirect_stdout(()->redirect_stderr(run1,devnull),devnull)==1      # refuses to overwrite
@@ -170,4 +170,68 @@ end
   @test redirect_stdout(()->TangoKalender.main(["from-issue",joinpath(ISSUES,"single.md"),"--root=$root","--report=$rep","--today=2026-10-01"]),devnull)==0
   @test occursin("@​someone",read(rep,String)) || !occursin("@someone",read(rep,String))
  end
+end
+@testset "corrections" begin
+ T=Date(2026,10,1); TK=TangoKalender
+ tick="- [X] Ja"
+ # a correction body as GitHub renders it: every form heading, unset fields as _No response_
+ body(vals)=join(("### $l\n\n$(get(vals,l,"_No response_"))" for l in TK.CORRECTION_FIELDS),"\n\n")
+ form(vals)=TK.parse_issue_form(body(merge(Dict("Samtykke"=>tick),vals)))
+ prefill(e)=Dict(lbl=>TK.correction_fields(e)[id] for (id,lbl) in TK.CORRECTION_IDS)
+ mktempdir() do d
+  root=joinpath(d,"events"); cp(TREE,root)
+  esa(dd)=load_events(only(f for f in TK.event_files(root) if endswith(f,"-esa-2026-$dd.json")))
+  # unchanged prefill → nothing to do
+  u,errs,_=TK.apply_correction(form(prefill(esa("10-13"))),root;today=T)
+  @test isempty(u) && any(occursin("Ingen endringer",m) for m in errs)
+  # blank fields = unchanged, so an id alone (prefill lost) is also "no changes", never a wipe
+  @test any(occursin("Ingen endringer",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-13")),root;today=T)[2])
+  # DJ on one date
+  u,errs,ch=TK.apply_correction(form(merge(prefill(esa("10-13")),Dict("DJ"=>"Gjeste-DJ"))),root;today=T)
+  @test isempty(errs) && length(u)==1 && ch==[("DJ","Varierer","Gjeste-DJ")]
+  old=esa("10-13"); new=u[1][2]
+  @test Set(k for k in keys(new) if new[k]!=old[k])==Set(["dj","last_verified"])
+  # "-" clears an optional field; required fields can't be cleared
+  @test isnothing(TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-13","DJ"=>"-")),root;today=T)[1][1][2]["dj"])
+  @test any(occursin("«Sted» kan ikke fjernes",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-13","Sted"=>"-")),root;today=T)[2])
+  # start time for this and all later dates, across the 25 Oct clock change
+  u,errs,_=TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-20","Starttid"=>"19:00","Gjelder"=>TK.SERIES_SCOPE)),root;today=T)
+  @test isempty(errs) && [x["id"] for (_,x) in u]==["esa-2026-$dd" for dd in ("10-20","10-27","11-03","11-10","11-17","11-24")]
+  @test u[1][2]["start"]=="2026-10-20T19:00:00+02:00" && u[2][2]["start"]=="2026-10-27T19:00:00+01:00" && u[2][2]["end"]=="2026-10-27T23:00:00+01:00"
+  # cancel the rest of a series
+  u,errs,ch=TK.apply_correction(form(Dict("Arrangement-ID"=>"otq-2026-11-04","Status"=>"Avlyst","Gjelder"=>TK.SERIES_SCOPE)),root;today=T)
+  @test isempty(errs) && length(u)==4 && all(x["status"]=="cancelled" for (_,x) in u) && ch==[("Status","Gjennomføres","Avlyst")]
+  # errors
+  @test any(occursin("én dato om gangen",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-20","Dato"=>"2026-10-21","Gjelder"=>TK.SERIES_SCOPE)),root;today=T)[2])
+  @test any(occursin("Fant ikke",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"finnes-ikke")),root;today=T)[2])
+  @test any(occursin("«Starttid» må være",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-13","Starttid"=>"kveld")),root;today=T)[2])
+  @test any(occursin("ikke del av en serie",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"galla-1128","DJ"=>"X","Gjelder"=>TK.SERIES_SCOPE)),root;today=T)[2])
+  # CLI: date change moves the file, keeps the id, writes titles
+  bf=joinpath(d,"b.md"); rep=joinpath(d,"r.md"); out=joinpath(d,"out")
+  write(bf,body(Dict("Samtykke"=>tick,"Arrangement-ID"=>"esa-2026-10-13","Dato"=>"2026-10-14","Kommentar"=>"Flyttet\n@noen sa det")))
+  @test redirect_stdout(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--outputs=$out","--today=2026-10-01"]),devnull)==0
+  @test !isfile(joinpath(root,"2026","10-october","2026-10-13-esa-2026-10-13.json"))
+  moved=load_events(joinpath(root,"2026","10-october","2026-10-14-esa-2026-10-13.json"))
+  @test moved["id"]=="esa-2026-10-13" && moved["start"]=="2026-10-14T20:00:00+02:00" && isempty(validate_event_tree(root))
+  r=read(rep,String); @test startswith(r,"✅") && occursin("| Dato | 2026-10-13 | 2026-10-14 |",r) && occursin("> @​noen sa det",r)
+  @test read(out,String)=="pr_title=Rettelse: Milonga ESA (14. okt)\nissue_title=Rettelse: Milonga ESA (14. okt)\n"
+  # rollback: an invalid file elsewhere in the tree makes validation fail → nothing changes
+  before=read(joinpath(root,"2026","10-october","2026-10-20-esa-2026-10-20.json"),String)
+  write(joinpath(root,"2026","10-october","broken.json"),"{\"id\":\"broken\"}")
+  write(bf,body(Dict("Samtykke"=>tick,"Arrangement-ID"=>"esa-2026-10-20","DJ"=>"Ny")))
+  @test redirect_stdout(()->redirect_stderr(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--today=2026-10-01"]),devnull),devnull)==1
+  @test read(joinpath(root,"2026","10-october","2026-10-20-esa-2026-10-20.json"),String)==before && startswith(read(rep,String),"❌")
+ end
+ # links
+ e=load_events(joinpath(TREE,"2026","10-october","2026-10-06-esa-2026-10-06.json"))
+ u=TK.correction_url(e)
+ @test startswith(u,TK.CORRECT_URL*"&") && occursin("&arrangement_id=esa-2026-10-06&",u) && occursin("&sted=Halvorsens%20Conditori&",u) && !occursin(' ',u)
+ long=merge(Dict{String,Any}(e),Dict("description"=>repeat("x",10_000))); @test !occursin("beskrivelse=",TK.correction_url(long)) && length(TK.correction_url(long))<=TK.MAX_URL
+ h=render_events_html([e]); @test occursin("aria-label=\"Rett opp: Milonga ESA\">Rett opp ↗</a>",h) && occursin("arrangement_id=esa-2026-10-06",h)
+ @test !occursin("Rett opp",render_events_html([e]; correct_url=""))
+ # drift guard for the correction template
+ tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
+ @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(TK.CORRECTION_FIELDS)
+ ids=Set(strip(m[1]) for m in eachmatch(r"^    id: (.+)$"m,tmpl)); @test all(id in ids for (id,_) in TK.CORRECTION_IDS)
+ @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
 end
