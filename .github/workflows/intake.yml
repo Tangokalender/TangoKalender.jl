@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
       - uses: julia-actions/cache@v2
@@ -45,7 +45,7 @@ jobs:
       - name: Open or update pull request
         id: pr
         if: steps.convert.outcome == 'success'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: arrangement/issue-${{ github.event.issue.number }}
           add-paths: events/**
