@@ -1,7 +1,7 @@
 # TangoKalender.jl
 
 Statisk, responsiv og filtrerbar tango-kalender basert på `JSON.jl`, publisert med GitHub Pages
-(`https://<org>.github.io/TangoKalender.jl/`).
+(https://tangokalender.github.io/TangoKalender.jl/), kildekode på https://github.com/Tangokalender/TangoKalender.jl.
 
 ## Legge inn arrangementer
 
@@ -56,7 +56,7 @@ med felles `series`-id, slik at DJ, pris osv. kan variere fra gang til gang. Avl
 markeres med `"status": "cancelled"` (vises som «Avlyst») i stedet for at filen slettes.
 
 Formatet er beskrevet i `schema/tango-event.schema.json` (JSON Schema draft-07). Legg til
-`"$schema": "../../../schema/tango-event.schema.json"` i en fil for autoutfylling i editoren.
+`"$schema": "https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json"` i en fil for autoutfylling i editoren.
 I tillegg til skjemaet sjekker valideringen at `id` er unik og at filen ligger på riktig sted.
 
 Nye felt i v2: `venue` (`{name, address, city}`), `music_style` (`traditional`,

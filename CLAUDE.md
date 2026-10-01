@@ -56,8 +56,11 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 
 ## GitHub workflows (`.github/workflows/`)
 
+The repo is `github.com/Tangokalender/TangoKalender.jl`, and the site is published at https://tangokalender.github.io/TangoKalender.jl/ (Pages hostnames are lowercase).
+
+
 - `ci.yml`: tests on Julia 1.11 and 1, plus `validate events`, on PRs and on `main`.
-- `pages.yml`: builds `_site/index.html` (plus `_site/schema/`) and deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
+- `pages.yml`: builds `_site/index.html` (plus `_site/schema/`, served at the schema's `$id`, `https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json`) and deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
 - `intake.yml`: issue opened or edited with the label `nytt-arrangement` → `from-issue` → `peter-evans/create-pull-request` on branch `arrangement/issue-<n>`, then a comment on the issue with the report. Failures get the `trenger-retting` label.
   - **Security:** the issue body and title are untrusted. Only pass them through `env:` or action inputs, never with `${{ }}` inside `run:`.
   - Bot PRs made with `GITHUB_TOKEN` don't trigger `ci.yml`. That's why `from-issue` validates the whole tree itself.

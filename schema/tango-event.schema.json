@@ -1,5 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json",
     "title": "Tango event",
     "description": "One dated tango event (v2). Stored one file per event under events/YYYY/MM-month/. Repeating events are one file per date sharing a `series` id.",
     "type": "object",
