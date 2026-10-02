@@ -15,6 +15,7 @@ julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 # CLI entry point (TangoKalender.main): build is the default subcommand; paths are relative to the cwd
 julia --project=. -m TangoKalender validate [events]                   # exit 1 on problems
 julia --project=. -m TangoKalender [build] [events] [public/index.html] [--title=… --subtitle=… --no-validate]
+julia --project=. -m TangoKalender site [events] [_site]   # whole site: index.html, for-ki.html, llms.txt, schema/*.json (used by pages.yml)
 julia --project=. -m TangoKalender migrate examples/oslo_tango_events_2026-09-30.json events  # one-off v1 → tree
 julia --project=. -m TangoKalender from-issue BODY.md [--root=events] [--issue-url=URL] [--report=r.md] [--today=YYYY-MM-DD]
 
@@ -38,6 +39,12 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
   - `apply_correction(form, root)` finds the event by «Arrangement-ID», works out which fields changed, and applies them to this date or, with `SERIES_SCOPE`, to all later dates in its `series`. A **blank field means unchanged and `-` clears**, so a lost prefill can never wipe data. Times are recomputed per date, so the clock change stays correct. A date change keeps the `id` and moves the file.
   - `from-issue` treats any form that has «Arrangement-ID» as a correction. It rolls back if validating the tree fails.
   - Avoid GitHub's own query parameters (`title`, `labels`, `type`, …) as field ids; that's why the ID field is `arrangement_id`.
+- `src/submission.jl`: JSON submissions, e.g. extracted by an LLM, through `.github/ISSUE_TEMPLATE/nytt-arrangement-json.yml`.
+  - `submission_schema()` is **derived** from the stored schema at build time: the `BOT_FIELDS` are removed, `video_url` replaces `video`, and `start`/`end` are relaxed to Oslo local time. It's published at `SUBMISSION_SCHEMA_URL`. Don't hand-edit a copy of it.
+  - `events_from_json` strips code fences and prose, drops any bot fields the LLM included, and validates each item for precise Norwegian error paths (`«[1].venue.name»`).
+  - It **ignores any submitted offset and recomputes it** with `_stamp`/`_end_stamp`, because all times are Oslo local time. Then it sets `id`/`series`/metadata and runs `validate_event`.
+  - `from-issue` routes a form that has a «JSON» heading here.
+- `src/llms.jl`: `llm_rules()` is written once and used both in `llms_txt()` (English, for models) and in the copy-ready prompt on `for_ki_html()` (Norwegian page). `EXAMPLE_INPUT`/`EXAMPLE_OUTPUT` are the published worked example, and the tests check that the example converts cleanly. `write_site` writes everything for Pages. The type and music lists come from `_TYPES`/`_MUSIC`, with English help text in `TYPE_HELP`/`MUSIC_HELP`, so add new enum values there too.
 - `src/validate.jl`: `validate_event` checks one event against `schema/tango-event.schema.json` with JSONSchema.jl. `validate_event_tree` also flags duplicate ids and files not at their `event_path`.
 - `src/render/html.jl`: all of the rendering. Julia string interpolation builds the markup directly; there is no templating library.
   - Private helpers (prefixed `_`): `_esc` (HTML escaping; every interpolated field must go through it), `_val` (a `get` that also maps JSON `null`/`nothing` to the default), `_date_label`, `_price`, `_card`.
@@ -70,7 +77,7 @@ The repo is `github.com/Tangokalender/TangoKalender.jl`, and the site is publish
 
 
 - `ci.yml`: tests on the latest Julia release (`'1'`; the compat floor is 1.12, which Pkg apps need), plus `validate events`, on PRs and on `main`.
-- `pages.yml`: builds `_site/index.html` (plus `_site/schema/`, served at the schema's `$id`, `https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json`) and deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
+- `pages.yml`: runs `site events _site`, which writes `index.html`, `for-ki.html`, `llms.txt` and both schemas under `schema/`, served at their `$id`s, e.g. `https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json`. It deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
 - `intake.yml`: issue opened or edited with the label `nytt-arrangement` or `rettelse` → `from-issue` → `peter-evans/create-pull-request` on branch `arrangement/issue-<n>`, then a comment on the issue with the report. `from-issue --outputs=$GITHUB_OUTPUT` emits a one-line `pr_title` and `issue_title`, which name the PR and rename the issue. `add-paths: events` must stay a directory, so that moved files are committed as deletions too. Failures get the `trenger-retting` label.
   - **Security:** the issue body and title are untrusted. Only pass them through `env:` or action inputs, never with `${{ }}` inside `run:`.
   - Bot PRs made with `GITHUB_TOKEN` don't trigger `ci.yml`. That's why `from-issue` validates the whole tree itself.

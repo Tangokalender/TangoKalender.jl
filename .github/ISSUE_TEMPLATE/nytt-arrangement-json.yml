@@ -1,0 +1,30 @@
+# JSON produced by an LLM from an existing event page – see https://tangokalender.github.io/TangoKalender.jl/for-ki.html
+# The «JSON» label is the key read by from-issue (events_from_json in src/submission.jl).
+name: Nytt arrangement (JSON fra KI)
+description: Lim inn JSON som en KI-assistent (Copilot, Gemini, ChatGPT …) har laget fra en arrangementsside.
+title: "[Arrangement]: "
+labels: ["nytt-arrangement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Har du arrangementet på Facebook eller en nettside? Følg veiledningen på
+        [**Bruk KI til å legge inn arrangementer**](https://tangokalender.github.io/TangoKalender.jl/for-ki.html):
+        kopier ledeteksten, lim den og arrangementsteksten inn i en KI-assistent, og lim svaret inn her.
+        En robot sjekker JSON-en og lager et forslag som en redaktør ser over. **Les over svaret først** –
+        KI kan ta feil.
+  - type: textarea
+    id: json
+    attributes:
+      label: JSON
+      description: Hele svaret fra KI-assistenten (ett arrangement eller en liste med flere datoer).
+      render: json
+    validations:
+      required: true
+  - type: checkboxes
+    id: samtykke
+    attributes:
+      label: Samtykke
+      options:
+        - label: Personer som er nevnt (DJ, lærere, arrangør) har godtatt å bli oppført i den offentlige kalenderen.
+          required: true

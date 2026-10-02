@@ -265,3 +265,59 @@ end
   end
  end
 end
+@testset "JSON submissions (KI)" begin
+ TK=TangoKalender; T=Date(2026,10,1)
+ # submission schema: derived from the stored one, loads as a schema, no bot-managed fields
+ s=TK.submission_schema(); ev=s["definitions"]["event"]["properties"]
+ @test isnothing(TK.JSONSchema.validate(TK.JSONSchema.Schema(s),JSON.parse(TK.EXAMPLE_OUTPUT)))       # the published example is valid
+ @test !any(haskey(ev,k) for k in TK.BOT_FIELDS) && haskey(ev,"video_url")
+ @test ev["type"]["enum"]==JSON.parsefile(TK.SCHEMA_FILE)["properties"]["type"]["enum"]
+ # drift guard: the worked example in llms.txt converts to valid stored events
+ events,errs=TK.events_from_json(TK.EXAMPLE_OUTPUT; issue_url="https://github.com/o/r/issues/3", today=Date(2027,1,1))
+ @test isempty(errs) && length(events)==1
+ e=events[1]
+ @test e["id"]=="milonga-del-fiordo-2027-03-12" && e["start"]=="2027-03-12T21:00:00+01:00" && e["end"]=="2027-03-13T01:30:00+01:00"
+ @test e["source"]=="Innsendt via KI-skjema" && e["source_url"]=="https://github.com/o/r/issues/3" && isnothing(e["series"]) && isempty(validate_event(e))
+ @test occursin(TK.EXAMPLE_OUTPUT,TK.llms_txt()) && occursin(TK.SUBMISSION_SCHEMA_URL,TK.llm_prompt())
+ # fences + prose, arrays → series, Oslo offsets recomputed (wrong +01:00 in October), same-day end before start → next day
+ ev1(d,st,en;kw...)=Dict{String,Any}("title"=>"Practica på Løkka","type"=>"practica","start"=>"$(d)T$st","end"=>"$(d)T$en",
+  "venue"=>Dict("name"=>"Løkka Dans","address"=>"Thorvald Meyers gate 1"),"organizer"=>"Løkka Tango","link"=>"https://example.org/p",(string(k)=>v for (k,v) in kw)...)
+ arr=[ev1("2026-10-21","19:00+01:00","22:00";id="hacked",confidence=0.1),ev1("2026-10-28","21:00","01:30";video_url="https://youtu.be/dQw4w9WgXcQ")]
+ events,errs=TK.events_from_json("Her er svaret:\n```json\n$(JSON.json(arr,2))\n```\nSi ifra om noe mangler!"; today=T)
+ @test isempty(errs) && [x["id"] for x in events]==["practica-pa-lokka-2026-10-21","practica-pa-lokka-2026-10-28"]
+ @test all(x["series"]=="practica-pa-lokka" for x in events) && events[1]["confidence"]==1.0
+ @test events[1]["start"]=="2026-10-21T19:00:00+02:00" && events[2]["start"]=="2026-10-28T21:00:00+01:00" && events[2]["end"]=="2026-10-29T01:30:00+01:00"
+ @test events[2]["video"]==Dict("platform"=>"youtube","id"=>"dQw4w9WgXcQ") && events[1]["venue"]["city"]=="Oslo"
+ # errors (Norwegian, with JSON paths)
+ msg(t)=TK.events_from_json(t; today=T)[2]
+ @test only(msg("ingen json her"))|>m->occursin("Fant ingen JSON",m)
+ @test only(msg("{\"title\": \"x\""))|>m->occursin("kan ikke leses",m)
+ @test only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";type="disco"))))=="«type»: \"disco\" er ikke en gyldig verdi. Lovlige verdier: milonga, practica, festival, marathon, class, workshop, class_and_social, class_and_practica, other."
+ @test occursin("«[1].venue.name»",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-28","19:00","22:00";venue=Dict("name"=>3,"address"=>"b"))]))))
+ @test occursin("mangler påkrevd felt: type, start, venue, organizer, link",only(msg("{\"title\":\"X\"}")))
+ @test occursin("har allerede vært",only(msg(JSON.json(ev1("2026-09-01","19:00","22:00")))))
+ @test occursin("to ganger",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-21","19:00","22:00")]))))
+ @test occursin("Høyst 60",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00") for _ in 1:61]))))
+ # CLI round trip through the JSON issue form (GitHub wraps a render: json textarea in a code fence)
+ mktempdir() do d
+  root=joinpath(d,"events"); bf=joinpath(d,"b.md"); rep=joinpath(d,"r.md"); out=joinpath(d,"o")
+  write(bf,"### JSON\n\n```json\n$(JSON.json(arr,2))\n```\n\n### Samtykke\n\n- [X] Ja")
+  @test redirect_stdout(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--outputs=$out","--today=2026-10-01"]),devnull)==0
+  @test length(load_events(root))==2 && isempty(validate_event_tree(root)) && startswith(read(rep,String),"✅")
+  @test occursin("pr_title=Nytt arrangement: Practica på Løkka (2 datoer fra 21. okt)",read(out,String))
+  write(bf,"### JSON\n\n```json\n$(JSON.json(ev1("2026-11-04","19:00","22:00")))\n```\n\n### Samtykke\n\n- [ ] Ja")
+  @test redirect_stdout(()->redirect_stderr(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--today=2026-10-01"]),devnull),devnull)==1
+  @test occursin("«Samtykke» må krysses av",read(rep,String)) && length(load_events(root))==2
+  # site: all files, links between them
+  site=joinpath(d,"site"); @test redirect_stdout(()->TK.main(["site",MEDIA,site]),devnull)==0
+  @test all(isfile(joinpath(site,f)) for f in ("index.html","for-ki.html","llms.txt",".nojekyll",joinpath("schema","tango-event.schema.json"),joinpath("schema","tango-event-submission.schema.json")))
+  @test occursin("href=\"for-ki.html\">Bruk KI</a>",read(joinpath(site,"index.html"),String))
+  ki=read(joinpath(site,"for-ki.html"),String)
+  @test occursin(TK.SUBMISSION_SCHEMA_URL,ki) && occursin(TK.JSON_FORM_URL,ki) && occursin("id=\"copy\"",ki)
+  @test JSON.parsefile(joinpath(site,"schema","tango-event-submission.schema.json"))["\$id"]==TK.SUBMISSION_SCHEMA_URL
+ end
+ # the JSON issue form uses the labels the parser expects
+ tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement-json.yml"),String)
+ @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(["JSON","Samtykke"]) && occursin("render: json",tmpl)
+ @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
+end
