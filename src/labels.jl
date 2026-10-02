@@ -1,3 +1,5 @@
+"Site name shown in titles, the hero, feeds and calendar names."
+const SITE_NAME="Tangokalender | Oslo"
 # Display labels (Norwegian) for the English slugs used in event data. Shared by the renderer and the issue-form parser.
 const _WEEKDAYS=Dict("Monday"=>"mandag","Tuesday"=>"tirsdag","Wednesday"=>"onsdag","Thursday"=>"torsdag","Friday"=>"fredag","Saturday"=>"lørdag","Sunday"=>"søndag")
 const _TYPES=Dict("milonga"=>"Milonga","practica"=>"Practica","festival"=>"Festival","marathon"=>"Maraton","class"=>"Kurs","workshop"=>"Workshop",

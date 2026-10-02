@@ -89,7 +89,7 @@ $EXAMPLE_OUTPUT
 "The Norwegian «Bruk KI» help page."
 function for_ki_html(; title="Bruk KI til å legge inn arrangementer")
  prompt=_esc(llm_prompt())
- """<!doctype html><html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – Oslo Tango</title><style>
+ """<!doctype html><html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title><style>
 :root{--wine:#872b49;--paper:#f5f1eb;--line:#ddd3ca;--muted:#6e6864}*{box-sizing:border-box}body{margin:0;background:var(--paper);font-family:Inter,system-ui,sans-serif;color:#211d1c;line-height:1.55}.hero{padding:40px 20px 56px;color:white;background:linear-gradient(135deg,#26151d,#8b2949)}.wrap{max-width:820px;margin:auto}.hero h1{font:500 clamp(2rem,6vw,3.4rem) Georgia;margin:.1em 0}.hero p{color:#f7dce5;margin:0}.hero a{color:white}main{max-width:820px;margin:-28px auto 0;padding:0 16px 60px}.card{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:16px;box-shadow:0 5px 18px #2919210b}h2{font:500 1.5rem Georgia;margin:0 0 8px}ol{padding-left:1.3em}li{margin:6px 0}a{color:var(--wine);font-weight:700}.promptbox{position:relative}pre{white-space:pre-wrap;word-break:break-word;background:#f7f2ec;border:1px solid var(--line);border-radius:12px;padding:16px;max-height:340px;overflow:auto;font-size:.82rem}button{border:0;border-radius:999px;background:var(--wine);color:white;font-weight:800;padding:10px 18px;cursor:pointer}button:hover{background:#6f2240}.btnrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:10px 0}.btn{display:inline-block;border-radius:999px;padding:10px 18px;background:#f2dce4;color:#76203e;text-decoration:none}small,.muted{color:var(--muted)}
 </style></head><body><div class="hero"><div class="wrap"><small><a href="./">← Til kalenderen</a></small><h1>$(_esc(title))</h1><p>Har du arrangementet på Facebook eller en nettside? La en KI-assistent (Copilot, Gemini, ChatGPT …) lage utfyllingen for deg.</p></div></div><main>
 <section class="card"><h2>Slik gjør du</h2><ol>
@@ -107,14 +107,27 @@ function for_ki_html(; title="Bruk KI til å legge inn arrangementer")
 </script></body></html>"""
 end
 """
-    write_site(dir; kwargs...) -> files
+    write_site(dir, events; today=Dates.today(), kwargs...) -> files
 
-Write the whole static site: index.html (from `events`), for-ki.html, llms.txt and both schemas.
+Write the whole static site: the three views (index.html = compact list, uke.html, kort.html), one page and one
+.ics per event (arrangement/<id>/index.html, arrangement/<id>.ics), kalender.ics, rss.xml, for-ki.html,
+llms.txt and both schemas. `kwargs` go to `render_events_html`.
 """
-function write_site(dir::AbstractString, events; kwargs...)
- mkpath(joinpath(dir,"schema"))
- files=[joinpath(dir,f) for f in ("index.html",AI_PAGE,"llms.txt",joinpath("schema","tango-event.schema.json"),joinpath("schema","tango-event-submission.schema.json"))]
- write(files[1],render_events_html(events;kwargs...)); write(files[2],for_ki_html()); write(files[3],llms_txt())
- cp(SCHEMA_FILE,files[4];force=true); open(io->(JSON.print(io,submission_schema(),2); write(io,'\n')),files[5],"w")
+function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwargs...)
+ mkpath(joinpath(dir,"schema")); mkpath(joinpath(dir,"arrangement")); files=String[]
+ w(rel,content)=(f=joinpath(dir,rel); mkpath(dirname(f)); write(f,content); push!(files,f))
+ ev=collect(events)
+ for (view,(file,_)) in _VIEWS; w(file,render_events_html(ev;view,site=true,kwargs...)); end
+ cu=get(Dict(kwargs),:correct_url,CORRECT_URL)
+ for e in ev
+  _haspage(e) || continue
+  w(joinpath("arrangement",string(e["id"]),"index.html"),render_event_page(e,ev;today,correct_url=cu))
+  w(joinpath("arrangement","$(e["id"]).ics"),event_ics(e;today))
+ end
+ w("kalender.ics",calendar_ics([e for e in ev if _haspage(e) && Date(_end_day(e))>=today-Day(30)];today))
+ w("rss.xml",rss_xml(ev;today))
+ w(AI_PAGE,for_ki_html()); w("llms.txt",llms_txt())
+ cp(SCHEMA_FILE,joinpath(dir,"schema","tango-event.schema.json");force=true); push!(files,joinpath(dir,"schema","tango-event.schema.json"))
+ w(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))
  touch(joinpath(dir,".nojekyll")); files
 end
