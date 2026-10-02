@@ -3,6 +3,8 @@
 const SUBMISSION_SCHEMA_URL=SITE_URL*"/schema/tango-event-submission.schema.json"
 const BOT_FIELDS=["id","series","source","source_url","published_date","first_seen","last_verified","crawl_timestamp","confidence","video"]
 const MAX_SUBMISSION=60
+"Required keys for submitted events (everything else may be null or left out)."
+const SUBMISSION_REQUIRED=["title","type","start","venue","organizer","link"]
 const _LOCALTIME="^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(Z|[+-][0-9]{2}:[0-9]{2})?)?\$"
 const TYPE_HELP=Dict("milonga"=>"social dance evening","practica"=>"practice evening","class"=>"class or course",
  "class_and_social"=>"class followed by a milonga","class_and_practica"=>"class followed by a practica","workshop"=>"workshop or seminar",
@@ -17,13 +19,13 @@ const _DESCRIPTIONS=Dict(
  "start"=>"Oslo local start time, \"YYYY-MM-DDTHH:MM\" (no time zone), or \"YYYY-MM-DD\" if no time is given.",
  "end"=>"Oslo local end time in the same format. If it ends after midnight, use the next day's date. null if not stated.",
  "venue"=>"Where the event takes place.",
- "organizer"=>"Organising group or person, as written in the source.",
+ "organizer"=>"Required. The organising group or person named in the source; if none is named, the page or profile that published the event (e.g. the Facebook event host).",
  "dj"=>"DJ name(s) exactly as written in the source, or null.",
  "teachers"=>"Teachers' names exactly as written in the source; [] if none.",
  "music_style"=>"Only if the source states it. Any of: ",   # completed below
  "price_nok"=>"Regular entry price in whole Norwegian kroner (integer), or null.",
  "student_price_nok"=>"Student/reduced price in whole NOK, or null.",
- "class_price_nok"=>"Price for the class/course part in whole NOK, or null.",
+ "class_price_nok"=>"Price for the class/course part in whole NOK, or null. A price for a whole course or series of dates goes here (on every date), with the description saying what it covers.",
  "description"=>"1–3 short neutral sentences in the source's language (level, entry, dress code). No marketing.",
  "flyer_url"=>"Direct https URL of the event image, only if it appears in the source; otherwise null.",
  "video_url"=>"YouTube or Vimeo link from the source, or null.",
@@ -46,7 +48,7 @@ function submission_schema()
   d=k=="type" ? d*_typelist()*"." : k=="music_style" ? d*_musiclist()*"." : d
   p=props[k]; haskey(p,"\$ref") ? (props[k]=JSON.Object{String,Any}("description"=>d,"allOf"=>[p])) : (p["description"]=d)
  end
- event=JSON.Object{String,Any}("type"=>"object","required"=>["title","type","start","venue","organizer","link"],
+ event=JSON.Object{String,Any}("type"=>"object","required"=>SUBMISSION_REQUIRED,
   "additionalProperties"=>false,"properties"=>props)
  defs["event"]=event
  JSON.Object{String,Any}("\$schema"=>"http://json-schema.org/draft-07/schema#","\$id"=>SUBMISSION_SCHEMA_URL,
@@ -127,7 +129,7 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   e=JSON.Object{String,Any}("id"=>id,"title"=>strip(_s(x["title"])),"type"=>x["type"],"status"=>something(_none(get(x,"status",nothing)),"scheduled"),
    "series"=>counts[slugs[k]]>1 ? slugs[k] : nothing,"start"=>_stamp(d,t),"end"=>stamp_end,
    "venue"=>JSON.Object{String,Any}("name"=>_none(get(v,"name",nothing)),"address"=>_none(get(v,"address",nothing)),"city"=>something(_none(get(v,"city",nothing)),"Oslo")),
-   "organizer"=>_none(x["organizer"]),"dj"=>_none(get(x,"dj",nothing)),"teachers"=>collect(something(get(x,"teachers",nothing),Any[])),
+   "organizer"=>_none(get(x,"organizer",nothing)),"dj"=>_none(get(x,"dj",nothing)),"teachers"=>collect(something(get(x,"teachers",nothing),Any[])),
    "price_nok"=>get(x,"price_nok",nothing),"student_price_nok"=>get(x,"student_price_nok",nothing),"class_price_nok"=>get(x,"class_price_nok",nothing),
    "description"=>_none(get(x,"description",nothing)),"music_style"=>collect(something(get(x,"music_style",nothing),Any[])),
    "flyer_url"=>_none(get(x,"flyer_url",nothing)),"video"=>video,"link"=>x["link"],
