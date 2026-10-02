@@ -1,8 +1,8 @@
 # Correction form (.github/ISSUE_TEMPLATE/rett-arrangement.yml): prefilled «Rett opp» links and applying submitted changes.
 # Semantics: a blank field means "unchanged", `-` clears an optional field.
-const CORRECTION_FIELDS=["Arrangement-ID","Gjelder","Status","Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør",
+const CORRECTION_FIELDS=["Arrangement-ID","Nåværende opplysninger","Gjelder","Status","Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør",
  "DJ","Lærere","Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Kommentar","Samtykke"]
-# form field id (URL prefill key) => form label, for the fields prefilled with the event's current value
+# form field id => form label for the editable fields (and the id), used to detect and display changes
 const CORRECTION_IDS=["arrangement_id"=>"Arrangement-ID","tittel"=>"Tittel","dato"=>"Dato","starttid"=>"Starttid","sluttid"=>"Sluttid",
  "sted"=>"Sted","adresse"=>"Adresse","arrangor"=>"Arrangør","dj"=>"DJ","laerere"=>"Lærere","pris"=>"Pris (kr)",
  "studentpris"=>"Studentpris (kr)","kurspris"=>"Kurspris (kr)","flyer"=>"Flyer","video"=>"Video","lenke"=>"Lenke","beskrivelse"=>"Beskrivelse"]
@@ -29,12 +29,24 @@ function correction_fields(e)
 end
 "Percent-encode `s` as UTF-8 for a URL query value (RFC 3986 unreserved characters kept)."
 _urlenc(s)=join((c<0x80 && (isletter(Char(c)) || isdigit(Char(c)) || Char(c) in "-_.~")) ? string(Char(c)) : "%"*uppercase(string(c;base=16,pad=2)) for c in codeunits(s))
-"«Rett opp» link: the correction form prefilled with `e`'s current values (description dropped if the URL gets too long)."
+"Read-only summary of the current values for the «Nåværende opplysninger» box."
+function current_summary(e; description=true)
+ d=_display(e); f=correction_fields(e)
+ lines=["$lbl: $(d[lbl])" for lbl in ("Tittel","Type","Status","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere",
+  "Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke") if !isempty(d[lbl])]
+ description && !isempty(f["beskrivelse"]) && push!(lines,"Beskrivelse: $(f["beskrivelse"])")
+ !isnothing(get(e,"series",nothing)) && push!(lines,"Serie: $(e["series"])")
+ join(lines,"\n")
+end
+"""
+«Rett opp» link: the correction form with only `arrangement_id` and the read-only «Nåværende opplysninger» prefilled.
+GitHub resets URL-prefilled fields when they are edited, so the editable fields are left blank (blank = unchanged).
+"""
 function correction_url(e; base=CORRECT_URL)
  f=correction_fields(e); d=Date(first(_s(e["start"]),10))
- params=["title"=>"Rettelse: $(f["tittel"]) ($(day(d)). $(_MO[month(d)]))";[k=>f[k] for (k,_) in CORRECTION_IDS if !isempty(f[k])]]
- url(ps)=base*join(("&$(k)=$(_urlenc(v))" for (k,v) in ps))
- u=url(params); length(u)>MAX_URL ? url(filter(p->first(p)!="beskrivelse",params)) : u
+ url(desc)=base*join(("&$(k)=$(_urlenc(v))" for (k,v) in ["title"=>"Rettelse: $(f["tittel"]) ($(day(d)). $(_MO[month(d)]))",
+  "arrangement_id"=>f["arrangement_id"],"navaerende"=>current_summary(e;description=desc)]))
+ u=url(true); length(u)>MAX_URL ? url(false) : u
 end
 "Display values for the before/after table."
 function _display(e)

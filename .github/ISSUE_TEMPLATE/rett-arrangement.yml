@@ -1,5 +1,6 @@
-# Opened from the «Rett opp» link on each card, prefilled via URL query parameters keyed by field id
-# (see correction_fields/correction_url in src/correction.jl). Labels are the keys read by the parser – rename together.
+# Opened from the «Rett opp» link on each card. Only arrangement_id and navaerende are prefilled via URL query
+# parameters (GitHub resets URL-prefilled fields when edited, so the editable fields start blank).
+# See correction_url in src/correction.jl. Labels are the keys read by the parser – rename together.
 name: Rett opp arrangement
 description: Rett opp feil eller meld avlysning for et arrangement i kalenderen.
 title: "[Rettelse]: "
@@ -8,8 +9,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Feltene under viser det som står i kalenderen nå. **Endre bare det som er feil** og send inn –
-        en robot lager et forslag som en redaktør ser over, og du får svar som en kommentar her.
+        Under «Nåværende opplysninger» ser du det som står i kalenderen nå. **Fyll bare inn feltene som skal endres**
+        og send inn – en robot lager et forslag som en redaktør ser over, og du får svar som en kommentar her.
 
         - Et **tomt** felt betyr «ingen endring».
         - Skriv **-** for å fjerne en opplysning (f.eks. DJ).
@@ -20,6 +21,11 @@ body:
       description: Fylles ut automatisk – ikke endre.
     validations:
       required: true
+  - type: textarea
+    id: navaerende
+    attributes:
+      label: Nåværende opplysninger
+      description: Til informasjon – endringer skrives i feltene under, ikke her.
   - type: dropdown
     id: gjelder
     attributes:
