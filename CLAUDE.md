@@ -52,7 +52,9 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 - `start` is either an ISO datetime with an offset (`2026-10-01T19:00:00+02:00`) or a bare date (`2026-10-02`). `_date_label` tries the datetime form first and falls back to the date form. The schema requires seconds in datetimes because `_date_label` parses `HH:MM:SS`.
 - v1 recurring activities have no `start` and get the sentinel `data-date="9999-12-31"`, which sorts them last. The JS **"Faste aktiviteter"** filter matches cards with a non-empty `data-series` *or* that sentinel, so `_sortkey`, `_card` and the JS must stay in sync.
 - Cancelled events render with class `cancelled` and an "Avlyst" chip, and stay visible on the page.
-- `data-type`, `data-date`, `data-series`, `data-search` and `data-music` attributes on each `<article class="event">` are the interface between the Julia output and the inline JS.
+- `data-type`, `data-date`, `data-end`, `data-series`, `data-search` and `data-music` attributes on each `<article class="event">` are the interface between the Julia output and the inline JS. `data-end` comes from `_end_day`: the last day the event runs, using the same «ends by 06:00 = previous evening» rule as `_date_label`.
+- The time filter defaults to **Kommende**: events whose end day is today or later, so ongoing festivals still show. Past events are hidden in the browser, not removed at build time, so the page stays correct between nightly builds. «Alle (også tidligere)» shows everything.
+- `test/js/filters.js` runs the page's real inline script in Node against a fixed date with a minimal DOM stand-in. The `upcoming filter` testset uses it when `node` is on the PATH (it is on GitHub runners) and skips otherwise.
 
 ### Gotchas
 
