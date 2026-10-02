@@ -1,11 +1,11 @@
 {
-    "id": "otra-milonga-2026-11-02",
+    "id": "otra-milonga-2026-11-09",
     "title": "Otra Milonga",
     "type": "milonga",
     "status": "scheduled",
     "series": "otra-milonga",
-    "start": "2026-11-02T20:00:00+01:00",
-    "end": "2026-11-03T00:00:00+01:00",
+    "start": "2026-11-09T20:00:00+01:00",
+    "end": "2026-11-10T00:00:00+01:00",
     "venue": {
         "name": "Nedre Løkka cocktailbar",
         "address": "Thorvald Meyers gate 89, Oslo",
