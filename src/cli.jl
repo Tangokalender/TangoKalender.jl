@@ -3,13 +3,15 @@ tangokalender - build the tango calendar as one static HTML page
 
 Usage:
   tangokalender [build] [INPUT] [OUTPUT]   validate, then render (default: events public/index.html)
+  tangokalender site [INPUT] [DIR]         validate, then write the whole site to DIR (default: events _site):
+                                           index.html, for-ki.html, llms.txt, schema/*.json
   tangokalender validate [INPUT]           validate only
   tangokalender migrate V1.json [DIR]      convert a v1 event array to the events tree (default: events)
-  tangokalender from-issue BODY.md         apply a submitted issue form: new event(s), or a correction (has «Arrangement-ID»)
+  tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form or «JSON»), or a correction («Arrangement-ID»)
 
 INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
 
-Options (build):
+Options (build, site):
   --no-validate        render even if validation fails
   --title=TEXT         page title (default: "Oslo Tango")
   --subtitle=TEXT      page subtitle
@@ -53,7 +55,12 @@ function _from_issue(body_file,opts)
  today=haskey(opts,"today") ? Date(opts["today"]) : Dates.today()
  form=parse_issue_form(read(body_file,String))
  haskey(form,"Arrangement-ID") && return _from_correction(form,root,today,opts)
- events,errs=events_from_form(form; issue_url=get(opts,"issue-url",nothing), today)
+ events,errs=if haskey(form,"JSON")   # «Nytt arrangement (JSON fra KI)»
+  ev,er=events_from_json(form["JSON"]; issue_url=get(opts,"issue-url",nothing), today)
+  isempty(_checked(get(form,"Samtykke",""))) ? (empty(ev),[er;"«Samtykke» må krysses av."]) : (ev,er)
+ else
+  events_from_form(form; issue_url=get(opts,"issue-url",nothing), today)
+ end
  paths=[event_path(e;root) for e in events]
  for p in paths; isfile(p) && push!(errs,"Arrangementet finnes allerede ($(relpath(p,root))). Bruk «Rett opp»-lenken på arrangementet for å endre det."); end
  files=isempty(errs) ? save_event_tree(events,root) : String[]
@@ -113,14 +120,14 @@ Returns 0 on success, 1 on validation errors, 2 on usage errors.
 function (@main)(args)
  args=String.(args)
  any(in(("-h","--help")),args) && (print(USAGE); return 0)
- cmd=!isempty(args) && args[1] in ("build","validate","migrate","from-issue") ? popfirst!(args) : "build"
+ cmd=!isempty(args) && args[1] in ("build","site","validate","migrate","from-issue") ? popfirst!(args) : "build"
  pos=filter(!startswith("--"),args); opts=Dict{String,String}(); novalidate=false
  for a in filter(startswith("--"),args)
   k,v=occursin('=',a) ? split(a[3:end],'=';limit=2) : (a[3:end],"")
-  if cmd=="build" && k=="no-validate" && isempty(v); novalidate=true
-  elseif cmd=="build" && k in ("title","subtitle"); opts[k]=v
-  elseif cmd=="build" && k=="submit-url"; opts["submit_url"]=v
-  elseif cmd=="build" && k=="correct-url"; opts["correct_url"]=v
+  if cmd in ("build","site") && k=="no-validate" && isempty(v); novalidate=true
+  elseif cmd in ("build","site") && k in ("title","subtitle"); opts[k]=v
+  elseif cmd in ("build","site") && k=="submit-url"; opts["submit_url"]=v
+  elseif cmd in ("build","site") && k=="correct-url"; opts["correct_url"]=v
   elseif cmd=="from-issue" && k in ("root","issue-url","report","today","outputs") && !isempty(v); opts[k]=v
   else println(stderr,"unknown option $a\n"); print(stderr,USAGE); return 2 end
  end
@@ -142,6 +149,10 @@ function (@main)(args)
  end
  if !isempty(problems)
   _report(problems); novalidate || return 1
+ end
+ if cmd=="site"
+  dir=get(pos,2,"_site"); files=write_site(dir,load_events(input);(Symbol(k)=>v for (k,v) in opts)...)
+  foreach(f->println("Wrote $f"),files); return 0
  end
  output=get(pos,2,joinpath("public","index.html"))
  render_events_file(input,output;(Symbol(k)=>v for (k,v) in opts)...); println("Wrote $output")

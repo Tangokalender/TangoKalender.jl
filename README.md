@@ -8,6 +8,12 @@ Statisk, responsiv og filtrerbar tango-kalender basert på `JSON.jl`, publisert 
 - **Skjema (anbefalt):** Issues → New issue → «Nytt arrangement». En robot gjør skjemaet om til
   arrangementsfiler og åpner en pull request; svaret (eller feil som må rettes) kommer som kommentar.
   Faste arrangementer legges inn med «Gjentas: Ukentlig».
+- **Med KI:** har du arrangementet på Facebook eller en nettside, følg
+  [Bruk KI til å legge inn arrangementer](https://tangokalender.github.io/TangoKalender.jl/for-ki.html): kopier
+  ledeteksten inn i Copilot/Gemini/ChatGPT sammen med arrangementsteksten, og lim svaret (JSON) inn i skjemaet
+  «Nytt arrangement (JSON fra KI)». Instruksjoner for KI-agenter ligger i
+  [`llms.txt`](https://tangokalender.github.io/TangoKalender.jl/llms.txt), og formatet i
+  [innsendingsskjemaet](https://tangokalender.github.io/TangoKalender.jl/schema/tango-event-submission.schema.json).
 - **Rette opp:** klikk «Rett opp» på arrangementet. Skjemaet viser hva som står der nå; fyll bare inn
   feltene som skal endres (tomt felt = ingen endring, `-` fjerner en opplysning), velg om endringen gjelder bare denne datoen eller
   også alle senere i serien, og send inn. Avlysninger meldes med «Status: Avlyst».
