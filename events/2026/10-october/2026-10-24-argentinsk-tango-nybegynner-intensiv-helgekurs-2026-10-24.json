@@ -1,0 +1,32 @@
+{
+    "id": "argentinsk-tango-nybegynner-intensiv-helgekurs-2026-10-24",
+    "title": "Argentinsk tango nybegynner (intensiv helgekurs)",
+    "type": "workshop",
+    "status": "scheduled",
+    "series": "argentinsk-tango-nybegynner-intensiv-helgekurs",
+    "start": "2026-10-24T16:00:00+02:00",
+    "end": "2026-10-24T18:00:00+02:00",
+    "venue": {
+        "name": "Ewa Trela Dans, Adamstuen",
+        "address": "Ullevålsveien 76, bygg 16, 0454 Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Ewa Trela Dans",
+    "dj": null,
+    "teachers": [],
+    "price_nok": null,
+    "student_price_nok": null,
+    "class_price_nok": 910,
+    "description": "Intensivt helgekurs i argentinsk tango for nybegynnere over to dager. Det kreves ingen forkunnskaper, og du trenger ikke å ha med partner. Undervisningen foregår på norsk.",
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": "https://ewatreladans.no",
+    "source": "Innsendt via KI-skjema",
+    "source_url": "https://github.com/Tangokalender/TangoKalender.jl/issues/9",
+    "published_date": "2026-10-02",
+    "first_seen": "2026-10-02",
+    "last_verified": "2026-10-02",
+    "crawl_timestamp": null,
+    "confidence": 1.0
+}
