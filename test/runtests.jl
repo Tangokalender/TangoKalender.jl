@@ -379,6 +379,12 @@ end
  @test cols==string.(Date(2026,10,5):Day(1):Date(2026,10,11)) && count("class=\"group col weekend\"",sec)==2
  @test occursin("<span class=\"wd\">man</span> <span class=\"dm\">5. okt</span>",sec) && occursin("title=\"mandag 5. oktober\"",sec)
  @test occursin("class=\"weekgrid\"",w) && occursin("<p class=\"none\">–</p>",w)
+ # the class for days without events must not collide with a display:none rule (it hid empty week columns)
+ css=match(r"<style>(.*?)</style>"s,w)[1]
+ for cls in eachmatch(r"classList\.toggle\('([a-z]+)',!has\)",TK._JS)
+  k=cls[1]; k=="hidden" && continue
+  @test !occursin(Regex("(^|[},])\\.$k\\{[^}]*display:none"),css)
+ end
  @test occursin("class=\"cell ev t-festival\"",w) && occursin("<span class=\"dayn\">2/3</span>",w) && occursin("<a href=\"arrangement/c/\">",w)
  node=Sys.which("node")
  if !isnothing(node)
