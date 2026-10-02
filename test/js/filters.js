@@ -25,7 +25,7 @@ global.window={addEventListener(){}};
 global.document={addEventListener(t,f){if(t==='keydown')global.keydown=f},documentElement:{classList:classList('')},querySelectorAll:s=>s==='.ev'?rows:s==='.group'?groups:s==='.week'?weeks:s==='.col'?cols:[],querySelector:s=>el[s]||null};
 eval(script);
 const visible=()=>rows.filter(c=>!c.classList.has('hidden')).map(c=>c.dataset.date);
-const visGroups=()=>groups.filter(g=>!g.classList.has('hidden')&&!g.classList.has('empty')).map(g=>g.dataset.group);
+const visGroups=()=>groups.filter(g=>!g.classList.has('hidden')&&!g.classList.has('noev')).map(g=>g.dataset.group);
 const out={default:el['#when']?el['#when'].value:null,counts:{},groups:{}};
 for(const w of (el['#when']?['upcoming','all','today','week','month','recurring']:['any'])){if(el['#when'])el['#when'].value=w; window.apply(); out.counts[w]=visible(); out.groups[w]=visGroups();}
 if(el['#reset']){if(el['#when'])el['#when'].value='all'; el['#reset'].onclick(); out.reset=el['#when']?el['#when'].value:null}
