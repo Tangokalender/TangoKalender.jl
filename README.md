@@ -3,6 +3,13 @@
 Statisk, responsiv og filtrerbar tango-kalender basert på `JSON.jl`, publisert med GitHub Pages
 (https://tangokalender.github.io/TangoKalender.jl/), kildekode på https://github.com/Tangokalender/TangoKalender.jl.
 
+## Visninger og lenker
+
+- **Liste** (forsiden): kompakt liste gruppert per dag. **Uke**: én uke om gangen med ‹ ›. **Kort**: utfyllende kort.
+- Hvert arrangement har egen side, `…/arrangement/<id>/`, med alle detaljer, «Legg i kalender (.ics)», «Del lenke» og «Rett opp».
+- Abonner på hele kalenderen: `webcal://tangokalender.github.io/TangoKalender.jl/kalender.ics`. RSS: `…/rss.xml`.
+- ActivityPub står på [TODO](TODO.md).
+
 ## Legge inn arrangementer
 
 - **Skjema (anbefalt):** Issues → New issue → «Nytt arrangement». En robot gjør skjemaet om til

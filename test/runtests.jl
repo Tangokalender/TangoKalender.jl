@@ -73,7 +73,7 @@ end
  @test occursin("<option value=\"live_orchestra\">Levende orkester</option>",h)
  @test occursin("data-music=\"traditional live_orchestra\"",h)
  @test occursin("Kulturhuset",h) && occursin("Storgata 1, 0155 Oslo",h)
- @test occursin("class=\"event cancelled\"",h) && occursin(">Avlyst<",h) && occursin("data-series=\"weekly\"",h)
+ @test occursin("class=\"event ev cancelled\"",h) && occursin(">Avlyst<",h) && occursin("data-series=\"weekly\"",h)
  @test count(">Avlyst<",h)==1   # one visible chip (the «Rett opp» link also mentions the status)
  e=load_events(joinpath(MEDIA,"2026","12-december","2026-12-05-milonga-video.json"))
  e["video"]=Dict("platform"=>"youtube","id"=>"\"><script>x"); e["flyer_url"]="javascript:alert(1)"
@@ -324,4 +324,82 @@ end
  tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement-json.yml"),String)
  @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(["JSON","Samtykke"]) && occursin("render: json",tmpl)
  @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
+end
+@testset "views, event pages, ics, rss" begin
+ TK=TangoKalender; T=Date(2026,10,2)
+ E(id,st;kw...)=Dict{String,Any}("id"=>id,"title"=>"Milonga $id","type"=>"milonga","start"=>st,"venue"=>Dict("name"=>"Salen","address"=>"Gata 1, Oslo"),
+  "organizer"=>"Klubben","last_verified"=>"2026-10-01","first_seen"=>"2026-09-30",(string(k)=>v for (k,v) in kw)...)
+ evs=[E("a","2026-10-24T16:00:00+02:00";end_="x"),E("b","2026-11-14T16:00:00+01:00";first_seen="2026-10-01",series="s"),
+      E("c","2026-10-09";type="festival",var"end"="2026-10-11",title="Festival & <Fest>"),E("old","2026-09-01T20:00:00+02:00"),
+      E("d","2026-11-21T16:00:00+01:00";series="s",status="cancelled",dj="DJ Æøå",price_nok=150)]
+ for e in evs; delete!(e,"end_"); end
+ # --- ICS
+ ics=TK.calendar_ics(evs;today=T)
+ @test occursin("UID:a@tangokalender.github.io",ics) && occursin("DTSTART:20261024T140000Z",ics) && occursin("DTSTART:20261114T150000Z",ics)
+ @test occursin("DTSTART;VALUE=DATE:20261009",ics) && occursin("DTEND;VALUE=DATE:20261012",ics)        # exclusive end
+ @test occursin("STATUS:CANCELLED",ics) && count("BEGIN:VEVENT",ics)==5 && occursin("SUMMARY:Festival & <Fest>",ics)
+ @test !occursin(r"[^\r]\n",ics) && all(ncodeunits(l)<=75 for l in split(ics,"\r\n"))
+ long=TK.calendar_ics([E("l","2026-10-24T16:00:00+02:00";description=repeat("Æøå, ;tango\n",20))];today=T)
+ unf=replace(long,"\r\n "=>""); @test occursin("DESCRIPTION:Æøå\\, \\;tango\\nÆøå",unf) && all(ncodeunits(l)<=75 for l in split(long,"\r\n")) && isvalid(long)
+ @test TK._utc("2026-10-25T02:30:00+02:00")=="20261025T003000Z" && TK._utc("2026-10-02")===nothing
+ # --- RSS
+ rss=TK.rss_xml(evs;today=T)
+ @test !occursin("Milonga old",rss) && count("<item>",rss)==4
+ @test findfirst("Milonga b",rss)<findfirst("Milonga a",rss)                                            # newest addition first
+ @test occursin("Festival &amp; &lt;Fest&gt;",rss) && !occursin("<Fest>",rss) && occursin("<guid isPermaLink=\"true\">$(TK.SITE_URL)/arrangement/a/</guid>",rss)
+ @test occursin("<pubDate>Thu, 01 Oct 2026 00:00:00 +0200</pubDate>",rss) && occursin("AVLYST: ",rss)
+ @test count("<item>",TK.rss_xml([E("r$i","2026-12-01T20:00:00+01:00") for i in 1:150];today=T))==TK.RSS_MAX
+ if !isnothing(Sys.which("python3"))
+  mktempdir() do d; f=joinpath(d,"r.xml"); write(f,rss); @test success(`python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse(sys.argv[1])" $f`); end
+ end
+ # --- event page
+ x=Dict{String,Any}(evs[3]); x["title"]="<script>alert(1)</script>"
+ p=TK.render_event_page(x,evs;today=T); @test !occursin("<script>alert",p) && occursin("&lt;script&gt;",p)
+ @test JSON.parse(match(r"<script type=\"application/ld\+json\">(.*?)</script>"s,p)[1])["name"]=="<script>alert(1)</script>"   # escaped JSON still decodes
+ p=TK.render_event_page(evs[2],evs;today=T)
+ ld=JSON.parse(match(r"<script type=\"application/ld\+json\">(.*?)</script>"s,p)[1])
+ @test ld["@type"]=="Event" && ld["startDate"]=="2026-11-14T16:00:00+01:00" && ld["eventStatus"]=="https://schema.org/EventScheduled"
+ @test occursin("<link rel=\"canonical\" href=\"$(TK.SITE_URL)/arrangement/b/\">",p) && occursin("property=\"og:title\" content=\"Milonga b\"",p)
+ @test occursin("href=\"../b.ics\" download",p) && occursin("Rett opp ↗",p) && occursin("href=\"../d/\"",p) && occursin("Flere datoer i denne serien",p)
+ pd=TK.render_event_page(evs[5],evs;today=T); @test occursin("EventCancelled",pd) && occursin("<b>Avlyst.</b>",pd) && occursin("DJ Æøå",pd)
+ @test occursin("Dette arrangementet har vært",TK.render_event_page(evs[4],evs;today=T))
+ # --- compact list and week view
+ c=render_events_html(evs;view="compact",site=true)
+ heads=[m[1] for m in eachmatch(r"<section class=\"group\" data-group=\"([^\"]+)\">",c)]
+ @test heads==sort(heads) && issubset(["2026-10-09","2026-10-10","2026-10-11"],heads)                  # festival on each of its days
+ @test count("data-eid=\"c\"",c)==3 && occursin("dag 2 av 3",c) && occursin("<a href=\"arrangement/a/\">Milonga a</a>",c)
+ @test occursin("class=\"on\" aria-current=\"page\">Liste</a>",c) && !occursin("id=\"sort\"",c) && occursin("href=\"rss.xml\"",c)
+ @test !occursin("arrangement/",render_events_html(evs;view="compact"))                                 # no event pages outside the site
+ w=render_events_html(evs;view="week",site=true)
+ @test occursin("data-week=\"2026-W41\"",w) && occursin("id=\"uke-2026-41\"",w) && occursin("<h2>Uke 41 · 5.–11. okt</h2>",w)
+ @test occursin("mandag 5. oktober",w) && occursin("Ingen arrangementer",w) && !occursin("id=\"when\"",w)
+ @test occursin("<h2>Uke 44 · 26. okt – 1. nov</h2>",w)                                                   # range across months
+ node=Sys.which("node")
+ if !isnothing(node)
+  mktempdir() do d
+   run_(page,now,hash="")=(f=joinpath(d,"p.html"); write(f,page); JSON.parse(read(`$node $(joinpath(@__DIR__,"js","filters.js")) $f $now $hash`,String)))
+   r=run_(c,"2026-10-10")
+   @test r["default"]=="upcoming" && !("2026-09-01" in r["counts"]["upcoming"]) && !("2026-10-09" in r["groups"]["upcoming"]) && "2026-10-10" in r["groups"]["upcoming"]
+   r=run_(w,"2026-10-10"); @test r["weeks"]["default"]=="2026-W41" && r["weeks"]["next"]=="2026-W42" && r["weeks"]["prev"]=="2026-W40"
+   @test run_(w,"2026-10-10","#uke-2026-46")["weeks"]["hash"]=="2026-W46"
+   @test run_(w,"2027-06-01")["weeks"]["default"]==last([m[1] for m in eachmatch(r"data-week=\"([^\"]+)\"",w)])   # after the last week: show the last
+  end
+ end
+ # --- whole site: files and links
+ mktempdir() do d
+  files=TK.write_site(d,evs;today=T)
+  @test all(isfile(joinpath(d,f)) for f in ("index.html","uke.html","kort.html","kalender.ics","rss.xml","for-ki.html","llms.txt",joinpath("arrangement","a","index.html"),joinpath("arrangement","a.ics")))
+  @test occursin("class=\"group\"",read(joinpath(d,"index.html"),String))                                # index = compact list
+  k=read(joinpath(d,"kalender.ics"),String); @test count("BEGIN:VEVENT",k)==4 && !occursin("UID:old@",k)   # window: 30 days back (old is 31)
+  broken=String[]
+  for (r,_,fs) in walkdir(d), f in fs
+   endswith(f,".html") || continue
+   for m in eachmatch(r"(?:href|src)=\"([^\"]+)\"",read(joinpath(r,f),String))
+    u=replace(m[1],"&amp;"=>"&"); occursin(r"^(https?:|webcal:|mailto:|#|data:)",u) && continue
+    t=normpath(joinpath(r,first(split(u,['#','?'])))); (endswith(u,"/") || isdir(t)) && (t=joinpath(t,"index.html"))
+    isfile(t) || push!(broken,"$(relpath(joinpath(r,f),d)) → $u")
+   end
+  end
+  @test isempty(broken)
+ end
 end

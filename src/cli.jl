@@ -4,7 +4,8 @@ tangokalender - build the tango calendar as one static HTML page
 Usage:
   tangokalender [build] [INPUT] [OUTPUT]   validate, then render (default: events public/index.html)
   tangokalender site [INPUT] [DIR]         validate, then write the whole site to DIR (default: events _site):
-                                           index.html, for-ki.html, llms.txt, schema/*.json
+                                           index.html (list), uke.html, kort.html, arrangement/<id>/ pages and .ics,
+                                           kalender.ics, rss.xml, for-ki.html, llms.txt, schema/*.json
   tangokalender validate [INPUT]           validate only
   tangokalender migrate V1.json [DIR]      convert a v1 event array to the events tree (default: events)
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form or «JSON»), or a correction («Arrangement-ID»)
@@ -13,7 +14,7 @@ INPUT is an events directory or a single JSON array file. Paths are relative to 
 
 Options (build, site):
   --no-validate        render even if validation fails
-  --title=TEXT         page title (default: "Oslo Tango")
+  --title=TEXT         page title (default: "Tangokalender | Oslo")
   --subtitle=TEXT      page subtitle
   --submit-url=URL     target of the «Legg til arrangement» link (default: the repo's issue form; empty hides it)
   --correct-url=URL    base of each card's «Rett opp» link (default: the repo's correction form; empty hides it)
@@ -152,7 +153,7 @@ function (@main)(args)
  end
  if cmd=="site"
   dir=get(pos,2,"_site"); files=write_site(dir,load_events(input);(Symbol(k)=>v for (k,v) in opts)...)
-  foreach(f->println("Wrote $f"),files); return 0
+  println("Wrote $(length(files)) files to $dir"); return 0
  end
  output=get(pos,2,joinpath("public","index.html"))
  render_events_file(input,output;(Symbol(k)=>v for (k,v) in opts)...); println("Wrote $output")
