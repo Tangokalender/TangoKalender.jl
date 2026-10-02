@@ -371,9 +371,15 @@ end
  @test occursin("class=\"on\" aria-current=\"page\">Liste</a>",c) && !occursin("id=\"sort\"",c) && occursin("href=\"rss.xml\"",c)
  @test !occursin("arrangement/",render_events_html(evs;view="compact"))                                 # no event pages outside the site
  w=render_events_html(evs;view="week",site=true)
- @test occursin("data-week=\"2026-W41\"",w) && occursin("id=\"uke-2026-41\"",w) && occursin("<h2>Uke 41 · 5.–11. okt</h2>",w)
- @test occursin("mandag 5. oktober",w) && occursin("Ingen arrangementer",w) && !occursin("id=\"when\"",w)
- @test occursin("<h2>Uke 44 · 26. okt – 1. nov</h2>",w)                                                   # range across months
+ @test occursin("data-week=\"2026-W41\"",w) && occursin("id=\"uke-2026-41\"",w) && occursin("data-label=\"Uke 41 · 5.–11. okt\"",w)
+ @test occursin("data-label=\"Uke 44 · 26. okt – 1. nov\"",w) && !occursin("id=\"when\"",w)                # range across months
+ # a 7-column grid per week, Monday first, weekends marked, empty days get a placeholder
+ sec=match(r"<section class=\"week\" id=\"uke-2026-41\".*?</section>"s,w).match
+ cols=[m[1] for m in eachmatch(r"<div class=\"group col[^\"]*\" data-keep=\"1\" data-group=\"([^\"]+)\">",sec)]
+ @test cols==string.(Date(2026,10,5):Day(1):Date(2026,10,11)) && count("class=\"group col weekend\"",sec)==2
+ @test occursin("<span class=\"wd\">man</span> <span class=\"dm\">5. okt</span>",sec) && occursin("title=\"mandag 5. oktober\"",sec)
+ @test occursin("class=\"weekgrid\"",w) && occursin("<p class=\"none\">–</p>",w)
+ @test occursin("class=\"cell ev t-festival\"",w) && occursin("<span class=\"dayn\">2/3</span>",w) && occursin("<a href=\"arrangement/c/\">",w)
  node=Sys.which("node")
  if !isnothing(node)
   mktempdir() do d
@@ -381,6 +387,9 @@ end
    r=run_(c,"2026-10-10")
    @test r["default"]=="upcoming" && !("2026-09-01" in r["counts"]["upcoming"]) && !("2026-10-09" in r["groups"]["upcoming"]) && "2026-10-10" in r["groups"]["upcoming"]
    r=run_(w,"2026-10-10"); @test r["weeks"]["default"]=="2026-W41" && r["weeks"]["next"]=="2026-W42" && r["weeks"]["prev"]=="2026-W40"
+   @test r["weeks"]["label"]=="Uke 41 · 5.–11. okt" && r["weeks"]["today"]==["2026-10-10"]
+   @test r["weeks"]["keyRight"]=="2026-W42" && r["weeks"]["keyInInput"]=="2026-W42"                    # arrow keys, but not while typing
+   @test run_(w,"2026-01-01")["weeks"]["prevDisabledAtStart"]                                            # no week before the first
    @test run_(w,"2026-10-10","#uke-2026-46")["weeks"]["hash"]=="2026-W46"
    @test run_(w,"2027-06-01")["weeks"]["default"]==last([m[1] for m in eachmatch(r"data-week=\"([^\"]+)\"",w)])   # after the last week: show the last
   end
