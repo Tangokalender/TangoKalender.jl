@@ -74,7 +74,7 @@ end
  @test occursin("data-music=\"traditional live_orchestra\"",h)
  @test occursin("Kulturhuset",h) && occursin("Storgata 1, 0155 Oslo",h)
  @test occursin("class=\"event cancelled\"",h) && occursin(">Avlyst<",h) && occursin("data-series=\"weekly\"",h)
- @test count("Avlyst",h)==1
+ @test count(">Avlyst<",h)==1   # one visible chip (the «Rett opp» link also mentions the status)
  e=load_events(joinpath(MEDIA,"2026","12-december","2026-12-05-milonga-video.json"))
  e["video"]=Dict("platform"=>"youtube","id"=>"\"><script>x"); e["flyer_url"]="javascript:alert(1)"
  h=render_events_html([e]); @test !occursin("<iframe",h); @test !occursin("<img",h); @test !occursin("<script>x",h)
@@ -225,8 +225,11 @@ end
  # links
  e=load_events(joinpath(TREE,"2026","10-october","2026-10-06-esa-2026-10-06.json"))
  u=TK.correction_url(e)
- @test startswith(u,TK.CORRECT_URL*"&") && occursin("&arrangement_id=esa-2026-10-06&",u) && occursin("&sted=Halvorsens%20Conditori&",u) && !occursin(' ',u)
- long=merge(Dict{String,Any}(e),Dict("description"=>repeat("x",10_000))); @test !occursin("beskrivelse=",TK.correction_url(long)) && length(TK.correction_url(long))<=TK.MAX_URL
+ @test startswith(u,TK.CORRECT_URL*"&") && occursin("&arrangement_id=esa-2026-10-06&",u) && !occursin(' ',u)
+ # editable fields are never prefilled (GitHub resets URL-prefilled fields on edit); current values go in «navaerende»
+ @test !any(occursin("&$id=",u) for (id,_) in TK.CORRECTION_IDS if id!="arrangement_id")
+ @test occursin("&navaerende=",u) && occursin("Sted: Halvorsens Conditori\nAdresse: Prinsens gate 26, Oslo",TK.current_summary(e))
+ long=merge(Dict{String,Any}(e),Dict("description"=>repeat("x",10_000))); @test !occursin("xxxx",TK.correction_url(long)) && length(TK.correction_url(long))<=TK.MAX_URL
  h=render_events_html([e]); @test occursin("aria-label=\"Rett opp: Milonga ESA\">Rett opp ↗</a>",h) && occursin("arrangement_id=esa-2026-10-06",h)
  @test !occursin("Rett opp",render_events_html([e]; correct_url=""))
  # drift guard for the correction template
