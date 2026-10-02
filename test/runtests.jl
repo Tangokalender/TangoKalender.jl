@@ -295,6 +295,10 @@ end
  @test only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";type="disco"))))=="«type»: \"disco\" er ikke en gyldig verdi. Lovlige verdier: milonga, practica, festival, marathon, class, workshop, class_and_social, class_and_practica, other."
  @test occursin("«[1].venue.name»",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-28","19:00","22:00";venue=Dict("name"=>3,"address"=>"b"))]))))
  @test occursin("mangler påkrevd felt: type, start, venue, organizer, link",only(msg("{\"title\":\"X\"}")))
+ # organizer is mandatory, and the rules tell the model where to find it
+ noorg=ev1("2026-10-24","16:00","18:00"); delete!(noorg,"organizer")
+ @test only(msg(JSON.json([noorg])))=="«[0]» mangler påkrevd felt: organizer."
+ @test occursin("\"organizer\" is the group or person",TK.llm_rules()) && occursin("\"organizer\" and \"link\"",TK.llm_rules())
  @test occursin("har allerede vært",only(msg(JSON.json(ev1("2026-09-01","19:00","22:00")))))
  @test occursin("to ganger",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-21","19:00","22:00")]))))
  @test occursin("Høyst 60",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00") for _ in 1:61]))))
