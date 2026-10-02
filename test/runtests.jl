@@ -1,4 +1,4 @@
-using Test, Dates, TangoKalender
+using Test, Dates, JSON, TangoKalender
 const ROOT=joinpath(@__DIR__,"..")
 const V1=joinpath(ROOT,"examples","oslo_tango_events_2026-09-30.json")
 const TREE=joinpath(ROOT,"events")
@@ -237,4 +237,31 @@ end
  @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(TK.CORRECTION_FIELDS)
  ids=Set(strip(m[1]) for m in eachmatch(r"^    id: (.+)$"m,tmpl)); @test all(id in ids for (id,_) in TK.CORRECTION_IDS)
  @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
+end
+@testset "upcoming filter" begin
+ TK=TangoKalender
+ @test TK._end_day(Dict("start"=>"2026-10-02T21:00:00+02:00","end"=>"2026-10-03T01:30:00+02:00"))=="2026-10-02"   # evening past midnight
+ @test TK._end_day(Dict("start"=>"2026-10-09T17:00:00+02:00","end"=>"2026-10-12T00:00:00+02:00"))=="2026-10-11"
+ @test TK._end_day(Dict("start"=>"2026-10-02","end"=>"2026-10-06"))=="2026-10-06" && TK._end_day(Dict("start"=>"2026-11-28"))=="2026-11-28"
+ evs=[Dict("title"=>"Fortid","type"=>"milonga","start"=>"2026-09-30T20:00:00+02:00"),
+      Dict("title"=>"Festival","type"=>"festival","start"=>"2026-10-01","end"=>"2026-10-04"),
+      Dict("title"=>"Sen milonga","type"=>"milonga","start"=>"2026-10-01T21:00:00+02:00","end"=>"2026-10-02T01:00:00+02:00"),
+      Dict("title"=>"I dag","type"=>"practica","start"=>"2026-10-02T19:00:00+02:00","series"=>"s"),
+      Dict("title"=>"Neste uke","type"=>"milonga","start"=>"2026-10-08T20:00:00+02:00")]
+ h=render_events_html(evs)
+ @test occursin("<option value=\"upcoming\" selected>Kommende</option>",h) && occursin("data-end=\"2026-10-04\"",h)
+ node=Sys.which("node")
+ if isnothing(node)
+  @info "node not found – skipping the in-browser filter check"
+ else
+  mktempdir() do d
+   f=joinpath(d,"p.html"); write(f,h)
+   r=JSON.parse(read(`$node $(joinpath(@__DIR__,"js","filters.js")) $f 2026-10-02`,String))
+   c=r["counts"]
+   @test r["default"]=="upcoming" && r["reset"]=="upcoming"
+   @test sort(c["upcoming"])==["2026-10-01","2026-10-02","2026-10-08"]   # ongoing festival + today + future; past and yesterday's late milonga hidden
+   @test length(c["all"])==5 && sort(c["today"])==["2026-10-01","2026-10-02"] && c["recurring"]==["2026-10-02"]
+   @test sort(c["week"])==["2026-10-01","2026-10-02","2026-10-08"]
+  end
+ end
 end
