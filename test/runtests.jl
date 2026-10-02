@@ -403,3 +403,20 @@ end
   @test isempty(broken)
  end
 end
+@testset "icons" begin
+ TK=TangoKalender
+ e=Dict{String,Any}("id"=>"x","title"=>"Milonga X","type"=>"milonga","start"=>"2026-10-24T20:00:00+02:00","venue"=>Dict("name"=>"Salen","address"=>"Gata 1"),
+  "organizer"=>"Klubben","dj"=>"DJ Y","teachers"=>["A","B"],"price_nok"=>150,"music_style"=>["traditional"])
+ pages=[render_events_html([e];view=v,site=true) for v in ("compact","week","cards")]; push!(pages,TK.render_event_page(e,[e]))
+ for h in pages
+  used=Set(m[1] for m in eachmatch(r"<use href=\"#i-([a-z]+)\"/>",h))
+  @test !isempty(used) && all(occursin("<symbol id=\"i-$u\"",h) for u in used)                    # every icon is in the page sprite
+  @test count("<svg class=\"ic\" aria-hidden=\"true\"",h)==count("<use href=\"#i-",h)                 # all decorative
+  @test count("<svg width=\"0\" height=\"0\"",h)==1
+ end
+ c=pages[1]
+ @test occursin("<span class=\"f\" title=\"DJ\"><svg class=\"ic\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#i-dj\"/></svg><span class=\"sr\">DJ: </span>DJ Y</span>",c)
+ @test occursin("#i-price",c) && occursin("#i-teachers",c) && occursin("#i-pin",c)
+ @test occursin("<dt><svg class=\"ic\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#i-dj\"/></svg>DJ</dt>",pages[4])
+ @test_throws ArgumentError TK._icon("nope")
+end
