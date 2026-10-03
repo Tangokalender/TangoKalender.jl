@@ -7,7 +7,6 @@ Usage:
                                            index.html (list), uke.html, kort.html, arrangement/<id>/ pages and .ics,
                                            kalender.ics, rss.xml, for-ki.html, llms.txt, schema/*.json
   tangokalender validate [INPUT]           validate only
-  tangokalender migrate V1.json [DIR]      convert a v1 event array to the events tree (default: events)
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form or «JSON»), or a correction («Arrangement-ID»)
 
 INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
@@ -121,7 +120,7 @@ Returns 0 on success, 1 on validation errors, 2 on usage errors.
 function (@main)(args)
  args=String.(args)
  any(in(("-h","--help")),args) && (print(USAGE); return 0)
- cmd=!isempty(args) && args[1] in ("build","site","validate","migrate","from-issue") ? popfirst!(args) : "build"
+ cmd=!isempty(args) && args[1] in ("build","site","validate","from-issue") ? popfirst!(args) : "build"
  pos=filter(!startswith("--"),args); opts=Dict{String,String}(); novalidate=false
  for a in filter(startswith("--"),args)
   k,v=occursin('=',a) ? split(a[3:end],'=';limit=2) : (a[3:end],"")
@@ -137,11 +136,6 @@ function (@main)(args)
  if cmd=="from-issue"
   isempty(pos) && (println(stderr,"from-issue needs an issue body file\n"); print(stderr,USAGE); return 2)
   return _from_issue(pos[1],opts)
- end
- if cmd=="migrate"
-  isempty(pos) && (println(stderr,"migrate needs a v1 JSON file\n"); print(stderr,USAGE); return 2)
-  root=get(pos,2,"events"); files=save_event_tree(upgrade_events(load_events(pos[1])),root)
-  println("Wrote $(length(files)) files to $root"); return 0
  end
  input=get(pos,1,"events")
  problems=validate_event_tree(input)

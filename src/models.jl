@@ -13,27 +13,12 @@ function event_path(e; root::AbstractString="events")
 end
 event_files(dir::AbstractString)=sort!([joinpath(r,f) for (r,_,fs) in walkdir(dir) for f in fs if endswith(f,".json")])
 load_event_tree(dir::AbstractString)=[JSON.parsefile(f) for f in event_files(dir)]
-load_events(path::AbstractString="events.json")=isdir(path) ? load_event_tree(path) : JSON.parsefile(path)
+"Events from a directory tree (`events/`) or from a single JSON file holding an array of events."
+load_events(path::AbstractString="events")=isdir(path) ? load_event_tree(path) : JSON.parsefile(path)
 function save_events(events,file::AbstractString="events.json")
  mkpath(dirname(abspath(file))); open(file,"w") do io; JSON.print(io,events,4); write(io,'\n'); end; file
 end
 save_event_tree(events,dir::AbstractString="events")=[save_events(e,event_path(e;root=dir)) for e in events]
-"Convert a v1 event (flat `venue`/`address`/`city` strings) to the v2 format."
-function upgrade_event(e)
- v=get(e,"venue",nothing)
- v isa AbstractDict && return e
- name=v; addr=get(e,"address",nothing); city=get(e,"city",nothing)
- venue=all(isnothing,(name,addr,city)) ? nothing : JSON.Object{String,Any}("name"=>name,"address"=>addr,"city"=>city)
- out=JSON.Object{String,Any}()
- for (k,x) in e
-  k in ("address","city") && continue
-  out[k]= k=="venue" ? venue : x
- end
- haskey(out,"venue") || (out["venue"]=venue)
- for (k,d) in ("music_style"=>Any[],"flyer_url"=>nothing,"video"=>nothing,"link"=>nothing); haskey(out,k) || (out[k]=d); end
- get(out,"recurrence",nothing)=="weekly" || for k in ("recurrence","weekday","start_time","end_time"); delete!(out,k); end
- out
-end
 const WEEKDAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 _last_sunday(y,m)=(d=lastdayofmonth(Date(y,m)); d-Day(mod(dayofweek(d),7)))
 """
@@ -63,14 +48,9 @@ function expand_weekly(e; from::Date, until::Date, except=Date[], series=string(
    "start"=>_stamp(d,get(e,"start_time",nothing)))
   et=get(e,"end_time",nothing); isnothing(et) || (x["end"]=_end_stamp(d,string(get(e,"start_time","00:00")),string(et)))
   for (k,v) in e
-   k in ("id","title","type","status","series","start","end","recurrence","weekday","start_time","end_time") || (x[k]=v)
+   k in ("id","title","type","status","series","start","end","weekday","start_time","end_time") || (x[k]=v)
   end
   push!(out,x)
  end
  out
 end
-"Upgrade v1 events to v2; weekly ones are expanded from `first_seen` through `end`."
-upgrade_events(events)=reduce(vcat,(
- (u=upgrade_event(e); get(u,"recurrence",nothing)=="weekly" ?
-  expand_weekly(u; from=Date(something(get(u,"first_seen",nothing),string(today()))), until=Date(first(string(u["end"]),10))) : [u])
- for e in events); init=Any[])
