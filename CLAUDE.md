@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A small Julia package that turns Oslo tango events (one JSON file per event under `events/`) into one self-contained static HTML page (inline CSS and JS, no external assets). The page lets visitors search, filter and sort events. The UI text is Norwegian Bokmål (`lang="nb"`), so keep any new UI strings in Norwegian. Data values stay English slugs (schema enums such as `class_and_social`, `Tuesday`); `src/labels.jl` maps them to Norwegian display labels through `_TYPES`, `_MUSIC` and `_WEEKDAYS` (used by the renderer and the issue-form parser). Add any new enum value to the matching dict too. An English version of the page is planned, and these dicts are the place to translate.
+A small Julia package that turns Oslo tango events (one JSON file per event under `events/`) into one self-contained static HTML page (inline CSS and JS, no external assets). The page lets visitors search, filter and sort events. The UI text is Norwegian Bokmål (`lang="nb"`), so keep any new UI strings in Norwegian. Data values stay English slugs (schema enums such as `class_and_social`); `src/labels.jl` maps them to Norwegian display labels through `_TYPES` and `_MUSIC` (used by the renderer and the issue-form parser). Add any new enum value to the matching dict too. An English version of the page is planned, and these dicts are the place to translate.
 
 ## Commands
 
@@ -16,21 +16,20 @@ julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 julia --project=. -m TangoKalender validate [events]                   # exit 1 on problems
 julia --project=. -m TangoKalender [build] [events] [public/index.html] [--title=… --subtitle=… --no-validate]
 julia --project=. -m TangoKalender site [events] [_site]   # whole site: index.html, for-ki.html, llms.txt, schema/*.json (used by pages.yml)
-julia --project=. -m TangoKalender migrate examples/oslo_tango_events_2026-09-30.json events  # one-off v1 → tree
 julia --project=. -m TangoKalender from-issue BODY.md [--root=events] [--issue-url=URL] [--report=r.md] [--today=YYYY-MM-DD]
 
 # Install as the `tangokalender` app (Pkg apps, Julia ≥ 1.12). Apps.add(path=) needs a git repo; use develop locally
 julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 ```
 
-`bin/build_site.jl`, `bin/validate_events.jl` and `bin/migrate_v1.jl` are thin wrappers around `TangoKalender.main`.
+`bin/build_site.jl` and `bin/validate_events.jl` are thin wrappers around `TangoKalender.main`.
 
 `test/runtests.jl` holds plain `@testset`s; it does not use TestItems. `test/fixtures/media/` is a small valid tree that exercises flyer, video and music style. The `julia` MCP server is set up in `/workspace/.mcp.json`. Prefer a persistent session (`julia_create_session` + `julia_eval_code`, with Revise) over repeated `julia` invocations, which recompile every time. `/workspace/dev-oslotango/` is a dev environment that `[sources]`-links this package by path.
 
 ## Architecture
 
 - `src/TangoKalender.jl`: the module. It `include`s the files below and exports the public API.
-- `src/models.jl`: events are plain dicts (`JSON.Object` when parsed, which keeps key order). There are no structs. `load_events(path)` reads a directory tree via `load_event_tree` or a single v1-style array file. `event_path` gives each event's canonical file location (and throws if there is no `start`), and `save_event_tree` writes to it. `upgrade_event`/`upgrade_events` convert v1 to v2. `expand_weekly` turns a weekly template (`weekday`/`start_time`/`end_time`) into dated events with ids `<series>-YYYY-MM-DD`, and uses `oslo_offset` for the summer/winter time offset (no TimeZones dependency). It is the intended core for a future form or spreadsheet generator.
+- `src/models.jl`: events are plain dicts (`JSON.Object` when parsed, which keeps key order). There are no structs. `load_events(path)` reads a directory tree via `load_event_tree` or a single JSON file holding an array of events. `event_path` gives each event's canonical file location (and throws if there is no `start`), and `save_event_tree` writes to it. `expand_weekly` turns a weekly template (`weekday`/`start_time`/`end_time`, which exist only in the template, never in stored events) into dated events with ids `<series>-YYYY-MM-DD`. It uses `oslo_offset` for the summer/winter time offset (no TimeZones dependency), and the issue forms use it for «Gjentas: Ukentlig».
 - `src/cli.jl`: `function (@main)(args)` defines `TangoKalender.main`, which returns an exit code (0 ok, 1 validation failed, 2 usage error). It is reached through `julia -m TangoKalender` and the `[apps] tangokalender` entry in `Project.toml`. `main` is deliberately not exported: `using TangoKalender` from a script would otherwise bring `main` into `Main`, and `@main` would run it when the script finishes.
 - `src/issue.jl`: `parse_issue_form` splits a GitHub issue-form body into `### Heading => value`, and `events_from_form` turns that into dated events. Weekly submissions go through `expand_weekly`. It returns `(events, errors)`, with errors in Norwegian that name the form fields. The headings are the `label:`s in `.github/ISSUE_TEMPLATE/nytt-arrangement.yml` and are listed in `FORM_FIELDS`. A test checks that they stay in sync, so rename both together. The type and music options must match the `_TYPES`/`_MUSIC` labels.
 - `src/correction.jl`: the «Rett opp» flow.
@@ -66,10 +65,10 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 
 ### Event data contract
 
-`schema/tango-event.schema.json` (draft-07, `additionalProperties: false`) is the source of truth for the v2 format. When you add a field, update the schema, `upgrade_event` and the renderer together. Files live at `events/YYYY/MM-englishmonth/YYYY-MM-DD-<id>.json`. **Every v2 event is dated** (`start` is required). Repeating events (weekly milongas, courses) are one file per date sharing a `series` id, because weekly events get cancelled and their details (DJ, price) vary from date to date. Cancelled dates use `status: "cancelled"` rather than being deleted. The weekly-only keys `recurrence`/`weekday`/`start_time`/`end_time` are v1-only and rejected by the schema. v2 adds `venue: {name, address, city}`, `music_style`, `flyer_url`, `video: {platform, id}` and `link` (the official page; `source`/`source_url` are crawl provenance). `examples/*.json` are v1 flat arrays (string `venue` plus top-level `address`/`city`). The renderer still accepts them, but they fail schema validation.
+`schema/tango-event.schema.json` (draft-07, `additionalProperties: false`) is the source of truth for the event format. When you add a field, update the schema, the renderer, the issue forms (`src/issue.jl`, `src/correction.jl`) and the submission schema/rules (`src/submission.jl`, `src/llms.jl`) together. Files live at `events/YYYY/MM-englishmonth/YYYY-MM-DD-<id>.json`. **Every event is dated** (`start` is required). Repeating events (weekly milongas, courses) are one file per date sharing a `series` id, because weekly events get cancelled and their details (DJ, price) vary from date to date. Cancelled dates use `status: "cancelled"` rather than being deleted. `venue` is an object `{name, address, city}`; `link` is the official event page, while `source`/`source_url` record where the data came from.
 
 - `start` is either an ISO datetime with an offset (`2026-10-01T19:00:00+02:00`) or a bare date (`2026-10-02`). `_date_label` tries the datetime form first and falls back to the date form. The schema requires seconds in datetimes because `_date_label` parses `HH:MM:SS`.
-- v1 recurring activities have no `start` and get the sentinel `data-date="9999-12-31"`, which sorts them last. The JS **"Faste aktiviteter"** filter matches cards with a non-empty `data-series` *or* that sentinel, so `_sortkey`, `_card` and the JS must stay in sync.
+- The JS **"Faste aktiviteter"** filter matches rows with a non-empty `data-series`.
 - Cancelled events render with class `cancelled` and an "Avlyst" chip, and stay visible on the page.
 - `data-type`, `data-date`, `data-end`, `data-series`, `data-search` and `data-music` attributes on each `<article class="event">` are the interface between the Julia output and the inline JS. `data-end` comes from `_end_day`: the last day the event runs, using the same «ends by 06:00 = previous evening» rule as `_date_label`.
 - The time filter defaults to **Kommende**: events whose end day is today or later, so ongoing festivals still show. Past events are hidden in the browser, not removed at build time, so the page stays correct between nightly builds. «Alle (også tidligere)» shows everything.
@@ -78,7 +77,7 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 ### Gotchas
 
 - The JS lives inside a Julia `"""` string, so a JS template literal `${...}` must be written `\${...}`. Otherwise Julia tries to interpolate it.
-- The test asserts that the `html.jl` **source text** contains the literal `$(st)–$(en)` (with an en dash). Don't rewrite that expression in `_date_label`. The test also asserts that the rendered output never contains the string `nothing`, so route optional fields through `_val`/`_esc`.
+- The tests assert that the rendered output never contains the string `nothing`, so route optional fields through `_val`/`_esc`.
 - `public/index.html` is generated output.
 - JSONSchema.jl reports only the first issue per event. `_issue_message` in `src/validate.jl` turns it into a short message, and lists the key names for unknown-key errors.
 - Video ids are re-checked with regexes in `_video` and URLs must be `http(s)` (`_http`) before they are embedded, independently of the schema. Keep both checks.

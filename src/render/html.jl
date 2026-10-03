@@ -1,7 +1,7 @@
 _esc(x)=replace(string(something(x,"")),'&'=>"&amp;",'<'=>"&lt;",'>'=>"&gt;",'"'=>"&quot;",'\''=>"&#39;")
 _val(e,k,d="")=(v=get(e,k,d); isnothing(v) ? d : v)
 _iso(e)=(s=string(_val(e,"start","")); isempty(s) ? "" : first(split(s,'T')))
-_sortkey(e)=(s=string(_val(e,"start","")); isempty(s) ? "9999-12-31" : s)
+_sortkey(e)=string(_val(e,"start",""))
 const _WD=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"]
 const _MO=["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"]
 "`(DateTime, has_time)` for an ISO `start`/`end` string (offset ignored), or `nothing`."
@@ -15,7 +15,7 @@ _hm(dt)=Dates.format(dt,"HH:MM")
 _evening_end(dt,edt,etimed)=etimed && Date(edt)>Date(dt) && Time(edt)<=Time(6) ? Date(edt)-Day(1) : Date(edt)
 "`data-end` for the page's date filters: the last day the event runs (start day if no usable end)."
 function _end_day(e)
- iso=_iso(e); isempty(iso) && return "9999-12-31"
+ iso=_iso(e); isempty(iso) && return ""
  p=_parse_dt(string(_val(e,"start",""))); q=_parse_dt(string(_val(e,"end","")))
  (isnothing(p) || isnothing(q)) && return iso
  string(max(_evening_end(p[1],q[1],q[2]),Date(p[1])))
@@ -33,16 +33,13 @@ function _date_label(e)
   eday==Date(dt) && return timed && etimed ? "$(startl)–$(_hm(edt))" : startl
   return "$(startl) – $(_day(eday))"
  end
- weekday=get(_WEEKDAYS,string(_val(e,"weekday","")),string(_val(e,"weekday",""))); st=string(_val(e,"start_time","")); en=string(_val(e,"end_time",""))
- repeat_text=_val(e,"recurrence","")=="weekly" ? "Ukentlig " : ""
- times=isempty(st) ? "" : isempty(en) ? st : "$(st)–$(en)"
- strip("$(repeat_text)$(weekday) · $(times)",[' ','·'])
+ ""
 end
 _music(e)=[string(m) for m in something(_val(e,"music_style",Any[]),Any[])]
 _http(u)=(s=string(something(u,"")); occursin(r"^https?://"i,s) ? s : "")
 function _venue(e)
  v=_val(e,"venue",nothing)
- v isa AbstractDict || (v=Dict("name"=>v,"address"=>_val(e,"address",nothing),"city"=>_val(e,"city",nothing)))
+ v isa AbstractDict || (v=Dict{String,Any}())
  name=string(_val(v,"name","Sted ikke oppgitt")); addr=string(_val(v,"address","")); city=string(_val(v,"city","Oslo"))
  (isempty(name) ? "Sted ikke oppgitt" : name, isempty(addr) ? (isempty(city) ? "Oslo" : city) : addr)
 end
@@ -81,7 +78,7 @@ end
 function _card(e; correct_url=CORRECT_URL, links=false)
  corr=isempty(_http(correct_url)) || isempty(string(_val(e,"id",""))) || isempty(string(_val(e,"start",""))) ? "" :
   "<a class=\"correct\" href=\"$(_esc(correction_url(e;base=_http(correct_url))))\" target=\"_blank\" rel=\"noopener\" aria-label=\"Rett opp: $(_esc(_val(e,"title","")))\">Rett opp ↗</a>"
- title=_esc(_val(e,"title","Uten tittel")); typ=lowercase(string(_val(e,"type","other"))); date=_esc(_date_label(e)); iso=_esc(_iso(e)); (vname,vaddr)=_venue(e); venue=_esc(vname); addr=_esc(vaddr); org=_esc(_val(e,"organizer","")); dj=_esc(_val(e,"dj","")); desc=_esc(_val(e,"description","")); source=_esc(_val(e,"source","Kilde")); url=_esc(_val(e,"source_url","")); pub=_esc(_val(e,"published_date","Ikke oppgitt")); cancelled=_val(e,"status","")=="cancelled"; series=_esc(_val(e,"series","")); search=lowercase(join([title,venue,addr,org,dj,desc,cancelled ? "avlyst" : ""]," ")); d=isempty(iso) ? "9999-12-31" : iso; music=_music(e); flyer=_esc(_http(_val(e,"flyer_url",""))); info=_esc(_http(_val(e,"link","")))
+ title=_esc(_val(e,"title","Uten tittel")); typ=lowercase(string(_val(e,"type","other"))); date=_esc(_date_label(e)); iso=_esc(_iso(e)); (vname,vaddr)=_venue(e); venue=_esc(vname); addr=_esc(vaddr); org=_esc(_val(e,"organizer","")); dj=_esc(_val(e,"dj","")); desc=_esc(_val(e,"description","")); source=_esc(_val(e,"source","Kilde")); url=_esc(_val(e,"source_url","")); pub=_esc(_val(e,"published_date","Ikke oppgitt")); cancelled=_val(e,"status","")=="cancelled"; series=_esc(_val(e,"series","")); music=_music(e); flyer=_esc(_http(_val(e,"flyer_url",""))); info=_esc(_http(_val(e,"link","")))
  link=isempty(url) ? "<span>$source</span>" : "<a href=\"$url\" target=\"_blank\" rel=\"noopener\">$source ↗</a>"
  djhtml=isempty(dj) ? "" : "<div title=\"DJ\">$(_icon("dj","DJ"))$dj</div>"; orghtml=isempty(org) ? "" : "<div title=\"Arrangør\">$(_icon("org","Arrangør"))$org</div>"
  musichtml=isempty(music) ? "" : "<div class=\"music\">"*_icon("music","Musikk")*join(("<span class=\"chip music-chip\">$(_esc(_music_label(m)))</span>" for m in music),"")*"</div>"
@@ -108,7 +105,7 @@ const _CSS=""":root{--wine:#872b49;--paper:#f5f1eb;--line:#ddd3ca;--muted:#6e686
 const _JS=raw"""(function(){const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],rows=$$('.ev'),groups=$$('.group'),q=$('#q'),when=$('#when'),sort=$('#sort'),box=$('#events'),count=$('#count'),empty=$('#empty'),tboxes=$$('input[name=type]'),mboxes=$$('input[name=music]'),tabs=$$('.tabs a'),total=new Set(rows.map(c=>c.dataset.eid)).size,WHEN=['upcoming','all','today','week','month','recurring'],SORT=['asc','desc','title'];tabs.forEach(a=>{a.dataset.base=a.getAttribute('href')});const checked=bs=>bs.filter(b=>b.checked).map(b=>b.value);function day(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
 function readURL(){const p=new URLSearchParams(location.search),list=k=>(p.get(k)||'').split(',').map(x=>x.trim()).filter(Boolean);if(q)q.value=p.get('q')||'';const ts=list('type'),ms=list('music');tboxes.forEach(b=>{b.checked=ts.includes(b.value)});mboxes.forEach(b=>{b.checked=ms.includes(b.value)});if(when)when.value=WHEN.includes(p.get('when'))?p.get('when'):'upcoming';if(sort)sort.value=SORT.includes(p.get('sort'))?p.get('sort'):'asc'}
 function writeURL(){const p=new URLSearchParams();if(q&&q.value.trim())p.set('q',q.value.trim());const ts=checked(tboxes),ms=checked(mboxes);if(ts.length)p.set('type',ts.join(','));if(ms.length)p.set('music',ms.join(','));if(when&&when.value!=='upcoming')p.set('when',when.value);if(sort&&sort.value!=='asc')p.set('sort',sort.value);const s=p.toString().replace(/%2C/gi,','),search=s?'?'+s:'';if(search!==location.search)history.replaceState(null,'',location.pathname+search+location.hash);tabs.forEach(a=>{a.setAttribute('href',a.dataset.base+search)})}
-function apply(){let now=day(new Date()),limit=new Date(now),w=when?when.value:'any',ts=checked(tboxes),ms=checked(mboxes),words=q?q.value.toLowerCase().split(/\s+/).filter(Boolean):[];if(w==='week')limit.setDate(limit.getDate()+7);if(w==='month')limit.setDate(limit.getDate()+30);let v=[];rows.forEach(c=>{let rec=c.dataset.date==='9999-12-31',ser=rec||c.dataset.series!=='',d=rec?null:new Date(c.dataset.date+'T00:00:00'),en=rec?null:new Date(c.dataset.end+'T00:00:00'),future=rec||en>=now,oktime=true;if(w==='upcoming')oktime=future;else if(w==='today')oktime=!rec&&d<=now&&en>=now;else if(w==='week'||w==='month')oktime=!rec&&en>=now&&d<=limit;else if(w==='recurring')oktime=ser&&future;let ok=oktime&&(!ts.length||ts.includes(c.dataset.type))&&(!ms.length||c.dataset.music.split(' ').some(m=>ms.includes(m)))&&words.every(x=>c.dataset.search.includes(x));c.classList.toggle('hidden',!ok);if(ok)v.push(c)});if(sort&&box){v.sort((a,b)=>sort.value==='title'?a.querySelector('h2').textContent.localeCompare(b.querySelector('h2').textContent,'nb'):(sort.value==='desc'?-1:1)*a.dataset.date.localeCompare(b.dataset.date));v.forEach(c=>box.appendChild(c))}let vis=new Set(v.map(c=>c.dataset.group));groups.forEach(g=>{let has=vis.has(g.dataset.group);g.dataset.keep?g.classList.toggle('noev',!has):g.classList.toggle('hidden',!has)});let n=new Set(v.map(c=>c.dataset.eid)).size;if(count)count.textContent=n+' av '+total+' arrangementer';if(empty)empty.style.display=v.length?'none':'block';writeURL()}
+function apply(){let now=day(new Date()),limit=new Date(now),w=when?when.value:'any',ts=checked(tboxes),ms=checked(mboxes),words=q?q.value.toLowerCase().split(/\s+/).filter(Boolean):[];if(w==='week')limit.setDate(limit.getDate()+7);if(w==='month')limit.setDate(limit.getDate()+30);let v=[];rows.forEach(c=>{let ser=c.dataset.series!=='',d=new Date(c.dataset.date+'T00:00:00'),en=new Date(c.dataset.end+'T00:00:00'),future=en>=now,oktime=true;if(w==='upcoming')oktime=future;else if(w==='today')oktime=d<=now&&en>=now;else if(w==='week'||w==='month')oktime=en>=now&&d<=limit;else if(w==='recurring')oktime=ser&&future;let ok=oktime&&(!ts.length||ts.includes(c.dataset.type))&&(!ms.length||c.dataset.music.split(' ').some(m=>ms.includes(m)))&&words.every(x=>c.dataset.search.includes(x));c.classList.toggle('hidden',!ok);if(ok)v.push(c)});if(sort&&box){v.sort((a,b)=>sort.value==='title'?a.querySelector('h2').textContent.localeCompare(b.querySelector('h2').textContent,'nb'):(sort.value==='desc'?-1:1)*a.dataset.date.localeCompare(b.dataset.date));v.forEach(c=>box.appendChild(c))}let vis=new Set(v.map(c=>c.dataset.group));groups.forEach(g=>{let has=vis.has(g.dataset.group);g.dataset.keep?g.classList.toggle('noev',!has):g.classList.toggle('hidden',!has)});let n=new Set(v.map(c=>c.dataset.eid)).size;if(count)count.textContent=n+' av '+total+' arrangementer';if(empty)empty.style.display=v.length?'none':'block';writeURL()}
 if(q)q.addEventListener('input',apply);[when,sort,...tboxes,...mboxes].forEach(x=>x&&x.addEventListener('change',apply));let r=$('#reset');if(r)r.onclick=()=>{if(q)q.value='';tboxes.concat(mboxes).forEach(b=>{b.checked=false});if(when)when.value='upcoming';if(sort)sort.value='asc';apply()};let sh=$('#sharefilter');if(sh)sh.onclick=()=>{const u=location.href;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(()=>{sh.textContent='Lenke kopiert ✓';setTimeout(()=>{sh.textContent='Kopier lenke'},2500)});else prompt('Kopier lenken:',u)};window.apply=apply;readURL();apply();
 const weeks=[...document.querySelectorAll('.week')];if(weeks.length){if(document.documentElement)document.documentElement.classList.add('js');function isoWeek(d){let t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);let y=t.getUTCFullYear(),w=Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7);return y+'-W'+String(w).padStart(2,'0')}function current(){let k=isoWeek(new Date()),i=weeks.findIndex(x=>x.dataset.week>=k);return i<0?weeks.length-1:i}let i=current();let pv=$('#prevw'),nx=$('#nextw'),lb=$('#weeklabel'),td=new Date(),tk=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');[...document.querySelectorAll('.col')].forEach(c=>{if(c.dataset.group===tk)c.classList.add('today')});function show(j,push){i=Math.max(0,Math.min(weeks.length-1,j));weeks.forEach((x,k)=>x.classList.toggle('off',k!==i));if(lb)lb.textContent=weeks[i].dataset.label;if(pv)pv.disabled=i===0;if(nx)nx.disabled=i===weeks.length-1;if(push)history.replaceState(null,'',location.pathname+location.search+'#'+weeks[i].id);let t=weeks[i].querySelector&&weeks[i].querySelector('.col.today');if(t&&t.scrollIntoView&&window.innerWidth<760)t.parentNode.scrollLeft=t.offsetLeft-12}function fromHash(){let k=weeks.findIndex(x=>'#'+x.id===location.hash);show(k<0?current():k,false)}$('#prevw').onclick=()=>show(i-1,true);$('#nextw').onclick=()=>show(i+1,true);$('#todayw').onclick=()=>show(current(),true);window.addEventListener('hashchange',fromHash);document.addEventListener('keydown',ev=>{if(/INPUT|SELECT|TEXTAREA/.test((ev.target&&ev.target.tagName)||''))return;if(ev.key==='ArrowLeft')show(i-1,true);if(ev.key==='ArrowRight')show(i+1,true)});window.showWeek=show;fromHash()}})();"""
 const _VIEWS=["compact"=>("index.html","Liste"),"week"=>("uke.html","Uke"),"cards"=>("kort.html","Kort")]
@@ -120,7 +117,7 @@ _title_html(e,links)=(t=_esc(_val(e,"title","Uten tittel")); links && _haspage(e
 function _data_attrs(e; day=nothing, group=nothing)
  typ=lowercase(string(_val(e,"type","other"))); (vname,vaddr)=_venue(e); cancelled=_val(e,"status","")=="cancelled"
  search=lowercase(join([_val(e,"title",""),vname,vaddr,_val(e,"organizer",""),_val(e,"dj",""),_val(e,"description",""),cancelled ? "avlyst" : ""]," "))
- iso=_iso(e); d=isnothing(day) ? (isempty(iso) ? "9999-12-31" : iso) : string(day); en=isnothing(day) ? _end_day(e) : string(day)
+ d=isnothing(day) ? _iso(e) : string(day); en=isnothing(day) ? _end_day(e) : string(day)
  g=isnothing(group) ? "" : " data-group=\"$(_esc(group))\""
  "data-eid=\"$(_esc(_val(e,"id",_val(e,"title",""))))\" data-type=\"$(_esc(typ))\" data-date=\"$d\" data-end=\"$en\" data-series=\"$(_esc(_val(e,"series","")))\" data-search=\"$(_esc(search))\" data-music=\"$(_esc(join(_music(e)," ")))\"$g"
 end

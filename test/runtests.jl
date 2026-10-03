@@ -1,26 +1,20 @@
 using Test, Dates, JSON, TangoKalender
 const ROOT=joinpath(@__DIR__,"..")
-const V1=joinpath(ROOT,"examples","oslo_tango_events_2026-09-30.json")
 const TREE=joinpath(ROOT,"events")
 const MEDIA=joinpath(@__DIR__,"fixtures","media")
 @testset "renderer" begin
- for e in (load_events(V1),load_events(TREE))
-  h=render_events_html(e); @test occursin("<!doctype html>",h); @test occursin("Milonga ESA",h); @test !occursin("nothing",h)
- end
- @test occursin("\$(st)–\$(en)",read(joinpath(ROOT,"src","render","html.jl"),String))
- @test occursin("Ukentlig tirsdag",render_events_html(load_events(V1)))
+ h=render_events_html(load_events(TREE)); @test occursin("<!doctype html>",h); @test occursin("Milonga ESA",h); @test !occursin("nothing",h)
+ @test !occursin("9999-12-31",h)                                               # every event is dated; no placeholder dates
 end
 @testset "event tree" begin
  tree=load_events(TREE)
  ids=Set(e["id"] for e in tree)
  @test length(ids)==length(tree) && length(tree)>=49   # unique ids; grows as events are submitted
- @test all(e["id"] in ids for e in load_events(V1) if !isnothing(e["start"]) && e["id"]!="ktw")
  @test count(startswith("oslotango-tue-"),ids)==11 && count(startswith("oslotango-thu-"),ids)==12
  @test all(get(e,"series",nothing)=="esa" for e in tree if startswith(e["id"],"esa-"))
  @test all(haskey(e,"start") && !isnothing(e["start"]) for e in tree)
  @test isempty(validate_event_tree(TREE))
  @test isempty(validate_event_tree(MEDIA))
- up=upgrade_events(load_events(V1)); @test length(up)==49 && all(isempty∘validate_event,up)
  e=Dict("id"=>"x","start"=>"2026-10-15T20:30:00+02:00")
  @test event_path(e)==joinpath("events","2026","10-october","2026-10-15-x.json")
  @test_throws ArgumentError event_path(Dict("id"=>"x","start"=>nothing))
@@ -93,8 +87,6 @@ end
   @test redirect_stderr(()->TangoKalender.main(["build",bad,joinpath(d,"x.html")]),devnull)==1
   @test !isfile(joinpath(d,"x.html"))
   @test quiet(()->redirect_stderr(()->TangoKalender.main(["build",bad,joinpath(d,"x.html"),"--no-validate"]),devnull))==0
-  @test quiet(()->TangoKalender.main(["migrate",V1,joinpath(d,"tree")]))==0
-  @test length(load_events(joinpath(d,"tree")))==49
  end
 end
 @testset "date labels" begin

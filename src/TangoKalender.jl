@@ -14,5 +14,5 @@ include("llms.jl")
 include("cli.jl")
 export create_event, load_events, save_events, render_events_html, render_events_file
 export render_event_page, calendar_ics, event_ics, rss_xml, write_site
-export event_path, load_event_tree, save_event_tree, upgrade_event, upgrade_events, expand_weekly, oslo_offset, validate_event, validate_event_tree
+export event_path, load_event_tree, save_event_tree, expand_weekly, oslo_offset, validate_event, validate_event_tree
 end
