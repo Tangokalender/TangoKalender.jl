@@ -1,13 +1,20 @@
-# TangoKalender.jl
+# Tangokalender | Oslo
 
-Statisk, responsiv og filtrerbar tango-kalender basert på `JSON.jl`, publisert med GitHub Pages
-(https://tangokalender.github.io/), kildekode på https://github.com/Tangokalender/tangokalender.github.io.
+**Nettside: https://tangokalender.github.io/**
+
+Statisk, responsiv og filtrerbar kalender for argentinsk tango i Oslo – milongaer, practicaer, kurs og festivaler.
+Siden bygges av Julia-pakken `TangoKalender` i dette repoet og publiseres med GitHub Pages.
+Kildekode: https://github.com/Tangokalender/tangokalender.github.io
 
 ## Visninger og lenker
 
 - **Liste** (forsiden): kompakt liste gruppert per dag. **Uke**: én uke om gangen med ‹ ›. **Kort**: utfyllende kort.
-- Hvert arrangement har egen side, `…/arrangement/<id>/`, med alle detaljer, «Legg i kalender (.ics)», «Del lenke» og «Rett opp».
-- Abonner på hele kalenderen: `webcal://tangokalender.github.io/kalender.ics`. RSS: `…/rss.xml`.
+- Hvert arrangement har egen side, `https://tangokalender.github.io/arrangement/<id>/`, med alle detaljer,
+  «Legg i kalender (.ics)», «Del lenke» og «Rett opp».
+- Filtrene ligger i adressen og kan deles eller bokmerkes, f.eks.
+  https://tangokalender.github.io/?type=milonga,practica
+- Abonner på hele kalenderen: `webcal://tangokalender.github.io/kalender.ics`.
+  RSS: https://tangokalender.github.io/rss.xml
 - ActivityPub står på [TODO](TODO.md).
 
 ## Legge inn arrangementer
@@ -44,7 +51,8 @@ opprett etikettene `nytt-arrangement`, `rettelse` og `trenger-retting`.
 ```bash
 julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 julia --project=. -m TangoKalender validate                      # valider alle arrangementer i events/
-julia --project=. -m TangoKalender build events public/index.html # validerer først, bygger så siden
+julia --project=. -m TangoKalender site events _site             # validerer først, bygger hele nettsiden (som Pages)
+julia --project=. -m TangoKalender build events public/index.html # bare én side (kortvisning)
 julia --project=. -m TangoKalender from-issue sak.md --root=events   # skjema-tekst → arrangementsfiler
 julia --project=. -m TangoKalender --help
 ```
@@ -75,10 +83,7 @@ Formatet er beskrevet i `schema/tango-event.schema.json` (JSON Schema draft-07).
 `"$schema": "https://tangokalender.github.io/schema/tango-event.schema.json"` i en fil for autoutfylling i editoren.
 I tillegg til skjemaet sjekker valideringen at `id` er unik og at filen ligger på riktig sted.
 
-Nye felt i v2: `venue` (`{name, address, city}`), `music_style` (`traditional`,
-`alternative`, `live_orchestra`), `flyer_url`, `video` (`{platform: "youtube"|"vimeo", id}`)
-og `link` (offisiell side for arrangementet), samt `series` og `status` (`scheduled`/`cancelled`).
-
-`examples/oslo_tango_events_2026-09-30.json` er det gamle v1-formatet (én liste). Det kan
-konverteres med `julia --project=. bin/migrate_v1.jl <input.json> <events-mappe>`. Ukentlige
-aktiviteter utvides da til én fil per dato (`expand_weekly`) fra `first_seen` til `end`.
+Viktige felt: `title`, `type`, `start`/`end`, `venue` (`{name, address, city}`), `organizer`, `dj`, `teachers`,
+priser (`price_nok`, `student_price_nok`, `class_price_nok`), `music_style` (`traditional`, `alternative`,
+`live_orchestra`), `description`, `flyer_url`, `video` (`{platform: "youtube"|"vimeo", id}`),
+`link` (offisiell side for arrangementet), `series` og `status` (`scheduled`/`cancelled`).
