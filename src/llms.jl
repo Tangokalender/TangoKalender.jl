@@ -117,7 +117,7 @@ function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwar
  mkpath(joinpath(dir,"schema")); mkpath(joinpath(dir,"arrangement")); files=String[]
  w(rel,content)=(f=joinpath(dir,rel); mkpath(dirname(f)); write(f,content); push!(files,f))
  ev=collect(events)
- for (view,(file,_)) in _VIEWS; w(file,render_events_html(ev;view,site=true,kwargs...)); end
+ for (view,(file,_)) in _VIEWS; w(file,render_events_html(ev;view,site=true,today,kwargs...)); end
  cu=get(Dict(kwargs),:correct_url,CORRECT_URL)
  for e in ev
   _haspage(e) || continue

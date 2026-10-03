@@ -70,7 +70,7 @@ end
  @test occursin("https://player.vimeo.com/video/123456789",h)
  @test occursin("<img class=\"flyer\" src=\"https://example.org/flyer.png\"",h)
  @test occursin("Mer info ↗",h)
- @test occursin("<option value=\"live_orchestra\">Levende orkester</option>",h)
+ @test occursin("<input type=\"checkbox\" name=\"music\" value=\"live_orchestra\"><span>Levende orkester</span>",h)
  @test occursin("data-music=\"traditional live_orchestra\"",h)
  @test occursin("Kulturhuset",h) && occursin("Storgata 1, 0155 Oslo",h)
  @test occursin("class=\"event ev cancelled\"",h) && occursin(">Avlyst<",h) && occursin("data-series=\"weekly\"",h)
@@ -115,7 +115,7 @@ end
 end
 @testset "norwegian labels" begin
  h=render_events_html([Dict("title"=>"a","type"=>"class_and_social","start"=>"2026-10-01"),Dict("title"=>"b","type"=>"class","start"=>"2026-10-02")])
- @test occursin("<span class=\"chip\">Kurs og milonga</span>",h) && occursin("<option value=\"class\">Kurs</option>",h)
+ @test occursin("<span class=\"chip\">Kurs og milonga</span>",h) && occursin("<input type=\"checkbox\" name=\"type\" value=\"class\"><span>Kurs</span>",h)
  @test !occursin("Class And Social",h)
 end
 @testset "issue form" begin
@@ -434,4 +434,74 @@ end
  @test occursin("#i-price",c) && occursin("#i-teachers",c) && occursin("#i-pin",c)
  @test occursin("<dt><svg class=\"ic\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#i-dj\"/></svg>DJ</dt>",pages[4])
  @test_throws ArgumentError TK._icon("nope")
+end
+
+# ---------------------------------------------------------------------------------------------------------------
+# Filters: multi-select and URL state (Node harness), and what a real browser actually shows (headless Chrome).
+FILTER_EVENTS=[Dict{String,Any}("id"=>id,"title"=>t,"type"=>ty,"start"=>st,"venue"=>Dict("name"=>"Salen $id","address"=>"Gata 1"),"organizer"=>"Klubb",
+  "music_style"=>mu,(isnothing(en) ? () : ("end"=>en,))...) for (id,t,ty,st,en,mu) in [
+ ("a","Milonga A","milonga","2035-03-05T20:00:00+01:00",nothing,Any[]),
+ ("b","Practica B","practica","2035-03-06T19:00:00+01:00",nothing,Any["traditional"]),
+ ("c","Kurs C","class","2035-03-07T18:00:00+01:00",nothing,Any["alternative"]),
+ ("f","Festival F","festival","2035-03-05","2035-03-07",Any[]),
+ ("p","Gammel P","milonga","2020-01-05T20:00:00+01:00",nothing,Any[])]]
+@testset "filters: multi-select + URL (harness)" begin
+ node=Sys.which("node")
+ if isnothing(node); @info "node not found – skipping"; else
+ mktempdir() do d
+  run_(page,search)=(f=joinpath(d,"p.html"); write(f,page); JSON.parse(read(`$node $(joinpath(@__DIR__,"js","filters.js")) $f 2034-01-01 "" $search`,String)))
+  c=render_events_html(FILTER_EVENTS;view="compact",site=true)
+  @test count("name=\"type\"",c)==4 && count("name=\"music\"",c)==2 && occursin("id=\"sharefilter\"",c)
+  types(r)=Set(x[2] for x in r["initial"]["rows"]); eids(r)=Set(x[3] for x in r["initial"]["rows"])
+  r=run_(c,""); @test eids(r)==Set(["a","b","c","f"]) && r["initial"]["search"]==""                   # default: upcoming, all types
+  r=run_(c,"?type=milonga,practica")
+  @test types(r)==Set(["milonga","practica"]) && Set(r["initial"]["checked"])==Set(["type:milonga","type:practica"])
+  @test r["initial"]["search"]=="?type=milonga,practica" && all(endswith(t,"?type=milonga,practica") for t in r["initial"]["tabs"])
+  @test eids(run_(c,"?music=traditional,alternative"))==Set(["b","c"])                                  # any of the ticked music styles
+  @test eids(run_(c,"?q=kurs%20salen"))==Set(["c"]) && eids(run_(c,"?q=Salen%20Kurs"))==Set(["c"])       # several words: all must match, any order
+  @test "p" in eids(run_(c,"?when=all")) && run_(c,"?when=all")["initial"]["when"]=="all"
+  r=run_(c,"?when=bogus&type=nope&sort=x"); @test eids(r)==Set(["a","b","c","f"]) && r["initial"]["search"]==""   # unknown values ignored
+  r=run_(c,"?type=class"); @test r["afterReset"]["search"]=="" && r["afterReset"]["checked"]==0           # «Nullstill» clears URL too
+  w=render_events_html(FILTER_EVENTS;view="week",site=true)
+  r=run_(w,"?type=practica"); @test eids(r)==Set(["b"]) && r["initial"]["search"]=="?type=practica" && occursin("type=practica",r["initial"]["tabs"][1])
+  @test count("class=\"week\"",render_events_html(FILTER_EVENTS;view="week",site=true,today=Date(2035,3,1)))==6        # from 4 weeks back, not from 2020
+ end; end
+end
+"Headless Chrome/Chromium for browser tests: TANGO_CHROME, or a chrome/chromium on PATH; `nothing` skips them."
+function find_chrome()
+ p=get(ENV,"TANGO_CHROME",""); !isempty(p) && isfile(p) && return p
+ for c in ("google-chrome","google-chrome-stable","chromium","chromium-browser","chrome","chrome-headless-shell"); x=Sys.which(c); isnothing(x) || return x; end
+ nothing
+end
+const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);</script>"
+"Load `page` in headless Chrome at `?search`, return (visible event ids, ticked boxes, url, dom)."
+function browser_view(chrome,dir,page,search)
+ f=joinpath(dir,"b.html"); write(f,replace(page,"</body>"=>PROBE*"</body>"))
+ dom=read(pipeline(`$chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=3000 --dump-dom file://$f$search`;stderr=devnull),String)
+ vis=Set(m[1] for m in eachmatch(r"<article class=\"[^\"]*\bev\b[^\"]*\" data-eid=\"([^\"]+)\"[^>]*data-vis=\"1\"",dom))
+ hid=Set(m[1] for m in eachmatch(r"<article class=\"[^\"]*\bev\b[^\"]*\" data-eid=\"([^\"]+)\"[^>]*data-vis=\"0\"",dom))
+ ticked=Set(m[1] for m in eachmatch(r"<input type=\"checkbox\" name=\"[a-z]+\" value=\"([^\"]+)\" data-checked=\"1\"",dom))
+ url=something(match(r"<body[^>]*data-url=\"([^\"]*)\"",dom),(nothing,""))[1]
+ (vis=setdiff(vis,Set{String}()),hid,ticked,url=replace(url,"&amp;"=>"&"),dom)
+end
+@testset "filters in a real browser" begin
+ chrome=find_chrome()
+ if isnothing(chrome)
+  @info "No Chrome/Chromium found (set TANGO_CHROME) – skipping browser tests"
+ else
+  mktempdir() do d
+   pages=Dict(v=>render_events_html(FILTER_EVENTS;view=v,site=true,today=Date(2035,3,1)) for v in ("compact","week","cards"))
+   r=browser_view(chrome,d,pages["compact"],"")
+   @test r.vis==Set(["a","b","c","f"]) && "p" in r.hid                                                    # past event really hidden
+   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica")
+   @test r.vis==Set(["a","b"]) && r.ticked==Set(["milonga","practica"]) && r.url=="?type=milonga,practica"
+   @test occursin("href=\"uke.html?type=milonga,practica\"",r.dom)                                       # tabs keep the filter
+   @test browser_view(chrome,d,pages["compact"],"?q=kurs%20salen").vis==Set(["c"])
+   @test browser_view(chrome,d,pages["compact"],"?music=traditional,alternative").vis==Set(["b","c"])
+   @test "p" in browser_view(chrome,d,pages["compact"],"?when=all").vis
+   r=browser_view(chrome,d,pages["week"],"?type=practica#uke-2035-10")                                  # the bug: rows stayed visible
+   @test r.vis==Set(["b"]) && issubset(Set(["a","c","f"]),r.hid) && startswith(r.url,"?type=practica#uke-2035-10")
+   r=browser_view(chrome,d,pages["cards"],"?type=class,festival"); @test r.vis==Set(["c","f"])
+  end
+ end
 end
