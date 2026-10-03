@@ -1,13 +1,13 @@
 # TangoKalender.jl
 
 Statisk, responsiv og filtrerbar tango-kalender basert på `JSON.jl`, publisert med GitHub Pages
-(https://tangokalender.github.io/TangoKalender.jl/), kildekode på https://github.com/Tangokalender/TangoKalender.jl.
+(https://tangokalender.github.io/), kildekode på https://github.com/Tangokalender/tangokalender.github.io.
 
 ## Visninger og lenker
 
 - **Liste** (forsiden): kompakt liste gruppert per dag. **Uke**: én uke om gangen med ‹ ›. **Kort**: utfyllende kort.
 - Hvert arrangement har egen side, `…/arrangement/<id>/`, med alle detaljer, «Legg i kalender (.ics)», «Del lenke» og «Rett opp».
-- Abonner på hele kalenderen: `webcal://tangokalender.github.io/TangoKalender.jl/kalender.ics`. RSS: `…/rss.xml`.
+- Abonner på hele kalenderen: `webcal://tangokalender.github.io/kalender.ics`. RSS: `…/rss.xml`.
 - ActivityPub står på [TODO](TODO.md).
 
 ## Legge inn arrangementer
@@ -16,11 +16,11 @@ Statisk, responsiv og filtrerbar tango-kalender basert på `JSON.jl`, publisert 
   arrangementsfiler og åpner en pull request; svaret (eller feil som må rettes) kommer som kommentar.
   Faste arrangementer legges inn med «Gjentas: Ukentlig».
 - **Med KI:** har du arrangementet på Facebook eller en nettside, følg
-  [Bruk KI til å legge inn arrangementer](https://tangokalender.github.io/TangoKalender.jl/for-ki.html): kopier
+  [Bruk KI til å legge inn arrangementer](https://tangokalender.github.io/for-ki.html): kopier
   ledeteksten inn i Copilot/Gemini/ChatGPT sammen med arrangementsteksten, og lim svaret (JSON) inn i skjemaet
   «Nytt arrangement (JSON fra KI)». Instruksjoner for KI-agenter ligger i
-  [`llms.txt`](https://tangokalender.github.io/TangoKalender.jl/llms.txt), og formatet i
-  [innsendingsskjemaet](https://tangokalender.github.io/TangoKalender.jl/schema/tango-event-submission.schema.json).
+  [`llms.txt`](https://tangokalender.github.io/llms.txt), og formatet i
+  [innsendingsskjemaet](https://tangokalender.github.io/schema/tango-event-submission.schema.json).
 - **Rette opp:** klikk «Rett opp» på arrangementet. Skjemaet viser hva som står der nå; fyll bare inn
   feltene som skal endres (tomt felt = ingen endring, `-` fjerner en opplysning), velg om endringen gjelder bare denne datoen eller
   også alle senere i serien, og send inn. Avlysninger meldes med «Status: Avlyst».
@@ -52,7 +52,7 @@ julia --project=. -m TangoKalender --help
 ### Som app (Julia ≥ 1.12)
 
 ```bash
-julia -e 'using Pkg; Pkg.Apps.add(url="<git-url til TangoKalender.jl>")'   # eller Pkg.Apps.develop(path=".")
+julia -e 'using Pkg; Pkg.Apps.add(url="https://github.com/Tangokalender/tangokalender.github.io")'   # eller Pkg.Apps.develop(path=".")
 tangokalender                  # = tangokalender build events public/index.html, i gjeldende mappe
 tangokalender validate events
 tangokalender build --title="Tango i Oslo" --no-validate
@@ -72,7 +72,7 @@ med felles `series`-id, slik at DJ, pris osv. kan variere fra gang til gang. Avl
 markeres med `"status": "cancelled"` (vises som «Avlyst») i stedet for at filen slettes.
 
 Formatet er beskrevet i `schema/tango-event.schema.json` (JSON Schema draft-07). Legg til
-`"$schema": "https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json"` i en fil for autoutfylling i editoren.
+`"$schema": "https://tangokalender.github.io/schema/tango-event.schema.json"` i en fil for autoutfylling i editoren.
 I tillegg til skjemaet sjekker valideringen at `id` er unik og at filen ligger på riktig sted.
 
 Nye felt i v2: `venue` (`{name, address, city}`), `music_style` (`traditional`,
