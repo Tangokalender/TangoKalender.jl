@@ -505,3 +505,24 @@ end
   end
  end
 end
+@testset "site URL drift" begin
+ TK=TangoKalender
+ @test TK.SITE_URL=="https://tangokalender.github.io" && TK.REPO_URL=="https://github.com/Tangokalender/tangokalender.github.io"
+ @test JSON.parsefile(TK.SCHEMA_FILE)["\$id"]==TK.SITE_URL*"/schema/tango-event.schema.json"
+ # every absolute link to the site or the repo in source, schema, issue forms and docs uses the current SITE_URL/REPO_URL
+ host=replace(TK.SITE_URL,r"^https://"=>""); repo=replace(TK.REPO_URL,r"^https://"=>"")
+ bad=String[]
+ for dir in ("src","schema",".github","events"), (r,_,fs) in walkdir(joinpath(ROOT,dir)), f in fs
+  p=joinpath(r,f); t=read(p,String)
+  occursin("github.io/TangoKalender.jl",t) && push!(bad,"$p: old project-site path")
+  for m in eachmatch(r"(?:https?|webcal)://([a-z0-9.-]*github\.(?:io|com)/[A-Za-z0-9._-]*)",t)
+   u=m[1]; (startswith(u,host) || startswith(u,repo)) && continue
+   occursin(r"^(github\.com/(orgs|julia-actions|actions|peter-evans|stefanbuck)|[a-z0-9-]+\.github\.io/?$|user-attachments)",u) && continue
+   occursin(r"^github\.com/[A-Za-z0-9-]+/?$",u) && continue
+   startswith(u,"github.com/Tangokalender") && push!(bad,"$p: $u")
+   startswith(u,"tangokalender.github.io/") && push!(bad,"$p: $u")
+  end
+ end
+ for f in ("README.md","CLAUDE.md","TODO.md"); occursin("github.io/TangoKalender.jl/",read(joinpath(ROOT,f),String)) && push!(bad,f); end
+ @test isempty(bad)
+end

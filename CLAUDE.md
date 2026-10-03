@@ -85,11 +85,11 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 
 ## GitHub workflows (`.github/workflows/`)
 
-The repo is `github.com/Tangokalender/TangoKalender.jl`, and the site is published at https://tangokalender.github.io/TangoKalender.jl/ (Pages hostnames are lowercase).
+The repo is `github.com/Tangokalender/tangokalender.github.io`. The name makes it the organisation's root Pages site, so the site is at https://tangokalender.github.io/. It was renamed from `TangoKalender.jl`, and the old `/TangoKalender.jl/` path is gone. The Julia package is still called `TangoKalender`. All absolute URLs derive from `SITE_URL`/`REPO_URL` in `src/render/html.jl`, and a test fails if a hard-coded copy drifts. A custom domain is planned (see `TODO.md`).
 
 
 - `ci.yml`: tests on the latest Julia release (`'1'`; the compat floor is 1.12, which Pkg apps need), plus `validate events`, on PRs and on `main`.
-- `pages.yml`: runs `site events _site`, which writes `index.html` (the compact list), `uke.html`, `kort.html`, `arrangement/<id>/` plus `.ics`, `kalender.ics`, `rss.xml`, `for-ki.html`, `llms.txt` and both schemas under `schema/`, served at their `$id`s, e.g. `https://tangokalender.github.io/TangoKalender.jl/schema/tango-event.schema.json`. It deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
+- `pages.yml`: runs `site events _site`, which writes `index.html` (the compact list), `uke.html`, `kort.html`, `arrangement/<id>/` plus `.ics`, `kalender.ics`, `rss.xml`, `for-ki.html`, `llms.txt` and both schemas under `schema/`, served at their `$id`s, e.g. `https://tangokalender.github.io/schema/tango-event.schema.json`. It deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
 - `intake.yml`: issue opened or edited with the label `nytt-arrangement` or `rettelse` → `from-issue` → `peter-evans/create-pull-request` on branch `arrangement/issue-<n>`, then a comment on the issue with the report. `from-issue --outputs=$GITHUB_OUTPUT` emits a one-line `pr_title` and `issue_title`, which name the PR and rename the issue. `add-paths: events` must stay a directory, so that moved files are committed as deletions too. Failures get the `trenger-retting` label.
   - **Security:** the issue body and title are untrusted. Only pass them through `env:` or action inputs, never with `${{ }}` inside `run:`.
   - Bot PRs made with `GITHUB_TOKEN` don't trigger `ci.yml`. That's why `from-issue` validates the whole tree itself.
