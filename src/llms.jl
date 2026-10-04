@@ -107,7 +107,7 @@ function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwar
  end
  w("kalender.ics",calendar_ics([e for e in ev if _haspage(e) && Date(_end_day(e))>=today-Day(30)];today))
  w("rss.xml",rss_xml(ev;today))
- w(ADD_PAGE,legg_til_html()); w(AI_PAGE,for_ki_redirect_html()); w("llms.txt",llms_txt())
+ w(ADD_PAGE,legg_til_html()); w(ABOUT_PAGE,om_html()); w(AI_PAGE,for_ki_redirect_html()); w("llms.txt",llms_txt())
  w(TEMPLATE_CSV,table_template_csv())
  cp(SCHEMA_FILE,joinpath(dir,"schema","tango-event.schema.json");force=true); push!(files,joinpath(dir,"schema","tango-event.schema.json"))
  w(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))

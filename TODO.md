@@ -34,3 +34,24 @@ Goal: a short address (e.g. `tangokalender.no`) instead of `tangokalender.github
    `CNAME` file (Actions-based Pages takes the domain from the settings, the file only documents it).
 5. GitHub redirects `tangokalender.github.io` to the custom domain for HTML pages, but calendar apps and
    feed readers subscribed to `kalender.ics`/`rss.xml` may need to re-subscribe; announce the new address.
+
+## English version of the calendar
+
+Goal: an English version for visiting dancers and the international community in Oslo, alongside the Norwegian one.
+
+What it involves in this codebase:
+
+1. **URL scheme:** e.g. `/en/` (`/en/index.html`, `/en/uke.html` → `/en/week.html`, `/en/arrangement/<id>/`), with a
+   language switch («English / Norsk») in the hero, `<html lang>` per page, and `<link rel="alternate" hreflang>`
+   between the two versions (also good for search engines).
+2. **Labels:** type and music labels are already in one place (`_TYPES`, `_MUSIC` in `src/labels.jl`) – turn them into
+   per-language tables; weekday/month names (`_WD`, `_MO`, `_WD3`, `_MONTHS_LONG` in `src/render/html.jl`) likewise.
+3. **UI strings:** the remaining Norwegian text lives in `src/render/html.jl` (filters, views, week navigation, footer),
+   `src/render/event.jl`, `src/render/submit.jl` (legg-til) and `src/render/about.jl`. Collect them in a small
+   string table keyed by language rather than translating inline.
+4. **Event content:** titles and descriptions stay as submitted (usually Norwegian); optionally add `description_en`
+   to the schema later. Dates/times need English formatting (e.g. "Fri 9 Oct · 20:00–23:00").
+5. **Feeds:** `kalender.ics` and `rss.xml` can stay shared, or get `/en/` variants with English category labels.
+6. **Submission:** the issue forms can stay Norwegian at first; `llms.txt` is already in English.
+7. **Tests:** run the existing view/filter/browser tests for both languages; drift test that every Norwegian UI
+   string has an English counterpart.

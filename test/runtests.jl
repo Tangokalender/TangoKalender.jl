@@ -569,3 +569,14 @@ end
   @test length(load_events(root))==2 && isempty(validate_event_tree(root)) && occursin("2 datoer fra 16. okt",read(out,String))
  end
 end
+@testset "about page" begin
+ TK=TangoKalender
+ h=TK.om_html()
+ @test occursin("Et felles prosjekt",h) && occursin("frivillige og arrangører",h) && occursin("Slik støtter du kalenderen",h)
+ @test occursin("spandere en drink",h) && occursin("href=\"legg-til.html\"",h) && occursin("<link rel=\"canonical\" href=\"$(TK.SITE_URL)/om.html\">",h)
+ ev=[Dict{String,Any}("id"=>"a","title"=>"A","type"=>"milonga","start"=>"2035-03-05T20:00:00+01:00","venue"=>Dict("name"=>"S","address"=>"G"))]
+ @test occursin("<a href=\"om.html\">Om kalenderen</a>",render_events_html(ev;view="compact",site=true))      # footer link on the site
+ @test !occursin("om.html",render_events_html(ev))                                                            # not on a standalone page
+ @test occursin("href=\"../../om.html\"",TK.render_event_page(ev[1],ev)) && occursin("href=\"om.html\"",TK.legg_til_html())
+ mktempdir() do d; TK.write_site(d,ev); @test isfile(joinpath(d,"om.html")); end
+end

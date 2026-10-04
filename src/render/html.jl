@@ -213,7 +213,7 @@ function render_events_html(events; view="cards",site=false,title=SITE_NAME,subt
  hero_submit=isempty(submit) ? "" : "<a class=\"submit\" href=\"$submit\"$ext>+ Legg til arrangement</a>"
  footer_submit=isempty(submit) ? "" : " · <a href=\"$submit\"$ext>Legg til arrangement</a>"
  tabs=site ? "<nav class=\"tabs\" aria-label=\"Visning\">"*join(("<a href=\"$f\"$(v==view ? " class=\"on\" aria-current=\"page\"" : "")>$l</a>" for (v,(f,l)) in _VIEWS),"")*"</nav>" : ""
- feeds=site ? " · <span class=\"feeds\"><a href=\"webcal://$(replace(SITE_URL,r"^https?://"=>""))/kalender.ics\">Abonner på kalenderen</a> · <a href=\"kalender.ics\">.ics</a> · <a href=\"rss.xml\">RSS</a></span>" : ""
+ feeds=site ? " · <a href=\"$ABOUT_PAGE\">Om kalenderen</a> · <span class=\"feeds\"><a href=\"webcal://$(replace(SITE_URL,r"^https?://"=>""))/kalender.ics\">Abonner på kalenderen</a> · <a href=\"kalender.ics\">.ics</a> · <a href=\"rss.xml\">RSS</a></span>" : ""
  headlinks=site ? "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$(_esc(SITE_NAME))\" href=\"rss.xml\"><link rel=\"canonical\" href=\"$SITE_URL/$(Dict(_VIEWS)[view][1]=="index.html" ? "" : Dict(_VIEWS)[view][1])\">" : ""
  ev=sort(collect(events),by=_sortkey)
  body=if view=="cards"

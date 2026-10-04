@@ -12,6 +12,7 @@ include("ics.jl")
 include("rss.jl")
 include("render/event.jl")
 include("render/submit.jl")
+include("render/about.jl")
 include("llms.jl")
 include("cli.jl")
 export create_event, load_events, save_events, render_events_html, render_events_file
