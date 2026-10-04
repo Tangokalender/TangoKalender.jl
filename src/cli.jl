@@ -7,7 +7,7 @@ Usage:
                                            index.html (list), uke.html, kort.html, arrangement/<id>/ pages and .ics,
                                            kalender.ics, rss.xml, for-ki.html, llms.txt, schema/*.json
   tangokalender validate [INPUT]           validate only
-  tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form or «JSON»), or a correction («Arrangement-ID»)
+  tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
 
 INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
 
@@ -55,7 +55,10 @@ function _from_issue(body_file,opts)
  today=haskey(opts,"today") ? Date(opts["today"]) : Dates.today()
  form=parse_issue_form(read(body_file,String))
  haskey(form,"Arrangement-ID") && return _from_correction(form,root,today,opts)
- events,errs=if haskey(form,"JSON")   # «Nytt arrangement (JSON fra KI)»
+ events,errs=if haskey(form,"Tabell")   # «Nytt arrangement (fra tabell)»: cells pasted from a spreadsheet
+  ev,er=events_from_table(form["Tabell"]; issue_url=get(opts,"issue-url",nothing), today)
+  isempty(_checked(get(form,"Samtykke",""))) ? (empty(ev),[er;"«Samtykke» må krysses av."]) : (ev,er)
+ elseif haskey(form,"JSON")   # «Nytt arrangement (JSON fra KI)»
   ev,er=events_from_json(form["JSON"]; issue_url=get(opts,"issue-url",nothing), today)
   isempty(_checked(get(form,"Samtykke",""))) ? (empty(ev),[er;"«Samtykke» må krysses av."]) : (ev,er)
  else

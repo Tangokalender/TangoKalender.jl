@@ -19,18 +19,19 @@ Kildekode: https://github.com/Tangokalender/tangokalender.github.io
 
 ## Legge inn arrangementer
 
-- **Skjema (anbefalt):** Issues → New issue → «Nytt arrangement». En robot gjør skjemaet om til
-  arrangementsfiler og åpner en pull request; svaret (eller feil som må rettes) kommer som kommentar.
-  Faste arrangementer legges inn med «Gjentas: Ukentlig».
-- **Med KI:** har du arrangementet på Facebook eller en nettside, følg
-  [Bruk KI til å legge inn arrangementer](https://tangokalender.github.io/for-ki.html): kopier
-  ledeteksten inn i Copilot/Gemini/ChatGPT sammen med arrangementsteksten, og lim svaret (JSON) inn i skjemaet
-  «Nytt arrangement (JSON fra KI)». Instruksjoner for KI-agenter ligger i
-  [`llms.txt`](https://tangokalender.github.io/llms.txt), og formatet i
-  [innsendingsskjemaet](https://tangokalender.github.io/schema/tango-event-submission.schema.json).
-- **Rette opp:** klikk «Rett opp» på arrangementet. Skjemaet viser hva som står der nå; fyll bare inn
-  feltene som skal endres (tomt felt = ingen endring, `-` fjerner en opplysning), velg om endringen gjelder bare denne datoen eller
-  også alle senere i serien, og send inn. Avlysninger meldes med «Status: Avlyst».
+Alt om innsending står på én side: **https://tangokalender.github.io/legg-til.html**
+
+- **Ett arrangement** (eller en enkel ukentlig serie): skjemaet «Nytt arrangement». Faste kvelder legges inn med
+  «Gjentas: Ukentlig».
+- **Flere datoer fra regneark:** første rad kolonnenavn, andre rad alt som er felles, neste rader bare det som er
+  annerledes (typisk Dato og DJ; tom celle = som andre rad, `-` fjerner, «Avlyst» i Status). Kopier cellene fra
+  Excel/Google Regneark/Numbers og lim inn i «Nytt arrangement (fra tabell)». Mal:
+  https://tangokalender.github.io/mal/arrangementer-mal.csv
+- **Med KI:** kopier ledeteksten på siden inn i Copilot/Gemini/ChatGPT sammen med arrangementsteksten, og lim
+  svaret (JSON) inn i «Nytt arrangement (JSON fra KI)». Instruksjoner for KI-agenter:
+  https://tangokalender.github.io/llms.txt
+- **Rette opp:** «Rett opp» på hvert arrangement (tomt felt = ingen endring, `-` fjerner en opplysning; gjelder
+  denne datoen eller også alle senere i serien; avlysning med «Status: Avlyst»).
 - **Pull request:** legg til eller endre filer under `events/` direkte. CI validerer alle filer.
 
 En redaktør ser over og merger; siden bygges og publiseres automatisk fra `main`.

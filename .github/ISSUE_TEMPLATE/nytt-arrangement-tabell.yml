@@ -1,0 +1,32 @@
+# Cells pasted from a spreadsheet – see https://tangokalender.github.io/legg-til.html#tabell
+# The «Tabell» label is the key read by from-issue (events_from_table in src/table.jl).
+name: Nytt arrangement (fra tabell)
+description: Flere datoer på én gang – lim inn celler fra Excel, Google Regneark eller Numbers.
+title: "[Arrangement]: "
+labels: ["nytt-arrangement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Se veiledning, eksempel og mal på [**Legg til arrangement – fra regneark**](https://tangokalender.github.io/legg-til.html#tabell).
+
+        - **Første rad:** kolonnenavn (Tittel, Type, Dato, Starttid, Sluttid, Sted, Adresse, Arrangør, DJ, Pris (kr), Lenke …)
+        - **Andre rad:** alt som er felles for alle datoene.
+        - **Neste rader:** bare det som er annerledes, typisk Dato og DJ. Tom celle = som andre rad. `-` fjerner en opplysning. «Avlyst» i Status for avlyste datoer.
+
+        Merk alle cellene (også kolonnenavnene), kopier og lim inn under.
+  - type: textarea
+    id: tabell
+    attributes:
+      label: Tabell
+      description: Lim inn cellene fra regnearket her.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: samtykke
+    attributes:
+      label: Samtykke
+      options:
+        - label: Personer som er nevnt (DJ, lærere, arrangør) har godtatt å bli oppført i den offentlige kalenderen.
+          required: true

@@ -15,7 +15,7 @@ julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 # CLI entry point (TangoKalender.main): build is the default subcommand; paths are relative to the cwd
 julia --project=. -m TangoKalender validate [events]                   # exit 1 on problems
 julia --project=. -m TangoKalender [build] [events] [public/index.html] [--title=… --subtitle=… --no-validate]
-julia --project=. -m TangoKalender site [events] [_site]   # whole site: index.html, for-ki.html, llms.txt, schema/*.json (used by pages.yml)
+julia --project=. -m TangoKalender site [events] [_site]   # whole site: index.html, uke.html, kort.html, legg-til.html (+ for-ki.html redirect), arrangement/, kalender.ics, rss.xml, llms.txt, mal/, schema/*.json (used by pages.yml)
 julia --project=. -m TangoKalender from-issue BODY.md [--root=events] [--issue-url=URL] [--report=r.md] [--today=YYYY-MM-DD]
 
 # Install as the `tangokalender` app (Pkg apps, Julia ≥ 1.12). Apps.add(path=) needs a git repo; use develop locally
@@ -43,9 +43,17 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
   - `events_from_json` strips code fences and prose, drops any bot fields the LLM included, and validates each item for precise Norwegian error paths (`«[1].venue.name»`).
   - It **ignores any submitted offset and recomputes it** with `_stamp`/`_end_stamp`, because all times are Oslo local time. Then it sets `id`/`series`/metadata and runs `validate_event`.
   - `from-issue` routes a form that has a «JSON» heading here.
-- `src/llms.jl`: `llm_rules()` is written once and used both in `llms_txt()` (English, for models) and in the copy-ready prompt on `for_ki_html()` (Norwegian page). `EXAMPLE_INPUT`/`EXAMPLE_OUTPUT` are the published worked example, and the tests check that the example converts cleanly. `write_site` writes everything for Pages. The type and music lists come from `_TYPES`/`_MUSIC`, with English help text in `TYPE_HELP`/`MUSIC_HELP`, so add new enum values there too.
+- `src/table.jl`: the spreadsheet route (issue form `nytt-arrangement-tabell.yml`, label «Tabell»).
+  - `parse_table` reads pasted cells: tab-separated is the normal case; `;`/`,` CSV and quoted cells are also accepted.
+  - `events_from_table`: row 1 holds the column headings (`TABLE_COLUMNS`, the form's labels, any order, with aliases), row 2 the defaults, and later rows only the deviations (blank = default, `-` clears, «Avlyst» in Status).
+  - Each row becomes a form dict and goes through `events_from_form`, so the rules and messages stay identical. Errors carry the spreadsheet row number (row 1 = headings). Rows with the same title share a `series`.
+  - `table_template_csv()` is the downloadable `mal/arrangementer-mal.csv` (semicolon-separated, with a UTF-8 BOM for Norwegian Excel). A test checks that it converts cleanly.
+  - `_date` (in `issue.jl`) also accepts `DD.MM.ÅÅÅÅ`, which is how Norwegian Excel copies dates.
+- `src/render/submit.jl`: `legg_til_html()` is the single «Legg til arrangement» page with sections `#skjema`, `#tabell`, `#ki` (prompt with copy button) and `#rette`. On the site, the main page's hero and footer link only there (`ADD_PAGE`). `for-ki.html` is now a redirect to `legg-til.html#ki`.
+- `src/llms.jl`: `llm_rules()` is written once and used both in `llms_txt()` (English, for models) and in the copy-ready prompt on `legg_til_html()#ki` (Norwegian). `EXAMPLE_INPUT`/`EXAMPLE_OUTPUT` are the published worked example, and the tests check that the example converts cleanly. `write_site` writes everything for Pages. The type and music lists come from `_TYPES`/`_MUSIC`, with English help text in `TYPE_HELP`/`MUSIC_HELP`, so add new enum values there too.
 - `src/validate.jl`: `validate_event` checks one event against `schema/tango-event.schema.json` with JSONSchema.jl. `validate_event_tree` also flags duplicate ids and files not at their `event_path`.
 - `src/render/html.jl`: the calendar views. `render_events_html(events; view="cards"|"compact"|"week", site=false)`: `site=true` (used by `write_site`) adds the view tabs, links to event pages, and the feed links and canonical URL. The views share `_CSS`, `_filterbar` and one raw-string script `_JS`.
+  - Filter bar: the search box is always visible. On screens under 760px the rest (`#morefilters`) folds behind «Filter (n)», where n counts the active filters, and is collapsed by default.
   - The script filters every `.ev` row and hides `.group` day sections without visible rows; with `data-keep` (week view) it marks them `noev` instead.
   - **The filter state is in the URL**: `?q=…&type=a,b&music=…&when=…&sort=…`. Defaults are omitted and unknown values ignored. `readURL()` runs on load, `writeURL()` after every change (`history.replaceState`, which keeps the `#uke-…` hash), and the view tabs get the same query string. Type and music are checkbox pills (`input[name=type|music]`). Several ticked means any of them; none ticked means all. Search words must all match.
   - `.hidden` uses `display:none!important`: the row and cell rules (`.row`/`.cell` display) otherwise beat it, which once made filtering look broken while the counter still changed.
@@ -88,7 +96,7 @@ The repo is `github.com/Tangokalender/tangokalender.github.io`. The name makes i
 
 
 - `ci.yml`: tests on the latest Julia release (`'1'`; the compat floor is 1.12, which Pkg apps need), plus `validate events`, on PRs and on `main`.
-- `pages.yml`: runs `site events _site`, which writes `index.html` (the compact list), `uke.html`, `kort.html`, `arrangement/<id>/` plus `.ics`, `kalender.ics`, `rss.xml`, `for-ki.html`, `llms.txt` and both schemas under `schema/`, served at their `$id`s, e.g. `https://tangokalender.github.io/schema/tango-event.schema.json`. It deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
+- `pages.yml`: runs `site events _site`, which writes `index.html` (the compact list), `uke.html`, `kort.html`, `arrangement/<id>/` plus `.ics`, `kalender.ics`, `rss.xml`, `legg-til.html` (plus the `for-ki.html` redirect and `mal/arrangementer-mal.csv`), `llms.txt` and both schemas under `schema/`, served at their `$id`s, e.g. `https://tangokalender.github.io/schema/tango-event.schema.json`. It deploys to GitHub Pages on `main` changes and nightly. `public/` and `_site/` are gitignored.
 - `intake.yml`: issue opened or edited with the label `nytt-arrangement` or `rettelse` → `from-issue` → `peter-evans/create-pull-request` on branch `arrangement/issue-<n>`, then a comment on the issue with the report. `from-issue --outputs=$GITHUB_OUTPUT` emits a one-line `pr_title` and `issue_title`, which name the PR and rename the issue. `add-paths: events` must stay a directory, so that moved files are committed as deletions too. Failures get the `trenger-retting` label.
   - **Security:** the issue body and title are untrusted. Only pass them through `env:` or action inputs, never with `${{ }}` inside `run:`.
   - Bot PRs made with `GITHUB_TOKEN` don't trigger `ci.yml`. That's why `from-issue` validates the whole tree itself.

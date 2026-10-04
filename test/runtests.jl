@@ -306,10 +306,13 @@ end
   @test occursin("«Samtykke» må krysses av",read(rep,String)) && length(load_events(root))==2
   # site: all files, links between them
   site=joinpath(d,"site"); @test redirect_stdout(()->TK.main(["site",MEDIA,site]),devnull)==0
-  @test all(isfile(joinpath(site,f)) for f in ("index.html","for-ki.html","llms.txt",".nojekyll",joinpath("schema","tango-event.schema.json"),joinpath("schema","tango-event-submission.schema.json")))
-  @test occursin("href=\"for-ki.html\">Bruk KI</a>",read(joinpath(site,"index.html"),String))
-  ki=read(joinpath(site,"for-ki.html"),String)
+  @test all(isfile(joinpath(site,f)) for f in ("index.html","legg-til.html","for-ki.html","llms.txt",".nojekyll",joinpath("mal","arrangementer-mal.csv"),joinpath("schema","tango-event.schema.json"),joinpath("schema","tango-event-submission.schema.json")))
+  idx=read(joinpath(site,"index.html"),String)
+  @test occursin("<a class=\"submit\" href=\"legg-til.html\">+ Legg til arrangement</a>",idx) && !occursin("Bruk KI",idx)   # one button
+  ki=read(joinpath(site,"legg-til.html"),String)
   @test occursin(TK.SUBMISSION_SCHEMA_URL,ki) && occursin(TK.JSON_FORM_URL,ki) && occursin("id=\"copy\"",ki)
+  @test occursin(TK.SUBMIT_URL,ki) && occursin(TK.TABLE_FORM_URL,ki) && all(occursin("id=\"$a\"",ki) for a in ("skjema","tabell","ki","rette"))
+  @test occursin("url=legg-til.html#ki",read(joinpath(site,"for-ki.html"),String))                        # old address redirects
   @test JSON.parsefile(joinpath(site,"schema","tango-event-submission.schema.json"))["\$id"]==TK.SUBMISSION_SCHEMA_URL
  end
  # the JSON issue form uses the labels the parser expects
@@ -395,7 +398,7 @@ end
  # --- whole site: files and links
  mktempdir() do d
   files=TK.write_site(d,evs;today=T)
-  @test all(isfile(joinpath(d,f)) for f in ("index.html","uke.html","kort.html","kalender.ics","rss.xml","for-ki.html","llms.txt",joinpath("arrangement","a","index.html"),joinpath("arrangement","a.ics")))
+  @test all(isfile(joinpath(d,f)) for f in ("index.html","uke.html","kort.html","kalender.ics","rss.xml","legg-til.html","for-ki.html","llms.txt",joinpath("arrangement","a","index.html"),joinpath("arrangement","a.ics")))
   @test occursin("class=\"group\"",read(joinpath(d,"index.html"),String))                                # index = compact list
   k=read(joinpath(d,"kalender.ics"),String); @test count("BEGIN:VEVENT",k)==4 && !occursin("UID:old@",k)   # window: 30 days back (old is 31)
   broken=String[]
@@ -524,4 +527,45 @@ end
  end
  for f in ("README.md","CLAUDE.md","TODO.md"); occursin("github.io/TangoKalender.jl/",read(joinpath(ROOT,f),String)) && push!(bad,f); end
  @test isempty(bad)
+end
+@testset "table input (pasted spreadsheet cells)" begin
+ TK=TangoKalender; T=Date(2026,10,4)
+ # parsing: tabs (Excel/Sheets clipboard), semicolon CSV, quoted cells with separators/line breaks, code fence
+ @test TK.parse_table("A\tB\n1\t2\n\t3\n")==[["A","B"],["1","2"],["","3"]]
+ @test TK.parse_table("```text\nA;B\n\"x;y\";\"to\nlinjer\"\n```")==[["A","B"],["x;y","to\nlinjer"]]
+ @test TK.parse_table("A,B\n1,2")==[["A","B"],["1","2"]] && TK.parse_table("A\tB\n\t\n1\t2")==[["A","B"],["1","2"]]   # empty rows dropped
+ H="Tittel\tType\tDato\tStarttid\tSluttid\tSted\tAdresse\tArrangør\tDJ\tPris (kr)\tMusikk\tLenke\tStatus\n"
+ row(c...)=join(c,"\t")*"\n"
+ full=row("Fredagsmilonga","Milonga","16.10.2026","20:00","00:30","Salen","Gata 1, Oslo","Klubben","DJ A","150 kr","Tradisjonell, Alternativ / neo","https://example.org","")
+ ev,errs=TK.events_from_table(H*full*row("","","23.10.2026","","","","","","DJ B","","","","")*row("","","2026-10-30","","","","","","-","","","","Avlyst"); today=T)
+ @test isempty(errs) && [e["id"] for e in ev]==["fredagsmilonga-2026-10-$d" for d in ("16","23","30")]
+ @test [e["dj"] for e in ev]==["DJ A","DJ B",nothing] && [e["status"] for e in ev]==["scheduled","scheduled","cancelled"]   # defaults, deviation, «-», Avlyst
+ @test all(e["series"]=="fredagsmilonga" && e["price_nok"]==150 && e["music_style"]==["traditional","alternative"] && e["source"]=="Innsendt via tabell" for e in ev)
+ @test ev[3]["start"]=="2026-10-30T20:00:00+01:00" && ev[1]["end"]=="2026-10-17T00:30:00+02:00"        # clock change, past midnight
+ one,_=TK.events_from_table(H*full;today=T); @test isnothing(one[1]["series"])                          # a single row is not a series
+ # column headings: any order, aliases, unknown/duplicate columns rejected
+ ev2,e2=TK.events_from_table("dato\ttittel\ttype\ttid\tsted\tadresse\tarrangor\tlenke\tpris\n16.10.2026\tX\tPractica\t19:00\tS\tA\tK\thttps://x\t80";today=T)
+ @test isempty(e2) && ev2[1]["type"]=="practica" && ev2[1]["price_nok"]==80
+ @test occursin("Ukjent kolonne «Farge»",only(TK.events_from_table("Tittel\tFarge\nX\tblå";today=T)[2]))
+ @test occursin("finnes flere ganger",only(TK.events_from_table("Dato\tDato\n1\t2";today=T)[2]))
+ # errors carry the spreadsheet row number and the form's messages
+ errs=TK.events_from_table(H*full*row("","","32.10.2026","kveld","","","","","","","","","Utsatt");today=T)[2]
+ @test any(startswith(m,"Rad 3: «Dato» må være en dato") for m in errs) && any(startswith(m,"Rad 3: «Starttid»") for m in errs) && any(occursin("ukjent «Status»",m) for m in errs)
+ @test occursin("samme arrangement og dato",only(TK.events_from_table(H*full*row("","","16.10.2026","","","","","","","","","","");today=T)[2]))
+ @test occursin("minst én rad",only(TK.events_from_table("Tittel\tDato";today=T)[2]))
+ # the downloadable template is valid input (opened in Excel, then copied → same cells)
+ csv=TK.table_template_csv(); @test startswith(csv,"\ufeff") && occursin("Arrangør",csv)
+ ev3,e3=TK.events_from_table(replace(csv,"\ufeff"=>"");today=Date(2026,12,1))
+ @test isempty(e3) && length(ev3)==3 && ev3[3]["status"]=="cancelled" && ev3[2]["dj"]=="DJ B"
+ @test TK.parse_table(replace(csv,"\ufeff"=>""))[1]==TK.TABLE_COLUMNS
+ # issue form: the label the parser keys on; CLI round trip through from-issue
+ tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement-tabell.yml"),String)
+ @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(["Tabell","Samtykke"]) && occursin("labels: [\"nytt-arrangement\"]",tmpl)
+ @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
+ mktempdir() do d
+  root=joinpath(d,"events"); bf=joinpath(d,"b.md"); rep=joinpath(d,"r.md"); out=joinpath(d,"o")
+  write(bf,"### Tabell\n\n```text\n"*H*full*row("","","23.10.2026","","","","","","DJ B","","","","")*"```\n\n### Samtykke\n\n- [X] Ja")
+  @test redirect_stdout(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--outputs=$out","--today=2026-10-04"]),devnull)==0
+  @test length(load_events(root))==2 && isempty(validate_event_tree(root)) && occursin("2 datoer fra 16. okt",read(out,String))
+ end
 end

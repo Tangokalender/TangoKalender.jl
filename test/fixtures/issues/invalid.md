@@ -8,7 +8,7 @@ Disco
 
 ### Dato
 
-14.11.2026
+neste lørdag
 
 ### Starttid
 

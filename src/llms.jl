@@ -1,7 +1,7 @@
-# Instructions for LLM assistants: /llms.txt (for the model) and /for-ki.html (Norwegian, for people).
+# Instructions for LLM assistants: /llms.txt (for the model); the human-facing part lives on legg-til.html#ki (src/render/submit.jl).
 # The rules are written once (llm_rules) and reused in both; the worked example is checked by the tests.
 const LLMS_URL=SITE_URL*"/llms.txt"
-const AI_PAGE="for-ki.html"
+const AI_PAGE="for-ki.html"   # old address, now a redirect to legg-til.html#ki
 const EXAMPLE_INPUT="""Milonga del Fiordo 🎶 Fredag 12. mars kl. 21–01.30 på Kulturhuset Fjord, Storgata 9, Oslo.
 DJ: Gjeste-DJ. Inngang 150 kr, studenter 100 kr. Tradisjonell tango hele kvelden.
 Arr: Tangoforeningen Fjord. https://www.facebook.com/events/000000000000000"""
@@ -84,33 +84,14 @@ $EXAMPLE_OUTPUT
 - [Submission JSON Schema]($SUBMISSION_SCHEMA_URL): what to output
 - [Stored event schema]($SITE_URL/schema/tango-event.schema.json): how events are stored after review (ids, series and metadata are set by the bot)
 - [JSON submission form]($JSON_FORM_URL)
-- [Instructions for people, in Norwegian]($SITE_URL/$AI_PAGE)
+- [Instructions for people, in Norwegian]($SITE_URL/$ADD_PAGE#ki)
 """
-"The Norwegian «Bruk KI» help page."
-function for_ki_html(; title="Bruk KI til å legge inn arrangementer")
- prompt=_esc(llm_prompt())
- """<!doctype html><html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title><style>
-:root{--wine:#872b49;--paper:#f5f1eb;--line:#ddd3ca;--muted:#6e6864}*{box-sizing:border-box}body{margin:0;background:var(--paper);font-family:Inter,system-ui,sans-serif;color:#211d1c;line-height:1.55}.hero{padding:40px 20px 56px;color:white;background:linear-gradient(135deg,#26151d,#8b2949)}.wrap{max-width:820px;margin:auto}.hero h1{font:500 clamp(2rem,6vw,3.4rem) Georgia;margin:.1em 0}.hero p{color:#f7dce5;margin:0}.hero a{color:white}main{max-width:820px;margin:-28px auto 0;padding:0 16px 60px}.card{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:16px;box-shadow:0 5px 18px #2919210b}h2{font:500 1.5rem Georgia;margin:0 0 8px}ol{padding-left:1.3em}li{margin:6px 0}a{color:var(--wine);font-weight:700}.promptbox{position:relative}pre{white-space:pre-wrap;word-break:break-word;background:#f7f2ec;border:1px solid var(--line);border-radius:12px;padding:16px;max-height:340px;overflow:auto;font-size:.82rem}button{border:0;border-radius:999px;background:var(--wine);color:white;font-weight:800;padding:10px 18px;cursor:pointer}button:hover{background:#6f2240}.btnrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:10px 0}.btn{display:inline-block;border-radius:999px;padding:10px 18px;background:#f2dce4;color:#76203e;text-decoration:none}small,.muted{color:var(--muted)}
-</style></head><body><div class="hero"><div class="wrap"><small><a href="./">← Til kalenderen</a></small><h1>$(_esc(title))</h1><p>Har du arrangementet på Facebook eller en nettside? La en KI-assistent (Copilot, Gemini, ChatGPT …) lage utfyllingen for deg.</p></div></div><main>
-<section class="card"><h2>Slik gjør du</h2><ol>
-<li><b>Kopier ledeteksten</b> under.</li>
-<li>Åpne KI-assistenten, lim inn ledeteksten og <b>legg til arrangementsteksten</b> rett etter – kopier teksten fra arrangementssiden, eller legg ved et skjermbilde. KI-assistenter kan som regel ikke logge inn på Facebook selv.</li>
-<li><b>Les over svaret.</b> KI kan ta feil – sjekk særlig dato, klokkeslett, sted og pris.</li>
-<li>Lim inn hele svaret i skjemaet <a href="$(_esc(JSON_FORM_URL))" target="_blank" rel="noopener">«Nytt arrangement (JSON fra KI)»</a> og send inn. En robot sjekker det og lager et forslag som en redaktør ser over.</li>
-</ol></section>
-<section class="card"><h2>Ledetekst</h2><div class="btnrow"><button id="copy" type="button">Kopier ledeteksten</button><span id="copied" class="muted" aria-live="polite"></span></div><div class="promptbox"><pre id="prompt">$prompt</pre></div></section>
-<section class="card"><h2>Gjentatte arrangementer</h2><p>Faste kvelder (f.eks. hver onsdag) blir én oppføring per dato. Skriv gjerne til KI-assistenten hvilke datoer det gjelder, for eksempel «hver onsdag fra 7. oktober til 9. desember, ikke 18. november».</p></section>
-<section class="card"><h2>Personvern</h2><p>Bruk bare opplysninger som allerede er offentlige. Navn på DJ-er og lærere skal bare være med hvis de har godtatt det – du bekrefter dette i skjemaet. Ikke lim inn private meldinger eller personopplysninger i KI-assistenten.</p></section>
-<section class="card"><h2>For utviklere og KI-agenter</h2><p class="muted">Instruksjonene på engelsk: <a href="llms.txt">llms.txt</a> · Skjema for innsending: <a href="schema/tango-event-submission.schema.json">tango-event-submission.schema.json</a> · Lagret format: <a href="schema/tango-event.schema.json">tango-event.schema.json</a></p></section>
-</main><script>
-(function(){var b=document.getElementById('copy'),p=document.getElementById('prompt'),s=document.getElementById('copied');function sel(){var r=document.createRange();r.selectNodeContents(p);var g=window.getSelection();g.removeAllRanges();g.addRange(r)}b.addEventListener('click',function(){var t=p.textContent;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){s.textContent='Kopiert ✓'},function(){sel();s.textContent='Merket – trykk Ctrl+C / ⌘C'})}else{sel();s.textContent='Merket – trykk Ctrl+C / ⌘C'}setTimeout(function(){s.textContent=''},4000)})})();
-</script></body></html>"""
-end
 """
     write_site(dir, events; today=Dates.today(), kwargs...) -> files
 
 Write the whole static site: the three views (index.html = compact list, uke.html, kort.html), one page and one
-.ics per event (arrangement/<id>/index.html, arrangement/<id>.ics), kalender.ics, rss.xml, for-ki.html,
+.ics per event (arrangement/<id>/index.html, arrangement/<id>.ics), kalender.ics, rss.xml, legg-til.html (+ the old
+for-ki.html as a redirect and the spreadsheet template),
 llms.txt and both schemas. `kwargs` go to `render_events_html`.
 """
 function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwargs...)
@@ -126,7 +107,8 @@ function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwar
  end
  w("kalender.ics",calendar_ics([e for e in ev if _haspage(e) && Date(_end_day(e))>=today-Day(30)];today))
  w("rss.xml",rss_xml(ev;today))
- w(AI_PAGE,for_ki_html()); w("llms.txt",llms_txt())
+ w(ADD_PAGE,legg_til_html()); w(AI_PAGE,for_ki_redirect_html()); w("llms.txt",llms_txt())
+ w(TEMPLATE_CSV,table_template_csv())
  cp(SCHEMA_FILE,joinpath(dir,"schema","tango-event.schema.json");force=true); push!(files,joinpath(dir,"schema","tango-event.schema.json"))
  w(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))
  touch(joinpath(dir,".nojekyll")); files

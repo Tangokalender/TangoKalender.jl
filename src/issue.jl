@@ -17,7 +17,12 @@ function _slug(s)
  s=strip(replace(Base.Unicode.normalize(s;stripmark=true),r"[^a-z0-9]+"=>"-"),'-')
  s=String(rstrip(first(s,50),'-')); isempty(s) ? "arrangement" : s
 end
-_date(s)=(m=match(r"^\s*(\d{4})-(\d{1,2})-(\d{1,2})\s*$",s); isnothing(m) ? nothing : tryparse(Date,"$(m[1])-$(lpad(m[2],2,'0'))-$(lpad(m[3],2,'0'))"))
+"A date as `ÅÅÅÅ-MM-DD`, or `DD.MM.ÅÅÅÅ` as Norwegian Excel displays (and copies) dates; `nothing` if invalid."
+function _date(s)
+ m=match(r"^\s*(\d{4})-(\d{1,2})-(\d{1,2})\s*$",s); isnothing(m) || return tryparse(Date,"$(m[1])-$(lpad(m[2],2,'0'))-$(lpad(m[3],2,'0'))")
+ m=match(r"^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$",s); isnothing(m) || return tryparse(Date,"$(m[3])-$(lpad(m[2],2,'0'))-$(lpad(m[1],2,'0'))")
+ nothing
+end
 function _time(s;allow24=false)
  m=match(r"^\s*(\d{1,2})[:.](\d{2})\s*$",s); isnothing(m) && return nothing
  h,mi=parse(Int,m[1]),parse(Int,m[2]); t="$(lpad(h,2,'0')):$(m[2])"
@@ -50,7 +55,7 @@ function _parse_field(label::AbstractString,s::AbstractString)
  if label=="Type"
   t=_lookup(_TYPES,s); isnothing(t) ? bad("Ukjent «Type»: $s.") : (t,nothing)
  elseif label in ("Dato","Gjentas til")
-  d=_date(s); isnothing(d) ? bad("«$label» må være på formen ÅÅÅÅ-MM-DD (fikk «$s»).") : (d,nothing)
+  d=_date(s); isnothing(d) ? bad("«$label» må være en dato, ÅÅÅÅ-MM-DD eller DD.MM.ÅÅÅÅ (fikk «$s»).") : (d,nothing)
  elseif label in ("Starttid","Sluttid")
   t=_time(s;allow24=label=="Sluttid"); isnothing(t) ? bad("«$label» må være på formen TT:MM (fikk «$s»).") : (t,nothing)
  elseif label=="Lenke"

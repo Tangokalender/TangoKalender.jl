@@ -92,7 +92,9 @@ const REPO_URL="https://github.com/Tangokalender/tangokalender.github.io"
 const SUBMIT_URL=REPO_URL*"/issues/new?template=nytt-arrangement.yml"
 "Base of each card's «Rett opp» link: the correction issue form (prefilled by `correction_url`)."
 const CORRECT_URL=REPO_URL*"/issues/new?template=rett-arrangement.yml"
-"The JSON issue form used with LLM-extracted events (see for-ki.html / llms.txt)."
+"The table issue form: cells pasted from a spreadsheet (see legg-til.html#tabell, src/table.jl)."
+const TABLE_FORM_URL=REPO_URL*"/issues/new?template=nytt-arrangement-tabell.yml"
+"The JSON issue form used with LLM-extracted events (see legg-til.html#ki / llms.txt)."
 const JSON_FORM_URL=REPO_URL*"/issues/new?template=nytt-arrangement-json.yml"
 """
 Published site (GitHub Pages, the organisation's root site from the repo `tangokalender.github.io`); also where the
@@ -202,13 +204,14 @@ end
 One calendar page. `view` is `"cards"`, `"compact"` (dense list grouped by day) or `"week"` (one week at a time).
 `site=true` (used by `write_site`) adds the view tabs, links to event pages and the feed links.
 """
-function render_events_html(events; view="cards",site=false,title=SITE_NAME,subtitle="Milongaer, practicaer, kurs og festivaler",generated_at=Dates.format(now(),dateformat"yyyy-mm-dd HH:MM"),submit_url=SUBMIT_URL,correct_url=CORRECT_URL,ai_url="for-ki.html",today::Date=Dates.today())
+function render_events_html(events; view="cards",site=false,title=SITE_NAME,subtitle="Milongaer, practicaer, kurs og festivaler",generated_at=Dates.format(now(),dateformat"yyyy-mm-dd HH:MM"),submit_url=nothing,correct_url=CORRECT_URL,today::Date=Dates.today())
  view in first.(_VIEWS) || throw(ArgumentError("unknown view $view"))
- submit=_esc(_http(submit_url))
- hero_submit=isempty(submit) ? "" : "<a class=\"submit\" href=\"$submit\" target=\"_blank\" rel=\"noopener\">+ Legg til arrangement</a>"
- footer_submit=isempty(submit) ? "" : " · <a href=\"$submit\" target=\"_blank\" rel=\"noopener\">Legg til arrangement</a>"
- ai=_esc(occursin(r"^(https?://|[A-Za-z0-9._-]+\.html$)",string(ai_url)) ? string(ai_url) : "")   # absolute URL or a relative page
- isempty(ai) || (hero_submit*=" <a class=\"submit ghost\" href=\"$ai\">Bruk KI</a>"; footer_submit*=" · <a href=\"$ai\">Bruk KI til å legge inn</a>")
+ # one «Legg til arrangement» link: the combined page on the site, the issue form directly for a standalone page
+ su=string(something(submit_url, site ? ADD_PAGE : SUBMIT_URL))
+ submit=_esc(occursin(r"^(https?://|[A-Za-z0-9._-]+\.html(#[a-z-]+)?$)",su) ? su : "")   # absolute URL or a relative page
+ ext=startswith(su,"http") ? " target=\"_blank\" rel=\"noopener\"" : ""
+ hero_submit=isempty(submit) ? "" : "<a class=\"submit\" href=\"$submit\"$ext>+ Legg til arrangement</a>"
+ footer_submit=isempty(submit) ? "" : " · <a href=\"$submit\"$ext>Legg til arrangement</a>"
  tabs=site ? "<nav class=\"tabs\" aria-label=\"Visning\">"*join(("<a href=\"$f\"$(v==view ? " class=\"on\" aria-current=\"page\"" : "")>$l</a>" for (v,(f,l)) in _VIEWS),"")*"</nav>" : ""
  feeds=site ? " · <span class=\"feeds\"><a href=\"webcal://$(replace(SITE_URL,r"^https?://"=>""))/kalender.ics\">Abonner på kalenderen</a> · <a href=\"kalender.ics\">.ics</a> · <a href=\"rss.xml\">RSS</a></span>" : ""
  headlinks=site ? "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$(_esc(SITE_NAME))\" href=\"rss.xml\"><link rel=\"canonical\" href=\"$SITE_URL/$(Dict(_VIEWS)[view][1]=="index.html" ? "" : Dict(_VIEWS)[view][1])\">" : ""
