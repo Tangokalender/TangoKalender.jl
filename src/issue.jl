@@ -53,7 +53,14 @@ Fields without special syntax are returned as text. Shared by new-event and corr
 function _parse_field(label::AbstractString,s::AbstractString)
  bad(m)=(nothing,m)
  if label=="Type"
-  t=_lookup(_TYPES,s); isnothing(t) ? bad("Ukjent «Type»: $s.") : (t,nothing)
+  # ticked boxes from the forms, or a list from the spreadsheet: «Kurs, Milonga» / «Kurs og milonga» / slugs
+  items=occursin(r"^\s*- \[",s) ? _checked(s) : split(s,r"\s*(?:[,;+&/]|\bog\b)\s*";keepempty=false)
+  ts=String[]
+  for it in items
+   k=strip(it); t=something(_lookup(_TYPES,k),findfirst(v->lowercase(v)==lowercase(k),_TYPES),haskey(_TYPES,lowercase(k)) ? lowercase(k) : nothing,Some(nothing))
+   isnothing(t) ? (return bad("Ukjent «Type»: $k.")) : (t in ts || push!(ts,t))
+  end
+  isempty(ts) ? bad("Velg minst én «Type».") : (sort!(ts,by=t->findfirst(==(t),TYPE_ORDER)),nothing)
  elseif label in ("Dato","Gjentas til")
   d=_date(s); isnothing(d) ? bad("«$label» må være en dato, ÅÅÅÅ-MM-DD eller DD.MM.ÅÅÅÅ (fikk «$s»).") : (d,nothing)
  elseif label in ("Starttid","Sluttid")
@@ -111,7 +118,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  isempty(errs) || return (JSON.Object{String,Any}[],errs)
  slug=_slug(title); none(s)=isempty(s) ? nothing : s
- base=JSON.Object{String,Any}("id"=>"$slug-$(Dates.format(date,"yyyy-mm-dd"))","title"=>title,"type"=>typ,"status"=>"scheduled","series"=>weekly ? slug : nothing,
+ base=JSON.Object{String,Any}("id"=>"$slug-$(Dates.format(date,"yyyy-mm-dd"))","title"=>title,"types"=>typ,"status"=>"scheduled","series"=>weekly ? slug : nothing,
   "start"=>_stamp(date,st),"end"=>isnothing(et) ? nothing : _end_stamp(date,st,et),
   "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>"Oslo"),"organizer"=>org,"dj"=>none(get_("DJ")),
   "teachers"=>something(val("Lærere"),Any[]),

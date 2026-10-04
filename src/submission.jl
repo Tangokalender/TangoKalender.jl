@@ -4,17 +4,17 @@ const SUBMISSION_SCHEMA_URL=SITE_URL*"/schema/tango-event-submission.schema.json
 const BOT_FIELDS=["id","series","source","source_url","published_date","first_seen","last_verified","crawl_timestamp","confidence","video"]
 const MAX_SUBMISSION=60
 "Required keys for submitted events (everything else may be null or left out)."
-const SUBMISSION_REQUIRED=["title","type","start","venue","organizer","link"]
+const SUBMISSION_REQUIRED=["title","types","start","venue","organizer","link"]
 const _LOCALTIME="^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(Z|[+-][0-9]{2}:[0-9]{2})?)?\$"
 const TYPE_HELP=Dict("milonga"=>"social dance evening","practica"=>"practice evening","class"=>"class or course",
- "class_and_social"=>"class followed by a milonga","class_and_practica"=>"class followed by a practica","workshop"=>"workshop or seminar",
+ "workshop"=>"workshop or seminar","outdoor"=>"open-air / outdoor event (utetango); combine with e.g. milonga",
  "festival"=>"festival or multi-day event with workshops","marathon"=>"multi-day, mostly social dancing","other"=>"anything else")
 const MUSIC_HELP=Dict("traditional"=>"traditional / golden-age tango","alternative"=>"alternative or neo tango","live_orchestra"=>"live orchestra")
-_typelist()=join(("$k ($(TYPE_HELP[k]))" for k in sort(collect(keys(_TYPES)))),", ")
+_typelist()=join(("$k ($(TYPE_HELP[k]))" for k in TYPE_ORDER),", ")
 _musiclist()=join(("$k ($(MUSIC_HELP[k]))" for k in sort(collect(keys(_MUSIC)))),", ")
 const _DESCRIPTIONS=Dict(
  "title"=>"Event name as written by the organiser.",
- "type"=>"One of: " ,   # completed in submission_schema()
+ "types"=>"A list with one or more of the following (e.g. [\"class\", \"milonga\"] for a class followed by a milonga): " ,   # completed in submission_schema()
  "status"=>"\"cancelled\" only if the source says the event is cancelled; otherwise omit.",
  "start"=>"Oslo local start time, \"YYYY-MM-DDTHH:MM\" (no time zone), or \"YYYY-MM-DD\" if no time is given.",
  "end"=>"Oslo local end time in the same format. If it ends after midnight, use the next day's date. null if not stated.",
@@ -45,7 +45,7 @@ function submission_schema()
  props["video_url"]=JSON.Object{String,Any}("\$ref"=>"#/definitions/url")
  props["venue"]["type"]="object"; props["venue"]["required"]=["name","address"]
  for (k,d) in _DESCRIPTIONS
-  d=k=="type" ? d*_typelist()*"." : k=="music_style" ? d*_musiclist()*"." : d
+  d=k=="types" ? d*_typelist()*"." : k=="music_style" ? d*_musiclist()*"." : d
   p=props[k]; haskey(p,"\$ref") ? (props[k]=JSON.Object{String,Any}("description"=>d,"allOf"=>[p])) : (p["description"]=d)
  end
  event=JSON.Object{String,Any}("type"=>"object","required"=>SUBMISSION_REQUIRED,
@@ -102,7 +102,14 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
  raw=_extract_json(text); isnothing(raw) && (err("Fant ingen JSON i feltet. Lim inn svaret fra KI-assistenten (det som starter med { eller [)."); return fail())
  data=try JSON.parse(raw) catch e; err("JSON-en kan ikke leses: $(first(split(sprint(showerror,e),'\n')))"); return fail() end
  items=data isa AbstractVector ? collect(data) : [data]; multi=data isa AbstractVector
- for x in items; x isa AbstractDict && foreach(k->delete!(x,k),BOT_FIELDS); end   # the bot sets these itself
+ for x in items
+  x isa AbstractDict || continue
+  foreach(k->delete!(x,k),BOT_FIELDS)   # the bot sets these itself
+  if haskey(x,"type") && !haskey(x,"types")   # tolerate the singular form an assistant may still produce
+   t=x["type"]; ts=t isa AbstractVector ? collect(t) : t=="class_and_social" ? ["class","milonga"] : t=="class_and_practica" ? ["class","practica"] : [t]
+   x["types"]=ts; delete!(x,"type")
+  end
+ end
  isempty(items) && (err("Lista er tom."); return fail())
  length(items)>MAX_SUBMISSION && (err("Høyst $MAX_SUBMISSION arrangementer per innsending (fikk $(length(items)))."); return fail())
  sch=_submission_event_schema()[2]
@@ -126,7 +133,7 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   for (f,n) in ("name"=>"venue.name","address"=>"venue.address"); isnothing(_none(get(v,f,nothing))) && err("$(at)«$n» må fylles ut."); end
   vurl=_none(get(x,"video_url",nothing)); video=isnothing(vurl) ? nothing : _video_from_url(vurl)
   !isnothing(vurl) && isnothing(video) && err("$(at)«video_url» må være en lenke til YouTube eller Vimeo.")
-  e=JSON.Object{String,Any}("id"=>id,"title"=>strip(_s(x["title"])),"type"=>x["type"],"status"=>something(_none(get(x,"status",nothing)),"scheduled"),
+  e=JSON.Object{String,Any}("id"=>id,"title"=>strip(_s(x["title"])),"types"=>sort!(unique(string.(x["types"])),by=t->something(findfirst(==(t),TYPE_ORDER),99)),"status"=>something(_none(get(x,"status",nothing)),"scheduled"),
    "series"=>counts[slugs[k]]>1 ? slugs[k] : nothing,"start"=>_stamp(d,t),"end"=>stamp_end,
    "venue"=>JSON.Object{String,Any}("name"=>_none(get(v,"name",nothing)),"address"=>_none(get(v,"address",nothing)),"city"=>something(_none(get(v,"city",nothing)),"Oslo")),
    "organizer"=>_none(get(x,"organizer",nothing)),"dj"=>_none(get(x,"dj",nothing)),"teachers"=>collect(something(get(x,"teachers",nothing),Any[])),

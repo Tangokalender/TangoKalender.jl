@@ -20,7 +20,7 @@ end
  @test_throws ArgumentError event_path(Dict("id"=>"x","start"=>nothing))
 end
 @testset "weekly expansion" begin
- t=Dict{String,Any}("id"=>"kurs","title"=>"Kurs","type"=>"class","weekday"=>"Tuesday","start_time"=>"18:00","end_time"=>"20:00","dj"=>nothing)
+ t=Dict{String,Any}("id"=>"kurs","title"=>"Kurs","types"=>["class"],"weekday"=>"Tuesday","start_time"=>"18:00","end_time"=>"20:00","dj"=>nothing)
  xs=expand_weekly(t; from=Date(2026,10,14), until=Date(2026,11,3), except=[Date(2026,10,27)])
  @test [x["id"] for x in xs]==["kurs-2026-10-20","kurs-2026-11-03"]
  @test xs[1]["start"]=="2026-10-20T18:00:00+02:00" && xs[2]["end"]=="2026-11-03T20:00:00+01:00"
@@ -36,7 +36,8 @@ end
  good=load_events(joinpath(MEDIA,"2026","12-december","2026-12-05-milonga-video.json"))
  @test isempty(validate_event(good))
  bad(f)=(e=deepcopy(good); f(e); !isempty(validate_event(e)))
- @test bad(e->e["type"]="disco")
+ @test bad(e->e["types"]=["disco"]) && bad(e->e["types"]=String[]) && bad(e->delete!(e,"types")) && bad(e->e["types"]="milonga")
+ @test bad(e->e["types"]=["milonga","milonga"])                                  # unique
  @test bad(e->delete!(e,"title"))
  @test bad(e->e["start"]="15.10.2026")
  @test bad(e->delete!(e,"start"))
@@ -96,18 +97,18 @@ end
  @test L("2026-10-09T17:00:00+02:00","2026-10-12T00:00:00+02:00")=="fredag 9. okt · 17:00 – søndag 11. okt"
  @test L("2026-10-02","2026-10-06")=="fredag 2. okt – tirsdag 6. okt"
  @test L("2026-10-05T20:00:00+02:00","2026-10-04T00:00:00+02:00")=="mandag 5. okt · 20:00"            # end before start ignored
- @test occursin("<aside>fredag 15. jan</aside>",render_events_html([Dict("title"=>"x","type"=>"festival","start"=>"2027-01-15")]))
- @test occursin("<aside>fredag 9. okt · 17:00</aside>",render_events_html([Dict("title"=>"x","type"=>"festival","start"=>"2026-10-09T17:00:00+02:00")]))
+ @test occursin("<aside>fredag 15. jan</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2027-01-15")]))
+ @test occursin("<aside>fredag 9. okt · 17:00</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2026-10-09T17:00:00+02:00")]))
 end
 @testset "submit link" begin
- h=render_events_html([Dict("title"=>"a","type"=>"milonga","start"=>"2026-10-01")])
+ h=render_events_html([Dict("title"=>"a","types"=>["milonga"],"start"=>"2026-10-01")])
  @test count(TangoKalender.SUBMIT_URL,h)==2 && occursin("+ Legg til arrangement</a>",h)
- @test !occursin("Legg til arrangement",render_events_html([Dict("title"=>"a","type"=>"milonga","start"=>"2026-10-01")]; submit_url=""))
- @test !occursin("javascript:",render_events_html([Dict("title"=>"a","type"=>"milonga","start"=>"2026-10-01")]; submit_url="javascript:alert(1)"))
+ @test !occursin("Legg til arrangement",render_events_html([Dict("title"=>"a","types"=>["milonga"],"start"=>"2026-10-01")]; submit_url=""))
+ @test !occursin("javascript:",render_events_html([Dict("title"=>"a","types"=>["milonga"],"start"=>"2026-10-01")]; submit_url="javascript:alert(1)"))
 end
 @testset "norwegian labels" begin
- h=render_events_html([Dict("title"=>"a","type"=>"class_and_social","start"=>"2026-10-01"),Dict("title"=>"b","type"=>"class","start"=>"2026-10-02")])
- @test occursin("<span class=\"chip\">Kurs og milonga</span>",h) && occursin("<input type=\"checkbox\" name=\"type\" value=\"class\"><span>Kurs</span>",h)
+ h=render_events_html([Dict("title"=>"a","types"=>["class","milonga"],"start"=>"2026-10-01"),Dict("title"=>"b","types"=>["class"],"start"=>"2026-10-02")])
+ @test occursin("<span class=\"chip\">Kurs</span> <span class=\"chip\">Milonga</span>",h) && occursin("<input type=\"checkbox\" name=\"type\" value=\"class\"><span>Kurs</span>",h)
  @test !occursin("Class And Social",h)
 end
 @testset "issue form" begin
@@ -117,14 +118,14 @@ end
  ev,errs=TangoKalender.events_from_form(f; issue_url="https://github.com/o/r/issues/7", today=T)
  @test isempty(errs) && length(ev)==1
  e=ev[1]
- @test e["id"]=="milonga-pa-torget-2026-11-14" && e["type"]=="milonga" && isnothing(e["series"])
+ @test e["id"]=="milonga-pa-torget-2026-11-14" && e["types"]==["milonga"] && isnothing(e["series"])
  @test e["start"]=="2026-11-14T20:30:00+01:00" && e["end"]=="2026-11-15T01:00:00+01:00"
  @test e["price_nok"]==150 && e["student_price_nok"]==100 && e["music_style"]==["traditional","live_orchestra"]
  @test e["flyer_url"]=="https://github.com/user-attachments/assets/0a1b2c3d-1111-2222-3333-444455556666"
  @test e["video"]==Dict("platform"=>"youtube","id"=>"dQw4w9WgXcQ") && e["source_url"]=="https://github.com/o/r/issues/7"
  ev,errs=TangoKalender.events_from_form(form("weekly"); today=T)
  @test isempty(errs) && [x["id"] for x in ev]==["ovingskveld-pa-lokka-2026-$d" for d in ("10-20","10-27","11-10","11-17")]
- @test all(x["series"]=="ovingskveld-pa-lokka" && x["type"]=="class_and_practica" for x in ev)
+ @test all(x["series"]=="ovingskveld-pa-lokka" && x["types"]==["class","practica"] for x in ev)
  @test ev[2]["start"]=="2026-10-27T19:00:00+01:00" && ev[1]["teachers"]==["Lærer A","Lærer B"] && ev[1]["video"]["platform"]=="vimeo"
  ev,errs=TangoKalender.events_from_form(form("invalid"); today=T)
  @test isempty(ev) && length(errs)==8
@@ -142,7 +143,7 @@ end
  # GitHub's YAML loader rejects the whole form if a scalar parses as a Date/Time ("Tried to load unspecified class: Date")
  @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
  opts=Set(strip(m[1]) for m in eachmatch(r"^        - (?!label:)(.+)$"m,tmpl))
- @test all(v in opts for v in values(TangoKalender._TYPES))
+ @test all(v in Set(strip(m[1]) for m in eachmatch(r"^        - label: (.+)$"m,tmpl)) for v in values(TangoKalender._TYPES))
  @test all(v in Set(strip(m[1]) for m in eachmatch(r"^        - label: (.+)$"m,tmpl)) for v in values(TangoKalender._MUSIC))
 end
 @testset "from-issue cli" begin
@@ -235,11 +236,11 @@ end
  @test TK._end_day(Dict("start"=>"2026-10-02T21:00:00+02:00","end"=>"2026-10-03T01:30:00+02:00"))=="2026-10-02"   # evening past midnight
  @test TK._end_day(Dict("start"=>"2026-10-09T17:00:00+02:00","end"=>"2026-10-12T00:00:00+02:00"))=="2026-10-11"
  @test TK._end_day(Dict("start"=>"2026-10-02","end"=>"2026-10-06"))=="2026-10-06" && TK._end_day(Dict("start"=>"2026-11-28"))=="2026-11-28"
- evs=[Dict("title"=>"Fortid","type"=>"milonga","start"=>"2026-09-30T20:00:00+02:00"),
-      Dict("title"=>"Festival","type"=>"festival","start"=>"2026-10-01","end"=>"2026-10-04"),
-      Dict("title"=>"Sen milonga","type"=>"milonga","start"=>"2026-10-01T21:00:00+02:00","end"=>"2026-10-02T01:00:00+02:00"),
-      Dict("title"=>"I dag","type"=>"practica","start"=>"2026-10-02T19:00:00+02:00","series"=>"s"),
-      Dict("title"=>"Neste uke","type"=>"milonga","start"=>"2026-10-08T20:00:00+02:00")]
+ evs=[Dict("title"=>"Fortid","types"=>["milonga"],"start"=>"2026-09-30T20:00:00+02:00"),
+      Dict("title"=>"Festival","types"=>["festival"],"start"=>"2026-10-01","end"=>"2026-10-04"),
+      Dict("title"=>"Sen milonga","types"=>["milonga"],"start"=>"2026-10-01T21:00:00+02:00","end"=>"2026-10-02T01:00:00+02:00"),
+      Dict("title"=>"I dag","types"=>["practica"],"start"=>"2026-10-02T19:00:00+02:00","series"=>"s"),
+      Dict("title"=>"Neste uke","types"=>["milonga"],"start"=>"2026-10-08T20:00:00+02:00")]
  h=render_events_html(evs)
  @test occursin("<option value=\"upcoming\" selected>Kommende</option>",h) && occursin("data-end=\"2026-10-04\"",h)
  node=Sys.which("node")
@@ -263,7 +264,8 @@ end
  s=TK.submission_schema(); ev=s["definitions"]["event"]["properties"]
  @test isnothing(TK.JSONSchema.validate(TK.JSONSchema.Schema(s),JSON.parse(TK.EXAMPLE_OUTPUT)))       # the published example is valid
  @test !any(haskey(ev,k) for k in TK.BOT_FIELDS) && haskey(ev,"video_url")
- @test ev["type"]["enum"]==JSON.parsefile(TK.SCHEMA_FILE)["properties"]["type"]["enum"]
+ enum=JSON.parsefile(TK.SCHEMA_FILE)["properties"]["types"]["items"]["enum"]
+ @test ev["types"]["items"]["enum"]==enum && Set(enum)==Set(TK.TYPE_ORDER)==Set(keys(TK._TYPES))
  # drift guard: the worked example in llms.txt converts to valid stored events
  events,errs=TK.events_from_json(TK.EXAMPLE_OUTPUT; issue_url="https://github.com/o/r/issues/3", today=Date(2027,1,1))
  @test isempty(errs) && length(events)==1
@@ -272,7 +274,7 @@ end
  @test e["source"]=="Innsendt via KI-skjema" && e["source_url"]=="https://github.com/o/r/issues/3" && isnothing(e["series"]) && isempty(validate_event(e))
  @test occursin(TK.EXAMPLE_OUTPUT,TK.llms_txt()) && occursin(TK.SUBMISSION_SCHEMA_URL,TK.llm_prompt())
  # fences + prose, arrays → series, Oslo offsets recomputed (wrong +01:00 in October), same-day end before start → next day
- ev1(d,st,en;kw...)=Dict{String,Any}("title"=>"Practica på Løkka","type"=>"practica","start"=>"$(d)T$st","end"=>"$(d)T$en",
+ ev1(d,st,en;kw...)=Dict{String,Any}("title"=>"Practica på Løkka","types"=>["practica"],"start"=>"$(d)T$st","end"=>"$(d)T$en",
   "venue"=>Dict("name"=>"Løkka Dans","address"=>"Thorvald Meyers gate 1"),"organizer"=>"Løkka Tango","link"=>"https://example.org/p",(string(k)=>v for (k,v) in kw)...)
  arr=[ev1("2026-10-21","19:00+01:00","22:00";id="hacked",confidence=0.1),ev1("2026-10-28","21:00","01:30";video_url="https://youtu.be/dQw4w9WgXcQ")]
  events,errs=TK.events_from_json("Her er svaret:\n```json\n$(JSON.json(arr,2))\n```\nSi ifra om noe mangler!"; today=T)
@@ -284,9 +286,12 @@ end
  msg(t)=TK.events_from_json(t; today=T)[2]
  @test only(msg("ingen json her"))|>m->occursin("Fant ingen JSON",m)
  @test only(msg("{\"title\": \"x\""))|>m->occursin("kan ikke leses",m)
- @test only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";type="disco"))))=="«type»: \"disco\" er ikke en gyldig verdi. Lovlige verdier: milonga, practica, festival, marathon, class, workshop, class_and_social, class_and_practica, other."
+ @test only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";types=["disco"]))))=="«types[1]»: \"disco\" er ikke en gyldig verdi. Lovlige verdier: milonga, practica, class, workshop, festival, marathon, outdoor, other."
+ # an assistant may still answer with the old singular field (or a combined value): converted, not rejected
+ old=ev1("2026-10-21","19:00","22:00"); delete!(old,"types"); old["type"]="class_and_social"
+ r=TK.events_from_json(JSON.json(old);today=T); @test isempty(r[2]) && r[1][1]["types"]==["class","milonga"]
  @test occursin("«[1].venue.name»",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-28","19:00","22:00";venue=Dict("name"=>3,"address"=>"b"))]))))
- @test occursin("mangler påkrevd felt: type, start, venue, organizer, link",only(msg("{\"title\":\"X\"}")))
+ @test occursin("mangler påkrevd felt: types, start, venue, organizer, link",only(msg("{\"title\":\"X\"}")))
  # organizer is mandatory, and the rules tell the model where to find it
  noorg=ev1("2026-10-24","16:00","18:00"); delete!(noorg,"organizer")
  @test only(msg(JSON.json([noorg])))=="«[0]» mangler påkrevd felt: organizer."
@@ -322,10 +327,10 @@ end
 end
 @testset "views, event pages, ics, rss" begin
  TK=TangoKalender; T=Date(2026,10,2)
- E(id,st;kw...)=Dict{String,Any}("id"=>id,"title"=>"Milonga $id","type"=>"milonga","start"=>st,"venue"=>Dict("name"=>"Salen","address"=>"Gata 1, Oslo"),
+ E(id,st;kw...)=Dict{String,Any}("id"=>id,"title"=>"Milonga $id","types"=>["milonga"],"start"=>st,"venue"=>Dict("name"=>"Salen","address"=>"Gata 1, Oslo"),
   "organizer"=>"Klubben","last_verified"=>"2026-10-01","first_seen"=>"2026-09-30",(string(k)=>v for (k,v) in kw)...)
  evs=[E("a","2026-10-24T16:00:00+02:00";end_="x"),E("b","2026-11-14T16:00:00+01:00";first_seen="2026-10-01",series="s"),
-      E("c","2026-10-09";type="festival",var"end"="2026-10-11",title="Festival & <Fest>"),E("old","2026-09-01T20:00:00+02:00"),
+      E("c","2026-10-09";types=["festival"],var"end"="2026-10-11",title="Festival & <Fest>"),E("old","2026-09-01T20:00:00+02:00"),
       E("d","2026-11-21T16:00:00+01:00";series="s",status="cancelled",dj="DJ Æøå",price_nok=150)]
  for e in evs; delete!(e,"end_"); end
  # --- ICS
@@ -415,7 +420,7 @@ end
 end
 @testset "icons" begin
  TK=TangoKalender
- e=Dict{String,Any}("id"=>"x","title"=>"Milonga X","type"=>"milonga","start"=>"2026-10-24T20:00:00+02:00","venue"=>Dict("name"=>"Salen","address"=>"Gata 1"),
+ e=Dict{String,Any}("id"=>"x","title"=>"Milonga X","types"=>["milonga"],"start"=>"2026-10-24T20:00:00+02:00","venue"=>Dict("name"=>"Salen","address"=>"Gata 1"),
   "organizer"=>"Klubben","dj"=>"DJ Y","teachers"=>["A","B"],"price_nok"=>150,"music_style"=>["traditional"])
  pages=[render_events_html([e];view=v,site=true) for v in ("compact","week","cards")]; push!(pages,TK.render_event_page(e,[e]))
  for h in pages
@@ -433,7 +438,7 @@ end
 
 # ---------------------------------------------------------------------------------------------------------------
 # Filters: multi-select and URL state (Node harness), and what a real browser actually shows (headless Chrome).
-FILTER_EVENTS=[Dict{String,Any}("id"=>id,"title"=>t,"type"=>ty,"start"=>st,"venue"=>Dict("name"=>"Salen $id","address"=>"Gata 1"),"organizer"=>"Klubb",
+FILTER_EVENTS=[Dict{String,Any}("id"=>id,"title"=>t,"types"=>[ty],"start"=>st,"venue"=>Dict("name"=>"Salen $id","address"=>"Gata 1"),"organizer"=>"Klubb",
   "music_style"=>mu,(isnothing(en) ? () : ("end"=>en,))...) for (id,t,ty,st,en,mu) in [
  ("a","Milonga A","milonga","2035-03-05T20:00:00+01:00",nothing,Any[]),
  ("b","Practica B","practica","2035-03-06T19:00:00+01:00",nothing,Any["traditional"]),
@@ -545,7 +550,7 @@ end
  one,_=TK.events_from_table(H*full;today=T); @test isnothing(one[1]["series"])                          # a single row is not a series
  # column headings: any order, aliases, unknown/duplicate columns rejected
  ev2,e2=TK.events_from_table("dato\ttittel\ttype\ttid\tsted\tadresse\tarrangor\tlenke\tpris\n16.10.2026\tX\tPractica\t19:00\tS\tA\tK\thttps://x\t80";today=T)
- @test isempty(e2) && ev2[1]["type"]=="practica" && ev2[1]["price_nok"]==80
+ @test isempty(e2) && ev2[1]["types"]==["practica"] && ev2[1]["price_nok"]==80
  @test occursin("Ukjent kolonne «Farge»",only(TK.events_from_table("Tittel\tFarge\nX\tblå";today=T)[2]))
  @test occursin("finnes flere ganger",only(TK.events_from_table("Dato\tDato\n1\t2";today=T)[2]))
  # errors carry the spreadsheet row number and the form's messages
@@ -574,9 +579,40 @@ end
  h=TK.om_html()
  @test occursin("Et felles prosjekt",h) && occursin("frivillige og arrangører",h) && occursin("Slik støtter du kalenderen",h)
  @test occursin("spandere en drink",h) && occursin("href=\"legg-til.html\"",h) && occursin("<link rel=\"canonical\" href=\"$(TK.SITE_URL)/om.html\">",h)
- ev=[Dict{String,Any}("id"=>"a","title"=>"A","type"=>"milonga","start"=>"2035-03-05T20:00:00+01:00","venue"=>Dict("name"=>"S","address"=>"G"))]
+ ev=[Dict{String,Any}("id"=>"a","title"=>"A","types"=>["milonga"],"start"=>"2035-03-05T20:00:00+01:00","venue"=>Dict("name"=>"S","address"=>"G"))]
  @test occursin("<a href=\"om.html\">Om kalenderen</a>",render_events_html(ev;view="compact",site=true))      # footer link on the site
  @test !occursin("om.html",render_events_html(ev))                                                            # not on a standalone page
  @test occursin("href=\"../../om.html\"",TK.render_event_page(ev[1],ev)) && occursin("href=\"om.html\"",TK.legg_til_html())
  mktempdir() do d; TK.write_site(d,ev); @test isfile(joinpath(d,"om.html")); end
+end
+@testset "several types per event, utetango" begin
+ TK=TangoKalender
+ E(id,ts)=Dict{String,Any}("id"=>id,"title"=>"Ev $id","types"=>ts,"start"=>"2035-03-05T20:00:00+01:00","venue"=>Dict("name"=>"S","address"=>"G"))
+ evs=[E("km",["class","milonga"]),E("ute",["milonga","outdoor"]),E("pr",["practica"])]
+ @test TK._types(E("x",["milonga","class","outdoor"]))==["class","milonga","outdoor"]                 # display order: Kurs · Milonga · Utetango
+ c=render_events_html(evs;view="compact",site=true)
+ @test occursin("data-type=\"class milonga\"",c) && occursin("<span class=\"chip\">Kurs</span> <span class=\"chip\">Milonga</span>",c)
+ @test occursin("<span class=\"chip outdoor\">Utetango</span>",c) && occursin("name=\"type\" value=\"outdoor\"><span>Utetango</span>",c)
+ pills=[m[1] for m in eachmatch(r"name=\"type\" value=\"([a-z]+)\"",c)]; @test pills==["class","milonga","practica","outdoor"]   # only types in use
+ w=render_events_html(evs;view="week",site=true); @test occursin("class=\"cell ev t-milonga outdoor\"",w) && occursin("class=\"cell ev t-class\"",w)
+ @test occursin("CATEGORIES:Kurs,Milonga\r\n",TK.calendar_ics([evs[1]])) && count("<category>",TK.rss_xml(evs[1:1];today=Date(2035,1,1)))==2
+ # filtering: an event matches if it has any of the ticked types
+ node=Sys.which("node")
+ if !isnothing(node)
+  mktempdir() do d
+   f=joinpath(d,"p.html"); write(f,c)
+   vis(q)=Set(x[3] for x in JSON.parse(read(`$node $(joinpath(@__DIR__,"js","filters.js")) $f 2034-01-01 "" $q`,String))["initial"]["rows"])
+   @test vis("?type=milonga")==Set(["km","ute"]) && vis("?type=outdoor")==Set(["ute"]) && vis("?type=class,practica")==Set(["km","pr"])
+  end
+ end
+ # forms: checkboxes (several), lists from the spreadsheet; at least one type
+ @test TK._parse_field("Type","- [X] Kurs\n- [ ] Practica\n- [X] Milonga")==(["class","milonga"],nothing)
+ @test TK._parse_field("Type","Milonga, Utetango")[1]==["milonga","outdoor"] && TK._parse_field("Type","Kurs og practica")[1]==["class","practica"]
+ @test TK._parse_field("Type","- [ ] Milonga")==(nothing,"Velg minst én «Type».") && TK._parse_field("Type","Disco")[2]=="Ukjent «Type»: Disco."
+ tm=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement.yml"),String)
+ @test occursin("type: checkboxes\n    id: type",tm) && all(occursin("- label: $l\n",tm) for l in values(TK._TYPES))
+ tr=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
+ @test occursin("type: checkboxes\n    id: type",tr) && all(occursin("- label: $l\n",tr) for l in values(TK._TYPES))
+ # the stored data has no combined or singular types left
+ @test all(haskey(e,"types") && !haskey(e,"type") for e in load_events(TREE))
 end

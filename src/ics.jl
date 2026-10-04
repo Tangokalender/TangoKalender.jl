@@ -48,7 +48,7 @@ function event_ics_lines(e; today::Date=Dates.today())
  push!(desc,event_url(e))
  push!(L,"DESCRIPTION:"*_icstext(join(desc,"\n")))
  push!(L,"URL:"*event_url(e))
- push!(L,"CATEGORIES:"*_icstext(_type_label(lowercase(_s(get(e,"type","other"))))))
+ push!(L,"CATEGORIES:"*join((_icstext(_type_label(t)) for t in _types(e)),","))   # comma-separated list
  push!(L,"STATUS:"*(_s(get(e,"status",nothing))=="cancelled" ? "CANCELLED" : "CONFIRMED"))
  push!(L,"END:VEVENT")
  L

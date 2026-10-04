@@ -1,5 +1,5 @@
-function create_event(; title, type="other", kwargs...)
- d=Dict{String,Any}("title"=>title,"type"=>type)
+function create_event(; title, types=["other"], kwargs...)
+ d=Dict{String,Any}("title"=>title,"types"=>collect(types))
  for (k,v) in kwargs; d[string(k)]=v; end
  d
 end
@@ -44,11 +44,11 @@ function expand_weekly(e; from::Date, until::Date, except=Date[], series=string(
  out=JSON.Object{String,Any}[]
  for d in first_day:Week(1):until
   d in except && continue
-  x=JSON.Object{String,Any}("id"=>"$series-$(Dates.format(d,"yyyy-mm-dd"))","title"=>e["title"],"type"=>e["type"],"status"=>"scheduled","series"=>series,
+  x=JSON.Object{String,Any}("id"=>"$series-$(Dates.format(d,"yyyy-mm-dd"))","title"=>e["title"],"types"=>e["types"],"status"=>"scheduled","series"=>series,
    "start"=>_stamp(d,get(e,"start_time",nothing)))
   et=get(e,"end_time",nothing); isnothing(et) || (x["end"]=_end_stamp(d,string(get(e,"start_time","00:00")),string(et)))
   for (k,v) in e
-   k in ("id","title","type","status","series","start","end","weekday","start_time","end_time") || (x[k]=v)
+   k in ("id","title","types","status","series","start","end","weekday","start_time","end_time") || (x[k]=v)
   end
   push!(out,x)
  end

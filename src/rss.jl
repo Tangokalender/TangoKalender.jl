@@ -23,7 +23,7 @@ function rss_xml(events; today::Date=Dates.today(), title=SITE_NAME)
   p=_price(e); p=="Pris ikke oppgitt" || push!(parts,"<p>$(_esc(p))</p>")
   dj=_s(get(e,"dj",nothing)); isempty(dj) || push!(parts,"<p>DJ: $(_esc(dj))</p>")
   d=_s(get(e,"description",nothing)); isempty(d) || push!(parts,"<p>$(_esc(d))</p>")
-  push!(items,"""<item><title>$(_xml((cancelled ? "AVLYST: " : "")*_short_label(e)*" · "*_s(e["title"])))</title><link>$(_xml(event_url(e)))</link><guid isPermaLink="true">$(_xml(event_url(e)))</guid><pubDate>$(_rfc822(seen(e)))</pubDate><category>$(_xml(_type_label(lowercase(_s(get(e,"type","other"))))))</category><description>$(_xml(join(parts,"")))</description></item>""")
+  push!(items,"""<item><title>$(_xml((cancelled ? "AVLYST: " : "")*_short_label(e)*" · "*_s(e["title"])))</title><link>$(_xml(event_url(e)))</link><guid isPermaLink="true">$(_xml(event_url(e)))</guid><pubDate>$(_rfc822(seen(e)))</pubDate>$(join(("<category>$(_xml(_type_label(t)))</category>" for t in _types(e)),""))<description>$(_xml(join(parts,"")))</description></item>""")
  end
  """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>$(_xml(title))</title><link>$SITE_URL/</link><description>Argentinsk tango i Oslo: milongaer, practicaer, kurs og festivaler</description><language>nb</language><atom:link href="$SITE_URL/rss.xml" rel="self" type="application/rss+xml"/><lastBuildDate>$(_rfc822(today))</lastBuildDate>

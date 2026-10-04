@@ -7,7 +7,7 @@ DJ: Gjeste-DJ. Inngang 150 kr, studenter 100 kr. Tradisjonell tango hele kvelden
 Arr: Tangoforeningen Fjord. https://www.facebook.com/events/000000000000000"""
 const EXAMPLE_OUTPUT="""{
   "title": "Milonga del Fiordo",
-  "type": "milonga",
+  "types": ["milonga"],
   "start": "2027-03-12T21:00",
   "end": "2027-03-13T01:30",
   "venue": {"name": "Kulturhuset Fjord", "address": "Storgata 9, Oslo", "city": "Oslo"},
@@ -25,11 +25,11 @@ const EXAMPLE_OUTPUT="""{
 }"""
 "The extraction rules, shared by llms.txt and the copy-ready prompt."
 llm_rules()="""- Output ONLY a JSON value that conforms to this JSON Schema, with no explanation around it: $SUBMISSION_SCHEMA_URL
-- Required in every object: "title", "type", "start", "venue" (with "name" and "address"), "organizer" and "link". Everything else may be null or left out.
+- Required in every object: "title", "types", "start", "venue" (with "name" and "address"), "organizer" and "link". Everything else may be null or left out.
 - "organizer" is the group or person the source names as organiser. If none is named, use the page or profile that published the event (on Facebook: the event host). Ask the user if you cannot tell.
 - One JSON object per date. If the event repeats (e.g. "every Wednesday until 9 December"), output an array with one object per date and leave out dates the source says are cancelled. If no end date is given, include the next 4 dates.
 - "start" and "end" are Oslo local time: "YYYY-MM-DDTHH:MM", without a time zone. Use "YYYY-MM-DD" when no time is given (e.g. festivals). If the event ends after midnight, "end" has the next day's date. If the year is not stated, use the next upcoming occurrence of that date.
-- "type" is one of: $(_typelist()).
+- "types" is a list with one or more of: $(_typelist()). Use several when the event combines them, e.g. ["class", "milonga"], or ["milonga", "outdoor"] for an open-air milonga.
 - "music_style" (only if the source states it) is a list of: $(_musiclist()).
 - Prices are whole Norwegian kroner as integers: "price_nok" (regular entry), "student_price_nok", "class_price_nok" (the class or course part). If a price covers a whole course or several dates (e.g. 910 kr for a 6-session course), put it in "class_price_nok" on each date, leave "price_nok" null, and say what it covers in "description" (e.g. "Pris for hele kurset.").
 - "venue" is {"name", "address", "city"}; "city" is usually "Oslo".

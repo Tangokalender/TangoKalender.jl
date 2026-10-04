@@ -52,7 +52,7 @@ end
 function _display(e)
  f=correction_fields(e)
  merge(Dict(lbl=>f[id] for (id,lbl) in CORRECTION_IDS if id!="arrangement_id"),
-  Dict("Type"=>_type_label(_s(get(e,"type","other"))),"Musikk"=>join(_music_label.(string.(something(get(e,"music_style",nothing),Any[]))),", "),
+  Dict("Type"=>_types_label(e),"Musikk"=>join(_music_label.(string.(something(get(e,"music_style",nothing),Any[]))),", "),
    "Status"=>_s(get(e,"status",nothing))=="cancelled" ? "Avlyst" : "Gjennomføres"))
 end
 """
@@ -80,8 +80,8 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
   v,e=_parse_field(label,s); isnothing(e) ? (ch[label]=v) : err(e)
  end
  t=get_("Type")
- if !isempty(t) && t!="Som før"
-  v,e=_parse_field("Type",t); isnothing(e) ? (v!=get(orig,"type",nothing) && (ch["Type"]=v)) : err(e)
+ if !isempty(_checked(t))   # no box ticked = unchanged
+  v,e=_parse_field("Type",t); isnothing(e) ? (Set(v)!=Set(_types(orig)) && (ch["Type"]=v)) : err(e)
  end
  m=get_("Musikk")
  if !isempty(_checked(m))
@@ -107,7 +107,7 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
  for (fl,e) in targets
   x=JSON.parse(JSON.json(e))   # deep copy, same key order
   apply!(k,v)=haskey(ch,k) && (x[v]=ch[k])
-  apply!("Tittel","title"); apply!("Type","type"); apply!("Arrangør","organizer"); apply!("DJ","dj"); apply!("Lenke","link")
+  apply!("Tittel","title"); apply!("Type","types"); apply!("Arrangør","organizer"); apply!("DJ","dj"); apply!("Lenke","link")
   apply!("Beskrivelse","description"); apply!("Flyer","flyer_url"); apply!("Video","video"); apply!("Musikk","music_style")
   apply!("Status","status"); haskey(ch,"Lærere") && (x["teachers"]=something(ch["Lærere"],Any[]))
   for (k,field) in PRICE_FIELDS; apply!(field,k); end

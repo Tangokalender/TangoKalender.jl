@@ -47,22 +47,20 @@ body:
     id: tittel
     attributes:
       label: Tittel
-  - type: dropdown
+  - type: checkboxes
     id: type
     attributes:
       label: Type
+      description: Kryss av bare hvis typen skal endres – da erstattes den med det du krysser av.
       options:
-        - Som før
-        - Milonga
-        - Practica
-        - Kurs
-        - Kurs og milonga
-        - Kurs og practica
-        - Workshop
-        - Festival
-        - Maraton
-        - Annet
-      default: 0
+        - label: Milonga
+        - label: Practica
+        - label: Kurs
+        - label: Workshop
+        - label: Festival
+        - label: Maraton
+        - label: Utetango
+        - label: Annet
   - type: input
     id: dato
     attributes:

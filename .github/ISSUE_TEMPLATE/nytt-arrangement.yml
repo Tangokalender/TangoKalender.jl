@@ -19,22 +19,20 @@ body:
       placeholder: f.eks. Milonga Sentimental
     validations:
       required: true
-  - type: dropdown
+  - type: checkboxes
     id: type
     attributes:
       label: Type
+      description: Kryss av én eller flere – f.eks. både Kurs og Milonga for kurs med milonga etterpå, og Utetango for arrangementer utendørs.
       options:
-        - Milonga
-        - Practica
-        - Kurs
-        - Kurs og milonga
-        - Kurs og practica
-        - Workshop
-        - Festival
-        - Maraton
-        - Annet
-    validations:
-      required: true
+        - label: Milonga
+        - label: Practica
+        - label: Kurs
+        - label: Workshop
+        - label: Festival
+        - label: Maraton
+        - label: Utetango
+        - label: Annet
   - type: input
     id: dato
     attributes:
