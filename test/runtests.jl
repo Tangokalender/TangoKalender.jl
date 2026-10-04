@@ -465,16 +465,18 @@ function find_chrome()
  for c in ("google-chrome","google-chrome-stable","chromium","chromium-browser","chrome","chrome-headless-shell"); x=Sys.which(c); isnothing(x) || return x; end
  nothing
 end
-const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);</script>"
+const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);var m=document.getElementById('morefilters'),c=document.getElementById('fcount');if(m)document.body.setAttribute('data-more',m.getClientRects().length?'1':'0');if(c)document.body.setAttribute('data-fcount',c.textContent);</script>"
 "Load `page` in headless Chrome at `?search`, return (visible event ids, ticked boxes, url, dom)."
-function browser_view(chrome,dir,page,search)
+function browser_view(chrome,dir,page,search;size="1280,900")
  f=joinpath(dir,"b.html"); write(f,replace(page,"</body>"=>PROBE*"</body>"))
- dom=read(pipeline(`$chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=3000 --dump-dom file://$f$search`;stderr=devnull),String)
+ dom=read(pipeline(`$chrome --headless --no-sandbox --disable-gpu --window-size=$size --virtual-time-budget=3000 --dump-dom file://$f$search`;stderr=devnull),String)
  vis=Set(m[1] for m in eachmatch(r"<article class=\"[^\"]*\bev\b[^\"]*\" data-eid=\"([^\"]+)\"[^>]*data-vis=\"1\"",dom))
  hid=Set(m[1] for m in eachmatch(r"<article class=\"[^\"]*\bev\b[^\"]*\" data-eid=\"([^\"]+)\"[^>]*data-vis=\"0\"",dom))
  ticked=Set(m[1] for m in eachmatch(r"<input type=\"checkbox\" name=\"[a-z]+\" value=\"([^\"]+)\" data-checked=\"1\"",dom))
  url=something(match(r"<body[^>]*data-url=\"([^\"]*)\"",dom),(nothing,""))[1]
- (vis=setdiff(vis,Set{String}()),hid,ticked,url=replace(url,"&amp;"=>"&"),dom)
+ more=something(match(r"<body[^>]*data-more=\"([01])\"",dom),(nothing,""))[1]
+ fcount=something(match(r"<body[^>]*data-fcount=\"([^\"]*)\"",dom),(nothing,""))[1]
+ (vis=setdiff(vis,Set{String}()),hid,ticked,url=replace(url,"&amp;"=>"&"),more,fcount,dom)
 end
 @testset "filters in a real browser" begin
  chrome=find_chrome()
@@ -494,6 +496,11 @@ end
    r=browser_view(chrome,d,pages["week"],"?type=practica#uke-2035-10")                                  # the bug: rows stayed visible
    @test r.vis==Set(["b"]) && issubset(Set(["a","c","f"]),r.hid) && startswith(r.url,"?type=practica#uke-2035-10")
    r=browser_view(chrome,d,pages["cards"],"?type=class,festival"); @test r.vis==Set(["c","f"])
+   # phones: the filter block is folded away by default; the toggle shows how many filters are active
+   @test browser_view(chrome,d,pages["compact"],"").more=="1"                                            # desktop: always visible
+   r=browser_view(chrome,d,pages["compact"],"";size="390,844"); @test r.more=="0" && r.fcount==""
+   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all";size="390,844")
+   @test r.more=="0" && r.fcount==" (3)" && r.vis==Set(["a","b","p"])                                     # folded, but still filtering
   end
  end
 end
