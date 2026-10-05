@@ -8,7 +8,11 @@ Kildekode: https://github.com/Tangokalender/tangokalender.github.io
 
 ## Visninger og lenker
 
-- **Liste** (forsiden): kompakt liste gruppert per dag. **Uke**: én uke om gangen med ‹ ›. **Kort**: utfyllende kort.
+- **Liste** (forsiden): kompakt liste gruppert per dag. **Uke**: én uke om gangen med ‹ ›. **Kart**: stedene for
+  arrangementene de neste 7 dagene (eller perioden du velger) på et kart, med de samme filtrene. **Kort**: utfyllende kort.
+- Arrangementer med en presis adresse får et kart på sin egen side. Posisjonene ligger i `venues.json` og hentes fra
+  OpenStreetMap (`tangokalender geocode`, kjøres automatisk for nye innsendinger). Står en nål feil, rett tallene i
+  `venues.json` og sett `"source": "manual"` – da blir de ikke overskrevet.
 - Hvert arrangement har egen side, `https://tangokalender.github.io/arrangement/<id>/`, med alle detaljer,
   «Legg i kalender (.ics)», «Del lenke» og «Rett opp».
 - Filtrene ligger i adressen og kan deles eller bokmerkes, f.eks.

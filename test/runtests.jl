@@ -797,3 +797,66 @@ end
   @test occursin("Tittel (andre språk): Evening milonga",TK.current_summary(x)) && occursin("Tekstspråk: Norsk",TK.current_summary(x))
  end
 end
+@testset "maps: venue cache, geocoding, event map, «Kart» view" begin
+ TK=TangoKalender; T=Date(2026,10,5)
+ @test TK._addrkey("Prinsens gate 26, 0157 Oslo")==TK._addrkey("Prinsens gate 26, Oslo")=="prinsens gate 26" && TK._addrkey("Karl Johans gt. 1")=="karl johans gate 1"
+ E(id,addr;kw...)=Dict{String,Any}("id"=>id,"title"=>"Milonga $id","types"=>["milonga"],"start"=>"2026-10-08T20:00:00+02:00","venue"=>Dict("name"=>"Sal $id","address"=>addr),(string(k)=>v for (k,v) in kw)...)
+ evs=[E("a","Storgata 1, 0155 Oslo"),E("b","Veien 2"),E("c","Ukjent sted 9"),E("d","Storgata 1, Oslo";types=["practica"]),E("e","Manuell vei 5")]
+ # geocoding with a stubbed Nominatim: house hit, street-only hit, not found, network error
+ calls=String[]
+ fake(q)=(push!(calls,q); startswith(q,"Storgata") ? Dict("lat"=>"59.91","lon"=>"10.75","address"=>Dict("house_number"=>"1"),"osm_type"=>"node","osm_id"=>1) :
+  startswith(q,"Veien") ? Dict("lat"=>"59.9","lon"=>"10.7","category"=>"highway","address"=>Dict("road"=>"Veien")) :
+  startswith(q,"Ukjent") ? nothing : error("timeout"))
+ v=Dict{String,Any}("manuell vei 5"=>Dict{String,Any}("address"=>"Manuell vei 5","lat"=>59.95,"lon"=>10.8,"precision"=>"street","source"=>"manual"))
+ added,failed=TK.geocode!(v,evs;fetch=fake,pause=0,today=T)
+ @test added==["Storgata 1, 0155 Oslo","Veien 2, Oslo","Ukjent sted 9, Oslo"] && isempty(failed) && calls==added              # one query per address; manual untouched
+ @test v["storgata 1"]["precision"]=="house" && v["veien 2"]["precision"]=="street" && v["ukjent sted 9"]["precision"]=="none" && v["storgata 1"]["osm"]=="node/1"
+ empty!(calls); TK.geocode!(v,evs;fetch=fake,pause=0); @test isempty(calls)                                                  # cached, «none» not retried
+ TK.geocode!(v,evs;fetch=fake,pause=0,retry=true); @test calls==["Ukjent sted 9, Oslo"]
+ @test only(TK.geocode!(Dict{String,Any}(),[E("x","Feil 1")];fetch=q->error("timeout"),pause=0)[2]) |> s->occursin("timeout",s)     # network errors: not stored
+ # only precise (house) or manual positions are used
+ @test venue_coords(evs[1],v)==(59.91,10.75)==venue_coords(evs[4],v) && isnothing(venue_coords(evs[2],v)) && isnothing(venue_coords(evs[3],v)) && venue_coords(evs[5],v)==(59.95,10.8)
+ @test isnothing(venue_coords(Dict("venue"=>nothing),v)) && isnothing(venue_coords(evs[1]))                                  # no cache in scope
+ mktempdir() do d
+  f=joinpath(d,"venues.json"); save_venues(v,f); @test load_venues(f)==JSON.parse(JSON.json(v)) && isempty(validate_venues(f))
+  write(f,"[{\"address\":\"X\",\"lat\":1,\"lon\":2,\"precision\":\"exact\",\"source\":\"nominatim\"}]"); @test !isempty(validate_venues(f))
+  @test isempty(validate_venues(joinpath(d,"none.json")))
+ end
+ @test isempty(validate_venues(joinpath(ROOT,"venues.json")))                                                                  # the committed cache
+ # event page: map card and JSON-LD geo only with a precise position
+ p=TK._with_venues(()->TK.render_event_page(evs[1],evs;today=T),v)
+ @test occursin("id=\"evmap\"",p) && occursin("data-lat=\"59.91\"",p) && occursin("leaflet.js\" integrity=\"sha512-",p) && occursin("\"geo\":{\"@type\":\"GeoCoordinates\"",p)
+ p2=TK._with_venues(()->TK.render_event_page(evs[2],evs;today=T),v); @test !occursin("evmap",p2) && !occursin("leaflet",p2) && !occursin("GeoCoordinates",p2)
+ @test occursin("<h2>Mapa</h2>",TK._with_venues(()->TK.render_event_page(evs[1],evs;today=T,lang="es"),v))
+ # the «Kart» view: rows carry positions, default period «next 7 days», same filters
+ k=TK._with_venues(()->render_events_html(evs;view="map",site=true,today=T),v)
+ @test count("data-lat=",k)==3 && occursin("id=\"map\"",k) && occursin("data-default=\"week\"",k) && occursin("<option value=\"week\" selected>",k) && occursin("leaflet.js",k)
+ @test !occursin("leaflet",TK._with_venues(()->render_events_html(evs;view="compact",site=true,today=T),v))
+ @test all(occursin("href=\"kart.html\"",TK._with_venues(()->render_events_html(evs;view="week",site=true,today=T,lang=l),v)) for l in TK.LANGS)
+ node=Sys.which("node")
+ if !isnothing(node)
+  mktempdir() do d
+   run_(page,search)=(f=joinpath(d,"p.html"); write(f,page); JSON.parse(read(`$node $(joinpath(@__DIR__,"js","filters.js")) $f 2026-10-05 "" $search`,String)))
+   r=run_(k,""); m=r["initial"]["markers"]
+   @test r["initial"]["when"]=="week" && r["initial"]["search"]=="" && length(m["markers"])==2 && m["without"]==2      # a+d share Storgata 1
+   @test Set(length(x["items"]) for x in m["markers"])==Set([2,1]) && Set(x["venue"] for x in m["markers"])==Set(["Sal a","Sal e"])
+   r=run_(k,"?type=practica"); @test [x["venue"] for x in r["initial"]["markers"]["markers"]]==["Sal d"] && r["initial"]["markers"]["without"]==0
+   r=run_(k,"?when=upcoming"); @test r["initial"]["when"]=="upcoming" && r["initial"]["search"]=="?when=upcoming"           # overriding the default stays in the URL
+   @test run_(k,"?type=class")["afterReset"]["search"]==""
+  end
+ end
+ chrome=find_chrome()
+ if !isnothing(chrome)
+  mktempdir() do d
+   page=replace(k,r"<link rel=\"stylesheet\" href=\"https://cdnjs[^>]*>|<script src=\"https://cdnjs[^>]*></script>"=>"")   # no network: marker data only
+   r=browser_view(chrome,d,replace(page,"</body>"=>"<script>document.body.setAttribute('data-markers',JSON.stringify(window.__markers.markers.map(m=>m.items.length)))</script></body>"),"?type=milonga&when=all")
+   @test r.vis==Set(["a","b","c","e"]) && occursin("data-markers=\"[1,1]\"",r.dom)                                       # d (practica) filtered off its shared marker
+  end
+ end
+ # the whole site: kart.html in every language, venues schema published
+ mktempdir() do d
+  TK.write_site(d,evs;today=T,venues=v)
+  @test all(isfile(joinpath(d,TK._prefix(l),"kart.html")) for l in TK.LANGS) && isfile(joinpath(d,"schema","venues.schema.json"))
+  @test count("data-lat=",read(joinpath(d,"en","kart.html"),String))==3
+ end
+end

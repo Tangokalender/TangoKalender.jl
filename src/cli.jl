@@ -7,7 +7,8 @@ Usage:
                                            index.html (list), uke.html, kort.html, arrangement/<id>/ pages and .ics,
                                            kalender.ics, rss.xml, … – in Norwegian, and again under en/ and es/ –
                                            plus events.json, for-ki.html, llms.txt, schema/*.json
-  tangokalender validate [INPUT]           validate only
+  tangokalender validate [INPUT]           validate only (also venues.json, if present)
+  tangokalender geocode [INPUT]            look up coordinates for new addresses (OpenStreetMap Nominatim) into venues.json
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
 
 INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
@@ -18,6 +19,11 @@ Options (build, site):
   --subtitle=TEXT      page subtitle
   --submit-url=URL     target of the «Legg til arrangement» link (default: the repo's issue form; empty hides it)
   --correct-url=URL    base of each card's «Rett opp» link (default: the repo's correction form; empty hides it)
+  --venues=FILE        coordinates for maps (default: venues.json if it exists)
+
+Options (geocode):
+  --venues=FILE        the coordinate cache to update (default: venues.json)
+  --retry              also retry addresses stored as not found
 
 Options (from-issue):
   --root=DIR           events directory to write into (default: events)
@@ -124,8 +130,8 @@ Returns 0 on success, 1 on validation errors, 2 on usage errors.
 function (@main)(args)
  args=String.(args)
  any(in(("-h","--help")),args) && (print(USAGE); return 0)
- cmd=!isempty(args) && args[1] in ("build","site","validate","from-issue") ? popfirst!(args) : "build"
- pos=filter(!startswith("--"),args); opts=Dict{String,String}(); novalidate=false
+ cmd=!isempty(args) && args[1] in ("build","site","validate","from-issue","geocode") ? popfirst!(args) : "build"
+ pos=filter(!startswith("--"),args); opts=Dict{String,String}(); novalidate=false; retry=false; venues=VENUES_FILE
  for a in filter(startswith("--"),args)
   k,v=occursin('=',a) ? split(a[3:end],'=';limit=2) : (a[3:end],"")
   if cmd in ("build","site") && k=="no-validate" && isempty(v); novalidate=true
@@ -133,16 +139,25 @@ function (@main)(args)
   elseif cmd in ("build","site") && k=="submit-url"; opts["submit_url"]=v
   elseif cmd in ("build","site") && k=="correct-url"; opts["correct_url"]=v
   elseif cmd=="from-issue" && k in ("root","issue-url","report","today","outputs") && !isempty(v); opts[k]=v
+  elseif cmd in ("build","site","geocode","validate") && k=="venues" && !isempty(v); venues=v
+  elseif cmd=="geocode" && k=="retry" && isempty(v); retry=true
   else println(stderr,"unknown option $a\n"); print(stderr,USAGE); return 2 end
  end
- maxpos=cmd in ("validate","from-issue") ? 1 : 2
+ maxpos=cmd in ("validate","from-issue","geocode") ? 1 : 2
  length(pos)>maxpos && (println(stderr,"too many arguments\n"); print(stderr,USAGE); return 2)
  if cmd=="from-issue"
   isempty(pos) && (println(stderr,"from-issue needs an issue body file\n"); print(stderr,USAGE); return 2)
   return _from_issue(pos[1],opts)
  end
  input=get(pos,1,"events")
- problems=validate_event_tree(input)
+ if cmd=="geocode"
+  v=load_venues(venues); added,failed=geocode!(v,load_events(input);retry)
+  isempty(added) || save_venues(v,venues)
+  for a in added; x=v[_addrkey(a)]; println("$(rpad(x["precision"],6)) $a", isnothing(x["lat"]) ? "" : "  ($(x["lat"]), $(x["lon"]))"); end
+  foreach(f->println(stderr,"failed: $f"),failed)
+  println("$(length(added)) new, $(length(failed)) failed → $venues"); return 0   # never fail the caller (e.g. intake) on a network problem
+ end
+ problems=[validate_event_tree(input);validate_venues(venues)]
  if cmd=="validate"
   _report(problems); isempty(problems) && println("OK: $input"); return isempty(problems) ? 0 : 1
  end
@@ -150,10 +165,10 @@ function (@main)(args)
   _report(problems); novalidate || return 1
  end
  if cmd=="site"
-  dir=get(pos,2,"_site"); files=write_site(dir,load_events(input);(Symbol(k)=>v for (k,v) in opts)...)
+  dir=get(pos,2,"_site"); files=write_site(dir,load_events(input);venues=load_venues(venues),(Symbol(k)=>v for (k,v) in opts)...)
   println("Wrote $(length(files)) files to $dir"); return 0
  end
  output=get(pos,2,joinpath("public","index.html"))
- render_events_file(input,output;(Symbol(k)=>v for (k,v) in opts)...); println("Wrote $output")
+ _with_venues(load_venues(venues)) do; render_events_file(input,output;(Symbol(k)=>v for (k,v) in opts)...); end; println("Wrote $output")
  0
 end

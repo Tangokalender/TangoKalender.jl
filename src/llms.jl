@@ -91,15 +91,16 @@ $EXAMPLE_OUTPUT
 - [Instructions for people]($SITE_URL/en/$ADD_PAGE#ki) (also in [Norwegian]($SITE_URL/$ADD_PAGE#ki) and [Spanish]($SITE_URL/es/$ADD_PAGE#ki))
 """
 """
-    write_site(dir, events; today=Dates.today(), kwargs...) -> files
+    write_site(dir, events; today=Dates.today(), venues=Dict(), kwargs...) -> files
 
 Write the whole static site. Per language (Norwegian at the root, English under `en/`, Spanish under `es/`, same file
 names): the three views (index.html = compact list, uke.html, kort.html), one page and one .ics per event
 (arrangement/<id>/index.html, arrangement/<id>.ics), kalender.ics, rss.xml, legg-til.html, om.html, bygg-inn.html and
 the embeds (embed/). Once, at the root: events.json, the old for-ki.html redirect, the spreadsheet template, llms.txt
-and both schemas. `kwargs` go to `render_events_html`.
+and the schemas. `venues` (see `load_venues`) gives map positions. `kwargs` go to `render_events_html`.
 """
-function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwargs...)
+write_site(dir::AbstractString, events; venues::AbstractDict=Dict{String,Any}(), kwargs...)=_with_venues(()->_write_site(dir,events;kwargs...),venues)
+function _write_site(dir::AbstractString, events; today::Date=Dates.today(), kwargs...)
  mkpath(joinpath(dir,"schema")); files=String[]
  ev=collect(events); cu=get(Dict(kwargs),:correct_url,CORRECT_URL)
  for lang in LANGS
@@ -123,6 +124,7 @@ function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwar
  wr(AI_PAGE,for_ki_redirect_html()); wr("llms.txt",llms_txt())
  wr(TEMPLATE_CSV,table_template_csv())
  cp(SCHEMA_FILE,joinpath(dir,"schema","tango-event.schema.json");force=true); push!(files,joinpath(dir,"schema","tango-event.schema.json"))
+ cp(VENUES_SCHEMA_FILE,joinpath(dir,"schema","venues.schema.json");force=true); push!(files,joinpath(dir,"schema","venues.schema.json"))
  wr(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))
  touch(joinpath(dir,".nojekyll")); files
 end

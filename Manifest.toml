@@ -2,7 +2,7 @@
 
 julia_version = "1.13.1"
 manifest_format = "2.1"
-project_hash = "b5cf151615dcf598884301daf90062fd1c610106"
+project_hash = "87038fadd42bc2be996f0753a686cac86ebc224b"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -153,7 +153,7 @@ uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
 
 [[deps.TangoKalender]]
-deps = ["Dates", "JSON", "JSONSchema"]
+deps = ["Dates", "Downloads", "JSON", "JSONSchema"]
 path = "."
 uuid = "8fa2004d-d644-4dc6-9815-18e81ae74980"
 version = "0.4.0"
