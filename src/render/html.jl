@@ -48,7 +48,7 @@ function _video(e)
  p=string(_val(v,"platform","")); id=string(_val(v,"id",""))
  src= p=="youtube" && occursin(r"^[A-Za-z0-9_-]{11}$",id) ? "https://www.youtube-nocookie.com/embed/$id" :
       p=="vimeo" && occursin(r"^[0-9]+$",id) ? "https://player.vimeo.com/video/$id" : ""
- isempty(src) ? "" : "<div class=\"video\"><iframe src=\"$src\" title=\"Video: $(_esc(_val(e,"title","")))\" loading=\"lazy\" allow=\"fullscreen; picture-in-picture\" allowfullscreen></iframe></div>"
+ isempty(src) ? "" : "<div class=\"video\"><iframe src=\"$src\" title=\"Video: $(_esc(_val(e,"title","")))\" loading=\"lazy\" referrerpolicy=\"strict-origin-when-cross-origin\" allow=\"fullscreen; picture-in-picture; encrypted-media\" allowfullscreen></iframe></div>"
 end
 function _price(e)
  parts=String[]
