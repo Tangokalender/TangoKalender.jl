@@ -20,6 +20,15 @@ Kildekode: https://github.com/Tangokalender/tangokalender.github.io
   arrangementer med `?arr=`), samt `kalender.ics`, `rss.xml` og `events.json`.
 - ActivityPub står på [TODO](TODO.md).
 
+## Språk
+
+Siden finnes på norsk (`/`), engelsk (`/en/`) og spansk (`/es/`), med de samme filnavnene, f.eks.
+https://tangokalender.github.io/en/uke.html. Første besøk på en norsk side følger nettleserens språk (engelsk for
+andre språk enn norsk/skandinavisk og spansk); valget i språkvelgeren (NO · EN · ES) huskes i nettleseren.
+Tittel og beskrivelse kan sendes inn på norsk eller engelsk («Tekstspråk»), og eventuelt også på det andre språket –
+ett språk er nok. Spanske sider viser engelsk tekst når den finnes. Skjemaene på GitHub er på norsk; de engelske og
+spanske «Legg til»-sidene forklarer feltene.
+
 ## Legge inn arrangementer
 
 Alt om innsending står på én side: **https://tangokalender.github.io/legg-til.html**

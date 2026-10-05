@@ -136,6 +136,25 @@ body:
     id: beskrivelse
     attributes:
       label: Beskrivelse
+  - type: dropdown
+    id: sprak
+    attributes:
+      label: Tekstspråk
+      description: Språket i Tittel og Beskrivelse. Endres bare hvis det er feil.
+      options:
+        - Som før
+        - Norsk
+        - English
+      default: 0
+  - type: input
+    id: tittel_annet
+    attributes:
+      label: Tittel (andre språk)
+      description: Tittelen på det andre språket (engelsk for norsk tekst, og omvendt). - fjerner den.
+  - type: textarea
+    id: beskrivelse_annet
+    attributes:
+      label: Beskrivelse (andre språk)
   - type: textarea
     id: kommentar
     attributes:

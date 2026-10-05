@@ -410,7 +410,8 @@ end
   for (r,_,fs) in walkdir(d), f in fs
    endswith(f,".html") || continue
    html=replace(read(joinpath(r,f),String),r"<script>.*?</script>"s=>"")      # code in scripts is not a link
-   base=occursin("<base href=\"$(TangoKalender.SITE_URL)/\"",html) ? d : r          # <base> = relative to the site root
+   bm=match(r"<base href=\"([^\"]+)\"",html)                                       # <base> = relative to a language root
+   base=isnothing(bm) ? r : joinpath(d,replace(bm[1],TangoKalender.SITE_URL*"/"=>""))
    for m in eachmatch(r"(?:href|src)=\"([^\"]+)\"",html)
     u=replace(m[1],"&amp;"=>"&"); occursin(r"^(https?:|webcal:|mailto:|#|data:)",u) && continue
     t=normpath(joinpath(base,first(split(u,['#','?'])))); (endswith(u,"/") || isdir(t)) && (t=joinpath(t,"index.html"))
@@ -682,5 +683,117 @@ end
  mktempdir() do d
   TK.write_site(d,evs;today=D)
   @test all(isfile(joinpath(d,f)) for f in ("bygg-inn.html","events.json",joinpath("embed","i-dag.svg"),joinpath("embed","uke.svg"),joinpath("embed","liste.html")))
+ end
+end
+@testset "languages (nb, en, es)" begin
+ TK=TangoKalender; T=Date(2026,10,5); L=TK.LANGS
+ # every string, label and prose block exists in all three languages
+ @test all(all(!isempty,(v.nb,v.en,v.es)) for v in values(TK._T))
+ @test all(issubset(Set(TK.TYPE_ORDER),keys(TK._TYPES_I18N[l])) && issubset(keys(TK._MUSIC),keys(TK._MUSIC_I18N[l])) for l in ("en","es"))
+ @test all(Set(keys(d))==Set(L) for d in (TK._about(),TK._add_text(),TK._embed_text(),TK._COLUMN_HELP,TK._DATES))
+ @test all(length(TK._COLUMN_HELP[l])==length(TK._COLUMN_HELP["nb"]) for l in L) && Set(keys(TK._GLOSSARY))==Set(["en","es"])
+ # dates
+ d=Date(2026,10,9); w=Date(2026,9,28)
+ @test [TK._with_lang(()->TK._day(d),l) for l in L]==["fredag 9. okt","Friday 9 Oct","viernes 9 oct"]
+ @test [TK._with_lang(()->TK._longday(d),l) for l in L]==["fredag 9. oktober","Friday 9 October","viernes 9 de octubre"]
+ @test [TK._with_lang(()->TK._weeklabel(w),l) for l in L]==["Uke 40 · 28. sep – 4. okt","Week 40 · 28 Sep – 4 Oct","Semana 40 · 28 sep – 4 oct"]
+ @test TK._with_lang(()->TK._weeklabel(Date(2026,10,5)),"en")=="Week 41 · 5–11 Oct" && TK._weeklabel(Date(2026,10,5))=="Uke 41 · 5.–11. okt"
+ @test TK._lang()=="nb" && TK._type_label("class")=="Kurs" && TK._with_lang(()->TK._type_label("outdoor"),"es")=="Al aire libre"
+ @test_throws ArgumentError render_events_html([];lang="de")
+ # event text: page language → (es: en) → original; note and lang attribute when it differs
+ E(;kw...)=Dict{String,Any}("id"=>"x","title"=>"Kveldsmilonga","types"=>["milonga"],"start"=>"2026-10-24T20:00:00+02:00","description"=>"Hyggelig kveld.",
+  "venue"=>Dict("name"=>"Salen","address"=>"Gata 1"),(string(k)=>v for (k,v) in kw)...)
+ bi=E(translations=Dict("en"=>Dict("title"=>"Evening milonga","description"=>"A nice evening.")))
+ @test [TK._with_lang(()->TK._text(bi,"title"),l) for l in L]==[("Kveldsmilonga","nb"),("Evening milonga","en"),("Evening milonga","en")]
+ @test TK._with_lang(()->TK._text(E(),"description"),"es")==("Hyggelig kveld.","nb")
+ en=E(title="English night",description="In English.",lang="en")
+ @test TK._text(en,"title")==("English night","en") && TK._with_lang(()->TK._text(en,"title"),"es")==("English night","en")
+ h=render_events_html([bi,en];view="cards",lang="es")
+ @test occursin("<a href=\"arrangement/x/\" lang=\"en\">Evening milonga</a>",render_events_html([bi];view="compact",site=true,lang="es"))
+ @test occursin("<span lang=\"en\">A nice evening.</span> <small class=\"tnote\">(en inglés)</small>",h) && occursin("(en inglés)",h)
+ @test !occursin("class=\"tnote\"",render_events_html([bi];view="cards",lang="en")) && occursin("<html lang=\"es\">",h)
+ @test occursin("evening milonga",h) && occursin("kveldsmilonga",h) && occursin("hyggelig kveld",render_events_html([bi];view="cards",lang="en"))   # search covers all languages
+ p=TK.render_event_page(bi,[bi];today=T,lang="en")
+ @test occursin("<h1 class=\"\">Evening milonga</h1>",p) && occursin("og:locale\" content=\"en_GB\"",p) && occursin("\"inLanguage\":\"en\"",p)
+ @test occursin("<link rel=\"canonical\" href=\"$(TK.SITE_URL)/en/arrangement/x/\">",p) && occursin("hreflang=\"x-default\" href=\"$(TK.SITE_URL)/arrangement/x/\"",p)
+ @test occursin("href=\"../../../arrangement/x/\" data-lang=\"nb\"",p) && occursin("href=\"../../../es/arrangement/x/\" data-lang=\"es\"",p) && occursin("class=\"on\" aria-current=\"true\">EN",p)
+ @test occursin("Suggest a correction",p) && occursin(TK._urlenc("Rettelse: Kveldsmilonga (24. okt)"),p)    # the correction form stays Norwegian
+ @test occursin("SUMMARY:Evening milonga",TK.event_ics(bi;today=T,lang="en")) && occursin("<language>es</language>",TK.rss_xml([bi];today=T,lang="es"))
+ @test occursin("Evening milonga",TK.today_svg([bi];today=Date(2026,10,24),lang="en")) && occursin("Today · Saturday 24 October",TK.today_svg([bi];today=Date(2026,10,24),lang="en"))
+ @test occursin("$(TK.SITE_URL)/es/uke.html#uke-2026-43",TK.week_svg([bi];today=Date(2026,10,24),lang="es"))
+ # whole site: three trees, no Norwegian left in the English/Spanish interface (event text here is English)
+ evs=[E(title="Friday night",description="Traditional music.",lang="en",dj="DJ A",price_nok=150,series="s"),
+      E(id="y",title="Practice",description="All levels.",lang="en",start="2026-10-25",types=["practica","outdoor"],status="cancelled",series="s")]
+ mktempdir() do dir
+  TK.write_site(dir,evs;today=T)
+  for l in ("en","es"), f in ("index.html","uke.html","kort.html","om.html","bygg-inn.html",joinpath("arrangement","x","index.html"),joinpath("embed","liste.html"),joinpath("embed","i-dag.svg"),joinpath("embed","uke.svg"),"rss.xml")
+   t=read(joinpath(dir,l,f),String)
+   @test occursin(Regex("(<html|<svg)[^>]* (xml:)?lang=\"$l\"|<language>$l<"),t)
+   t=replace(t,r"<script.*?</script>"s=>" ",r"<style.*?</style>"s=>" ",r"<code.*?</code>"s=>" ",r"<[^>]+>"=>" ",r"https?://\S+"=>" ")
+   bad=[m.match for m in eachmatch(r"\S*[æøåÆØÅ]\S*|\b(Avlyst|Kommende|arrangementer|Legg til|Søk|Pris|Sted|Uke|hele dagen|Kopier)\b",t)]
+   @test isempty(bad) || (println("$l/$f: ",bad); false)
+  end
+  @test occursin("Kommende",read(joinpath(dir,"index.html"),String)) && isfile(joinpath(dir,"en","arrangement","x.ics")) && !isfile(joinpath(dir,"en","llms.txt"))
+  @test occursin("The form fields in English",read(joinpath(dir,"en","legg-til.html"),String))
+  @test occursin("href=\"../$(TK.TEMPLATE_CSV)\"",read(joinpath(dir,"es","legg-til.html"),String)) && occursin("href=\"../events.json\"",read(joinpath(dir,"en","bygg-inn.html"),String))
+  g=read(joinpath(dir,"en","bygg-inn.html"),String)
+  @test occursin("data=&quot;$(TK.SITE_URL)/en/embed/i-dag.svg&quot;",g) && occursin("data-tpl=\"&lt;object type=&quot;image/svg+xml&quot; data=&quot;{BASE}embed/i-dag.svg",g)
+  # flags: every <use href="#flag-…"> has a symbol on the same page
+  for f in ("index.html",joinpath("en","om.html"),joinpath("es","arrangement","x","index.html"))
+   t=read(joinpath(dir,f),String); @test all(occursin("<symbol id=\"flag-$(m[1])\"",t) for m in eachmatch(r"<use href=\"#flag-([a-z]+)\"",t)) && count("data-lang=",t)==3
+  end
+  # the head script: redirect from Norwegian pages by browser language, stored choice, never for bots or /en/ /es/
+  node=Sys.which("node")
+  if isnothing(node); @info "node not found – skipping language script tests"; else
+   UA="Mozilla/5.0 (X11) Chrome/130"
+   js(f,langs,stored="",ua=UA,loc="")=JSON.parse(read(`$node $(joinpath(@__DIR__,"js","lang.js")) $(joinpath(dir,f)) $langs $stored $ua $loc`,String))
+   @test js("uke.html","en-GB,nb")["redirect"]=="en/uke.html"
+   @test js("uke.html","en-GB","",UA,"?type=milonga#uke-2026-43")["redirect"]=="en/uke.html?type=milonga#uke-2026-43"
+   @test js("index.html","es-AR,es")["redirect"]=="es/" && js("index.html","nb-NO,en")["redirect"]===nothing && js("index.html","nn")["redirect"]===nothing
+   @test js("index.html","de-DE")["redirect"]=="en/" && js("index.html","")["redirect"]=="en/"
+   @test js("index.html","en-GB","nb")["redirect"]===nothing && js("index.html","nb-NO","es")["redirect"]=="es/"   # stored choice wins
+   @test js("index.html","en-GB","THROW")["redirect"]=="en/"                                                      # blocked storage
+   @test js("index.html","en-GB","","Googlebot/2.1")["redirect"]===nothing && js("index.html","en-GB","","HeadlessChrome/130")["redirect"]===nothing
+   @test js(joinpath("arrangement","x","index.html"),"es")["redirect"]=="../../es/arrangement/x/"
+   @test js(joinpath("en","index.html"),"nb-NO")["redirect"]===nothing && js(joinpath("es","om.html"),"en")["redirect"]===nothing
+   c=js("uke.html","nb","nb",UA,"?type=practica#uke-2026-43")["click"]
+   @test c["href"]=="en/uke.html?type=practica#uke-2026-43" && c["stored"]=="en"                                   # the switch keeps filters and week
+  end
+  chrome=find_chrome()
+  if !isnothing(chrome)
+   r=browser_view(chrome,dir,read(joinpath(dir,"en","index.html"),String),"?type=practica&when=all")
+   @test r.vis==Set(["y"]) && occursin("1 of 2 events",r.dom)
+  end
+ end
+ # input: «Tekstspråk» and the other-language fields in the form, spreadsheet, JSON and corrections
+ f=Dict("Tekstspråk"=>"English","Tittel"=>"Friday milonga","Type"=>"- [X] Milonga","Dato"=>"2026-11-13","Starttid"=>"20:00","Sted"=>"S","Adresse"=>"A",
+  "Arrangør"=>"K","Lenke"=>"https://x.org","Beskrivelse"=>"Nice.","Tittel (andre språk)"=>"Fredagsmilonga","Samtykke"=>"- [X] ok")
+ ev,er=TK.events_from_form(f;today=T); e=only(ev)
+ @test isempty(er) && e["lang"]=="en" && e["translations"]==Dict("nb"=>Dict("title"=>"Fredagsmilonga")) && isempty(validate_event(e))
+ ev,_=TK.events_from_form(delete!(copy(f),"Tittel (andre språk)");today=T); @test only(ev)["lang"]=="en" && isnothing(only(ev)["translations"])
+ @test occursin("«Tekstspråk»",only(TK.events_from_form(merge(f,Dict("Tekstspråk"=>"Klingon"));today=T)[2]))
+ ev,er=TK.events_from_form(merge(f,Dict("Tekstspråk"=>"","Type"=>"Class, Open-air")),today=T); @test only(ev)["lang"]=="nb" && only(ev)["types"]==["class","outdoor"]   # labels in any language
+ tab="Title\tType\tDate\tStart time\tVenue\tAddress\tOrganiser\tLink\tLanguage\tTitle (other language)\tMusic\n"*
+     "Night\tMilonga\t13/11/2026\t20:00\tS\tA\tK\thttps://x.org\tEnglish\tNatt\tTraditional, Live orchestra\n\t\t20/11/2026\t\t\t\t\t\t\t-\t\n"
+ ev,er=TK.events_from_table(tab;today=T)
+ @test isempty(er) && [x["start"][1:10] for x in ev]==["2026-11-13","2026-11-20"] && all(x["lang"]=="en" && x["music_style"]==["traditional","live_orchestra"] for x in ev)
+ @test ev[1]["translations"]==Dict("nb"=>Dict("title"=>"Natt")) && isnothing(ev[2]["translations"])
+ @test TK.parse_table(replace(TK.table_template_csv(),"﻿"=>""))[1]==TK.TABLE_COLUMNS && "Tekstspråk" in TK.TABLE_COLUMNS
+ j="""{"title":"Night","types":["milonga"],"start":"2026-11-13T20:00","venue":{"name":"S","address":"A"},"organizer":"K","link":"https://x.org","lang":"en","translations":{"nb":{"title":"Natt","description":" "},"en":{"title":"x"}}}"""
+ ev,er=TK.events_from_json(j;today=T); @test isempty(er) && only(ev)["lang"]=="en" && only(ev)["translations"]==Dict("nb"=>Dict("title"=>"Natt"))
+ @test !isempty(TK.events_from_json(replace(j,"\"nb\":"=>"\"de\":");today=T)[2])                                  # unknown language rejected by the schema
+ @test !isempty(validate_event(merge(E(),Dict("translations"=>Dict("de"=>Dict("title"=>"x")))))) && !isempty(validate_event(merge(E(),Dict("lang"=>"es"))))
+ tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
+ @test issubset(Set(["Tekstspråk","Tittel (andre språk)","Beskrivelse (andre språk)"]),Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl)))
+ @test issubset(Set(["tittel_annet","beskrivelse_annet"]),Set(strip(m[1]) for m in eachmatch(r"^    id: (.+)$"m,tmpl)))
+ mktempdir() do root
+  x=E(id="x-2026-10-24",lang="nb",translations=Dict("en"=>Dict("title"=>"Evening milonga")),organizer="K",link="https://x.org"); save_event_tree([x],root)
+  base=Dict("Arrangement-ID"=>"x-2026-10-24","Samtykke"=>"- [X] ok")
+  u,er,ch=TK.apply_correction(merge(base,Dict("Beskrivelse (andre språk)"=>"A nice evening.")),root;today=T)
+  @test isempty(er) && u[1][2]["translations"]==Dict("en"=>Dict("title"=>"Evening milonga","description"=>"A nice evening.")) && ("Beskrivelse (andre språk)","","A nice evening.") in ch
+  u,er,_=TK.apply_correction(merge(base,Dict("Tittel (andre språk)"=>"-")),root;today=T); @test isempty(er) && isnothing(u[1][2]["translations"])
+  u,er,ch=TK.apply_correction(merge(base,Dict("Tekstspråk"=>"English")),root;today=T)     # mislabelled: swap the languages
+  @test isempty(er) && u[1][2]["lang"]=="en" && u[1][2]["translations"]==Dict("nb"=>Dict("title"=>"Evening milonga")) && ("Tekstspråk","Norsk","English") in ch
+  @test occursin("Tittel (andre språk): Evening milonga",TK.current_summary(x)) && occursin("Tekstspråk: Norsk",TK.current_summary(x))
  end
 end

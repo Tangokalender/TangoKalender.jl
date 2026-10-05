@@ -12,10 +12,23 @@ body:
 
         Faste arrangementer (f.eks. hver tirsdag) kan legges inn på én gang med «Gjentas: Ukentlig».
         Hver dato blir et eget arrangement, så DJ, pris eller avlysninger kan endres for én kveld senere.
+
+        *In English:* the form is in Norwegian, but you may write the title and description in English –
+        choose «Tekstspråk: English». Field names are explained at https://tangokalender.github.io/en/legg-til.html
+  - type: dropdown
+    id: sprak
+    attributes:
+      label: Tekstspråk
+      description: Språket du skriver tittel og beskrivelse på. / The language of your title and description.
+      options:
+        - Norsk
+        - English
+      default: 0
   - type: input
     id: tittel
     attributes:
       label: Tittel
+      description: Title
       placeholder: f.eks. Milonga Sentimental
     validations:
       required: true
@@ -147,7 +160,17 @@ body:
     id: beskrivelse
     attributes:
       label: Beskrivelse
-      description: Kort beskrivelse – nivå, inngang, dresscode osv.
+      description: Kort beskrivelse – nivå, inngang, dresscode osv. / Short description.
+  - type: input
+    id: tittel_annet
+    attributes:
+      label: Tittel (andre språk)
+      description: Valgfritt – tittelen på engelsk (eller norsk, hvis teksten over er engelsk). / Optional – the title in the other language.
+  - type: textarea
+    id: beskrivelse_annet
+    attributes:
+      label: Beskrivelse (andre språk)
+      description: Valgfritt – beskrivelsen på det andre språket. Ett språk er nok. / Optional – one language is enough.
   - type: checkboxes
     id: samtykke
     attributes:

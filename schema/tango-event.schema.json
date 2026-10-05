@@ -163,6 +163,63 @@
         "description": {
             "$ref": "#/definitions/text"
         },
+        "lang": {
+            "enum": [
+                "nb",
+                "en",
+                null
+            ],
+            "description": "Language of `title` and `description`: nb (Norwegian, the default when missing) or en (English)."
+        },
+        "translations": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "additionalProperties": false,
+            "properties": {
+                "nb": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "minProperties": 1,
+                    "properties": {
+                        "title": {
+                            "$ref": "#/definitions/text"
+                        },
+                        "description": {
+                            "$ref": "#/definitions/text"
+                        }
+                    }
+                },
+                "en": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "minProperties": 1,
+                    "properties": {
+                        "title": {
+                            "$ref": "#/definitions/text"
+                        },
+                        "description": {
+                            "$ref": "#/definitions/text"
+                        }
+                    }
+                },
+                "es": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "minProperties": 1,
+                    "properties": {
+                        "title": {
+                            "$ref": "#/definitions/text"
+                        },
+                        "description": {
+                            "$ref": "#/definitions/text"
+                        }
+                    }
+                }
+            },
+            "description": "Optional title/description in other languages, e.g. {\"en\": {\"title\": …, \"description\": …}} for a Norwegian event. Only text the organiser provided – no machine translation."
+        },
         "flyer_url": {
             "$ref": "#/definitions/url"
         },

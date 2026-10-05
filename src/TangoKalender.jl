@@ -3,6 +3,7 @@ using JSON, JSONSchema, Dates
 include("models.jl")
 include("validate.jl")
 include("labels.jl")
+include("i18n.jl")
 include("render/html.jl")
 include("issue.jl")
 include("correction.jl")

@@ -1,11 +1,13 @@
 # Correction form (.github/ISSUE_TEMPLATE/rett-arrangement.yml): prefilled «Rett opp» links and applying submitted changes.
 # Semantics: a blank field means "unchanged", `-` clears an optional field.
 const CORRECTION_FIELDS=["Arrangement-ID","Nåværende opplysninger","Gjelder","Status","Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør",
- "DJ","Lærere","Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Kommentar","Samtykke"]
+ "DJ","Lærere","Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tekstspråk","Tittel (andre språk)",
+ "Beskrivelse (andre språk)","Kommentar","Samtykke"]
 # form field id => form label for the editable fields (and the id), used to detect and display changes
 const CORRECTION_IDS=["arrangement_id"=>"Arrangement-ID","tittel"=>"Tittel","dato"=>"Dato","starttid"=>"Starttid","sluttid"=>"Sluttid",
  "sted"=>"Sted","adresse"=>"Adresse","arrangor"=>"Arrangør","dj"=>"DJ","laerere"=>"Lærere","pris"=>"Pris (kr)",
- "studentpris"=>"Studentpris (kr)","kurspris"=>"Kurspris (kr)","flyer"=>"Flyer","video"=>"Video","lenke"=>"Lenke","beskrivelse"=>"Beskrivelse"]
+ "studentpris"=>"Studentpris (kr)","kurspris"=>"Kurspris (kr)","flyer"=>"Flyer","video"=>"Video","lenke"=>"Lenke","beskrivelse"=>"Beskrivelse",
+ "tittel_annet"=>"Tittel (andre språk)","beskrivelse_annet"=>"Beskrivelse (andre språk)"]
 const REQUIRED_LABELS=Set(["Tittel","Dato","Starttid","Sted","Adresse","Arrangør","Lenke"])
 const SERIES_SCOPE="Denne og alle senere datoer i serien"
 const MAX_URL=6000
@@ -25,7 +27,16 @@ function correction_fields(e)
   "laerere"=>join(something(get(e,"teachers",nothing),Any[]),", "),"pris"=>_s(get(e,"price_nok",nothing)),
   "studentpris"=>_s(get(e,"student_price_nok",nothing)),"kurspris"=>_s(get(e,"class_price_nok",nothing)),
   "flyer"=>_s(get(e,"flyer_url",nothing)),"video"=>_video_url(get(e,"video",nothing)),"lenke"=>_s(get(e,"link",nothing)),
-  "beskrivelse"=>_s(get(e,"description",nothing)))
+  "beskrivelse"=>_s(get(e,"description",nothing)),
+  "tittel_annet"=>_translation(e,_other_lang(_textlang(e)),"title"),"beskrivelse_annet"=>_translation(e,_other_lang(_textlang(e)),"description"))
+end
+"Set (or with `nothing`, remove) `translations[l][k]`, dropping empty entries."
+function _set_translation!(x,l,k,v)
+ tr=get(x,"translations",nothing); tr isa AbstractDict || (tr=JSON.Object{String,Any}())
+ t=get(tr,l,nothing); t isa AbstractDict || (t=JSON.Object{String,Any}())
+ isnothing(v) ? delete!(t,k) : (t[k]=v)
+ isempty(t) ? delete!(tr,l) : (tr[l]=t)
+ x["translations"]=isempty(tr) ? nothing : tr
 end
 "Percent-encode `s` as UTF-8 for a URL query value (RFC 3986 unreserved characters kept)."
 _urlenc(s)=join((c<0x80 && (isletter(Char(c)) || isdigit(Char(c)) || Char(c) in "-_.~")) ? string(Char(c)) : "%"*uppercase(string(c;base=16,pad=2)) for c in codeunits(s))
@@ -33,8 +44,9 @@ _urlenc(s)=join((c<0x80 && (isletter(Char(c)) || isdigit(Char(c)) || Char(c) in 
 function current_summary(e; description=true)
  d=_display(e); f=correction_fields(e)
  lines=["$lbl: $(d[lbl])" for lbl in ("Tittel","Type","Status","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere",
-  "Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke") if !isempty(d[lbl])]
+  "Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Tekstspråk","Tittel (andre språk)") if !isempty(d[lbl])]
  description && !isempty(f["beskrivelse"]) && push!(lines,"Beskrivelse: $(f["beskrivelse"])")
+ description && !isempty(f["beskrivelse_annet"]) && push!(lines,"Beskrivelse (andre språk): $(f["beskrivelse_annet"])")
  !isnothing(get(e,"series",nothing)) && push!(lines,"Serie: $(e["series"])")
  join(lines,"\n")
 end
@@ -42,9 +54,10 @@ end
 «Rett opp» link: the correction form with only `arrangement_id` and the read-only «Nåværende opplysninger» prefilled.
 GitHub resets URL-prefilled fields when they are edited, so the editable fields are left blank (blank = unchanged).
 """
-function correction_url(e; base=CORRECT_URL)
+correction_url(e; base=CORRECT_URL)=_with_lang(()->_correction_url(e;base),"nb")   # the forms are Norwegian
+function _correction_url(e; base=CORRECT_URL)
  f=correction_fields(e); d=Date(first(_s(e["start"]),10))
- url(desc)=base*join(("&$(k)=$(_urlenc(v))" for (k,v) in ["title"=>"Rettelse: $(f["tittel"]) ($(day(d)). $(_MO[month(d)]))",
+ url(desc)=base*join(("&$(k)=$(_urlenc(v))" for (k,v) in ["title"=>"Rettelse: $(f["tittel"]) ($(_dm(d)))",
   "arrangement_id"=>f["arrangement_id"],"navaerende"=>current_summary(e;description=desc)]))
  u=url(true); length(u)>MAX_URL ? url(false) : u
 end
@@ -53,7 +66,7 @@ function _display(e)
  f=correction_fields(e)
  merge(Dict(lbl=>f[id] for (id,lbl) in CORRECTION_IDS if id!="arrangement_id"),
   Dict("Type"=>_types_label(e),"Musikk"=>join(_music_label.(string.(something(get(e,"music_style",nothing),Any[]))),", "),
-   "Status"=>_s(get(e,"status",nothing))=="cancelled" ? "Avlyst" : "Gjennomføres"))
+   "Status"=>_s(get(e,"status",nothing))=="cancelled" ? "Avlyst" : "Gjennomføres","Tekstspråk"=>LANG_NAME[_textlang(e)]))
 end
 """
     apply_correction(fields, root; today=Dates.today()) -> (updates, errors, changed)
@@ -90,6 +103,10 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
  st=Dict("Avlyst"=>"cancelled","Gjennomføres"=>"scheduled")
  status=get(st,get_("Status"),nothing)
  !isnothing(status) && status!=something(get(orig,"status",nothing),"scheduled") && (ch["Status"]=status)
+ sl=get_("Tekstspråk")
+ if !(sl in ("","Som før"))
+  l=_parse_lang(sl); isnothing(l) ? err("«Tekstspråk» må være «Norsk» eller «English».") : l!=_textlang(orig) && (ch["Tekstspråk"]=l)
+ end
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  series=get_("Gjelder")==SERIES_SCOPE
  haskey(ch,"Dato") && series && err("«Dato» kan bare endres for én dato om gangen – velg «Bare denne datoen».")
@@ -110,6 +127,11 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
   apply!("Tittel","title"); apply!("Type","types"); apply!("Arrangør","organizer"); apply!("DJ","dj"); apply!("Lenke","link")
   apply!("Beskrivelse","description"); apply!("Flyer","flyer_url"); apply!("Video","video"); apply!("Musikk","music_style")
   apply!("Status","status"); haskey(ch,"Lærere") && (x["teachers"]=something(ch["Lærere"],Any[]))
+  if haskey(ch,"Tekstspråk")   # the text was in the other language: relabel it, and the translation with it
+   old=_textlang(x); new=ch["Tekstspråk"]; x["lang"]=new
+   for k in ("title","description"); v=_translation(x,new,k); isempty(v) && continue; _set_translation!(x,new,k,nothing); _set_translation!(x,old,k,v); end
+  end
+  for (label,k) in OTHER_TEXT_FIELDS; haskey(ch,label) && _set_translation!(x,_other_lang(_textlang(x)),k,ch[label]); end
   for (k,field) in PRICE_FIELDS; apply!(field,k); end
   if haskey(ch,"Sted") || haskey(ch,"Adresse")
    v=get(x,"venue",nothing); v isa AbstractDict || (v=JSON.Object{String,Any}("name"=>nothing,"address"=>nothing,"city"=>"Oslo"))

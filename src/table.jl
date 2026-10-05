@@ -3,13 +3,21 @@
 # Row 1: column headings (the same names as in the form). Row 2: the defaults (repeated information).
 # Further rows: only what differs (typically Dato, DJ); a blank cell means "same as row 2", `-` clears an optional field.
 # Each data row becomes one dated event; rows with the same title share a `series`.
+# English headings are accepted as aliases («Title», «Date», «Organiser» …), and type/music values in any language.
 const TABLE_COLUMNS=["Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere","Pris (kr)",
- "Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Status"]
+ "Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Status","Tekstspråk","Tittel (andre språk)","Beskrivelse (andre språk)"]
 const MAX_TABLE_ROWS=60
 _colkey(s)=replace(lowercase(strip(s)),r"\s*\(kr\)\s*$"=>"",r"\s+"=>" ")
 const _COLUMN_BY_KEY=merge(Dict(_colkey(c)=>c for c in TABLE_COLUMNS),
  Dict("arrangor"=>"Arrangør","laerere"=>"Lærere","lærer"=>"Lærere","pris"=>"Pris (kr)","studentpris"=>"Studentpris (kr)",
-      "kurspris"=>"Kurspris (kr)","tid"=>"Starttid","start"=>"Starttid","slutt"=>"Sluttid","dato"=>"Dato","sted"=>"Sted"))
+      "kurspris"=>"Kurspris (kr)","tid"=>"Starttid","start"=>"Starttid","slutt"=>"Sluttid","dato"=>"Dato","sted"=>"Sted",
+      "språk"=>"Tekstspråk","sprak"=>"Tekstspråk","tekstsprak"=>"Tekstspråk","tittel (engelsk)"=>"Tittel (andre språk)","beskrivelse (engelsk)"=>"Beskrivelse (andre språk)",
+      # English headings (the English legg-til page explains the Norwegian ones, but these work too)
+      "title"=>"Tittel","date"=>"Dato","start time"=>"Starttid","end time"=>"Sluttid","end"=>"Sluttid","venue"=>"Sted","address"=>"Adresse",
+      "organiser"=>"Arrangør","organizer"=>"Arrangør","teachers"=>"Lærere","price"=>"Pris (kr)","student price"=>"Studentpris (kr)",
+      "class price"=>"Kurspris (kr)","music"=>"Musikk","link"=>"Lenke","description"=>"Beskrivelse","language"=>"Tekstspråk",
+      "text language"=>"Tekstspråk","title (other language)"=>"Tittel (andre språk)","description (other language)"=>"Beskrivelse (andre språk)",
+      "title (english)"=>"Tittel (andre språk)","description (english)"=>"Beskrivelse (andre språk)"))
 """
     parse_table(text) -> Vector{Vector{String}}
 
@@ -78,11 +86,11 @@ function events_from_table(text::AbstractString; issue_url=nothing, today::Date=
   ev,er=events_from_form(f; issue_url, today)
   append!(errs,("Rad $rowno: $m" for m in er))
   st=lowercase(strip(get(vals,"Status","")))
-  if !isempty(st) && !(st in ("avlyst","cancelled","gjennomføres","scheduled"))
+  if !isempty(st) && !(st in ("avlyst","cancelled","cancelado","gjennomføres","scheduled"))
    push!(errs,"Rad $rowno: ukjent «Status» «$(vals["Status"])» (bruk «Avlyst» eller la feltet stå tomt).")
   end
   for e in ev
-   st in ("avlyst","cancelled") && (e["status"]="cancelled")
+   st in ("avlyst","cancelled","cancelado") && (e["status"]="cancelled")
    e["source"]="Innsendt via tabell"; push!(events,e)
   end
  end
@@ -98,9 +106,9 @@ end
 "Template for the table route: semicolon CSV with a UTF-8 BOM, so Excel in Norwegian locale opens it with æøå intact."
 function table_template_csv()
  rows=[TABLE_COLUMNS,
-  ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 Oslo","Tangoklubben","DJ A","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.",""],
-  ["","","2027-01-15","","","","","","DJ B","","","","","","","","","",""],
-  ["","","2027-01-22","","","","","","","","","","","","","","","","Avlyst"]]
+  ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 Oslo","Tangoklubben","DJ A","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.","","Norsk","","Milonga every Friday."],
+  ["","","2027-01-15","","","","","","DJ B","","","","","","","","","","","","",""],
+  ["","","2027-01-22","","","","","","","","","","","","","","","","Avlyst","","",""]]
  q(c)=occursin(r"[;\"\n]",c) ? "\""*replace(c,"\""=>"\"\"")*"\"" : c
  "﻿"*join((join(q.(r),";") for r in rows),"\r\n")*"\r\n"
 end

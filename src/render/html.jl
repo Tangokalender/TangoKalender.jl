@@ -2,14 +2,11 @@ _esc(x)=replace(string(something(x,"")),'&'=>"&amp;",'<'=>"&lt;",'>'=>"&gt;",'"'
 _val(e,k,d="")=(v=get(e,k,d); isnothing(v) ? d : v)
 _iso(e)=(s=string(_val(e,"start","")); isempty(s) ? "" : first(split(s,'T')))
 _sortkey(e)=string(_val(e,"start",""))
-const _WD=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"]
-const _MO=["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"]
 "`(DateTime, has_time)` for an ISO `start`/`end` string (offset ignored), or `nothing`."
 function _parse_dt(raw)
  isempty(raw) && return nothing
  try (DateTime(replace(first(split(raw,['+','Z'])),'T'=>' '),dateformat"yyyy-mm-dd HH:MM:SS"),occursin('T',raw)) catch; nothing end
 end
-_day(d)="$(_WD[dayofweek(d)]) $(day(d)). $(_MO[month(d)])"
 _hm(dt)=Dates.format(dt,"HH:MM")
 "Last day of an event: an end at or before 06:00 the next day still belongs to the evening that started it."
 _evening_end(dt,edt,etimed)=etimed && Date(edt)>Date(dt) && Time(edt)<=Time(6) ? Date(edt)-Day(1) : Date(edt)
@@ -40,22 +37,23 @@ _http(u)=(s=string(something(u,"")); occursin(r"^https?://"i,s) ? s : "")
 function _venue(e)
  v=_val(e,"venue",nothing)
  v isa AbstractDict || (v=Dict{String,Any}())
- name=string(_val(v,"name","Sted ikke oppgitt")); addr=string(_val(v,"address","")); city=string(_val(v,"city","Oslo"))
- (isempty(name) ? "Sted ikke oppgitt" : name, isempty(addr) ? (isempty(city) ? "Oslo" : city) : addr)
+ name=string(_val(v,"name","")); addr=string(_val(v,"address","")); city=string(_val(v,"city","Oslo"))
+ (isempty(name) ? _t("venue.none") : name, isempty(addr) ? (isempty(city) ? "Oslo" : city) : addr)
 end
 function _video(e)
  v=_val(e,"video",nothing); v isa AbstractDict || return ""
  p=string(_val(v,"platform","")); id=string(_val(v,"id",""))
  src= p=="youtube" && occursin(r"^[A-Za-z0-9_-]{11}$",id) ? "https://www.youtube-nocookie.com/embed/$id" :
       p=="vimeo" && occursin(r"^[0-9]+$",id) ? "https://player.vimeo.com/video/$id" : ""
- isempty(src) ? "" : "<div class=\"video\"><iframe src=\"$src\" title=\"Video: $(_esc(_val(e,"title","")))\" loading=\"lazy\" referrerpolicy=\"strict-origin-when-cross-origin\" allow=\"fullscreen; picture-in-picture; encrypted-media\" allowfullscreen></iframe></div>"
+ isempty(src) ? "" : "<div class=\"video\"><iframe src=\"$src\" title=\"Video: $(_esc(_title(e)))\" loading=\"lazy\" referrerpolicy=\"strict-origin-when-cross-origin\" allow=\"fullscreen; picture-in-picture; encrypted-media\" allowfullscreen></iframe></div>"
 end
+"Prices «150 kr · student 100 kr», or \"\" when none is given (show `_t(\"price.none\")` where needed)."
 function _price(e)
  parts=String[]
- for (k,label) in [("price_nok",""),("student_price_nok","student "),("class_price_nok","kurs ")]
+ for (k,label) in [("price_nok",""),("student_price_nok",_t("price.student")*" "),("class_price_nok",_t("price.class")*" ")]
   v=get(e,k,nothing); !isnothing(v) && push!(parts,"$(label)$(v) kr")
  end
- isempty(parts) ? "Pris ikke oppgitt" : join(parts," · ")
+ join(parts," · ")
 end
 # Small monochrome line icons (tango-argentin.fr style). One hidden <svg> sprite per page; rows reference it with
 # <use>. Icons are decorative (aria-hidden); `_icon(name,label)` adds a visually hidden text label for screen readers.
@@ -69,7 +67,7 @@ const _ICON_PATHS=Dict(
  "music"=>"<path d=\"M9 17.5V5.5l10-2v12\"/><circle cx=\"6.7\" cy=\"17.5\" r=\"2.3\"/><circle cx=\"16.7\" cy=\"15.5\" r=\"2.3\"/>",
  "calendar"=>"<rect x=\"4\" y=\"5.5\" width=\"16\" height=\"14.5\" rx=\"2\"/><path d=\"M4 10h16M9 3.5v4M15 3.5v4\"/>")
 const _SPRITE="<svg width=\"0\" height=\"0\" style=\"position:absolute\" aria-hidden=\"true\" focusable=\"false\">"*
- join(("<symbol id=\"i-$k\" viewBox=\"0 0 24 24\">$v</symbol>" for (k,v) in sort(collect(_ICON_PATHS))),"")*"</svg>"
+ join(("<symbol id=\"i-$k\" viewBox=\"0 0 24 24\">$v</symbol>" for (k,v) in sort(collect(_ICON_PATHS))),"")*join((_FLAGS[l] for l in LANGS),"")*"</svg>"
 "Inline icon referencing the page sprite; `label` becomes screen-reader text («DJ: »)."
 function _icon(name,label="")
  haskey(_ICON_PATHS,name) || throw(ArgumentError("unknown icon $name"))
@@ -81,15 +79,16 @@ _type_chips(e)=join(("<span class=\"chip$(t=="outdoor" ? " outdoor" : "")\">$(_e
 _type_class(e)=(ts=filter(!=("outdoor"),_types(e)); "t-"*(isempty(ts) ? "other" : first(ts))*("outdoor" in _types(e) ? " outdoor" : ""))
 function _card(e; correct_url=CORRECT_URL, links=false)
  corr=isempty(_http(correct_url)) || isempty(string(_val(e,"id",""))) || isempty(string(_val(e,"start",""))) ? "" :
-  "<a class=\"correct\" href=\"$(_esc(correction_url(e;base=_http(correct_url))))\" target=\"_blank\" rel=\"noopener\" aria-label=\"Rett opp: $(_esc(_val(e,"title","")))\">Rett opp ↗</a>"
- title=_esc(_val(e,"title","Uten tittel")); date=_esc(_date_label(e)); iso=_esc(_iso(e)); (vname,vaddr)=_venue(e); venue=_esc(vname); addr=_esc(vaddr); org=_esc(_val(e,"organizer","")); dj=_esc(_val(e,"dj","")); desc=_esc(_val(e,"description","")); source=_esc(_val(e,"source","Kilde")); url=_esc(_val(e,"source_url","")); pub=_esc(_val(e,"published_date","Ikke oppgitt")); cancelled=_val(e,"status","")=="cancelled"; series=_esc(_val(e,"series","")); music=_music(e); flyer=_esc(_http(_val(e,"flyer_url",""))); info=_esc(_http(_val(e,"link","")))
+  "<a class=\"correct\" href=\"$(_esc(correction_url(e;base=_http(correct_url))))\" target=\"_blank\" rel=\"noopener\" aria-label=\"$(_esc(_t("correct.aria",_title(e))))\">$(_t("correct"))</a>"
+ title=_esc(_title(e)); date=_esc(_date_label(e)); iso=_esc(_iso(e)); (vname,vaddr)=_venue(e); venue=_esc(vname); addr=_esc(vaddr); org=_esc(_val(e,"organizer","")); dj=_esc(_val(e,"dj","")); (dtext,dl)=_text(e,"description"); desc=isempty(dtext) ? "" : "<span$(_langattr(dl))>$(_esc(dtext))</span>$(_langnote(dl))"; source=_esc(_val(e,"source",_t("source"))); url=_esc(_val(e,"source_url","")); pub=_esc(_val(e,"published_date",_t("notgiven"))); cancelled=_val(e,"status","")=="cancelled"; series=_esc(_val(e,"series","")); music=_music(e); flyer=_esc(_http(_val(e,"flyer_url",""))); info=_esc(_http(_val(e,"link","")))
  link=isempty(url) ? "<span>$source</span>" : "<a href=\"$url\" target=\"_blank\" rel=\"noopener\">$source ↗</a>"
- djhtml=isempty(dj) ? "" : "<div title=\"DJ\">$(_icon("dj","DJ"))$dj</div>"; orghtml=isempty(org) ? "" : "<div title=\"Arrangør\">$(_icon("org","Arrangør"))$org</div>"
- musichtml=isempty(music) ? "" : "<div class=\"music\">"*_icon("music","Musikk")*join(("<span class=\"chip music-chip\">$(_esc(_music_label(m)))</span>" for m in music),"")*"</div>"
+ djhtml=isempty(dj) ? "" : "<div title=\"DJ\">$(_icon("dj","DJ"))$dj</div>"; orghtml=isempty(org) ? "" : "<div title=\"$(_t("organizer"))\">$(_icon("org",_t("organizer")))$org</div>"
+ musichtml=isempty(music) ? "" : "<div class=\"music\">"*_icon("music",_t("music"))*join(("<span class=\"chip music-chip\">$(_esc(_music_label(m)))</span>" for m in music),"")*"</div>"
  media=(isempty(flyer) ? "" : "<img class=\"flyer\" src=\"$flyer\" alt=\"Flyer: $title\" loading=\"lazy\">")*_video(e)
  mediahtml=isempty(media) ? "" : "<div class=\"media\">$media</div>"
- infohtml=isempty(info) ? "" : "<a href=\"$info\" target=\"_blank\" rel=\"noopener\">Mer info ↗</a>"
- """<article class="event ev$(cancelled ? " cancelled" : "")" $(_data_attrs(e))><aside>$date</aside><section><header><span>$(cancelled ? "<span class=\"chip avlyst\">Avlyst</span> " : "")$(_type_chips(e))</span><span class="price">$(_icon("price","Pris"))$(_esc(_price(e)))</span></header><h2>$(_title_html(e,links))</h2><div class="meta"><div title="Sted">$(_icon("pin","Sted"))<b>$venue</b><br><small>$addr</small></div>$djhtml$orghtml</div>$musichtml<p>$desc</p>$mediahtml<footer><span>Publisert: $pub</span><span class="links">$infohtml$link$corr</span></footer></section></article>"""
+ infohtml=isempty(info) ? "" : "<a href=\"$info\" target=\"_blank\" rel=\"noopener\">$(_t("moreinfo"))</a>"
+ price=_price(e); isempty(price) && (price=_t("price.none"))
+ """<article class="event ev$(cancelled ? " cancelled" : "")" $(_data_attrs(e))><aside>$date</aside><section><header><span>$(cancelled ? "<span class=\"chip avlyst\">$(_t("cancelled"))</span> " : "")$(_type_chips(e))</span><span class="price">$(_icon("price",_t("price")))$(_esc(price))</span></header><h2>$(_title_html(e,links))</h2><div class="meta"><div title="$(_t("venue"))">$(_icon("pin",_t("venue")))<b>$venue</b><br><small>$addr</small></div>$djhtml$orghtml</div>$musichtml<p>$desc</p>$mediahtml<footer><span>$(_t("published")): $pub</span><span class="links">$infohtml$link$corr</span></footer></section></article>"""
 end
 const REPO_URL="https://github.com/Tangokalender/tangokalender.github.io"
 "Where the page's «Legg til arrangement» link points: the new-event issue form."
@@ -111,18 +110,26 @@ const _CSS=""":root{--wine:#872b49;--paper:#f5f1eb;--line:#ddd3ca;--muted:#6e686
 const _JS=raw"""(function(){const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],rows=$$('.ev'),groups=$$('.group'),q=$('#q'),when=$('#when'),sort=$('#sort'),box=$('#events'),count=$('#count'),empty=$('#empty'),tboxes=$$('input[name=type]'),mboxes=$$('input[name=music]'),tabs=$$('.tabs a'),total=new Set(rows.map(c=>c.dataset.eid)).size,WHEN=['upcoming','all','today','week','month','recurring'],SORT=['asc','desc','title'];tabs.forEach(a=>{a.dataset.base=a.getAttribute('href')});const checked=bs=>bs.filter(b=>b.checked).map(b=>b.value);function day(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
 const ARR=(new URLSearchParams(location.search).get('arr')||'').trim().toLowerCase();function readURL(){const p=new URLSearchParams(location.search),list=k=>(p.get(k)||'').split(',').map(x=>x.trim()).filter(Boolean);if(q)q.value=p.get('q')||'';const ts=list('type'),ms=list('music');tboxes.forEach(b=>{b.checked=ts.includes(b.value)});mboxes.forEach(b=>{b.checked=ms.includes(b.value)});if(when)when.value=WHEN.includes(p.get('when'))?p.get('when'):'upcoming';if(sort)sort.value=SORT.includes(p.get('sort'))?p.get('sort'):'asc'}
 function writeURL(){const p=new URLSearchParams();if(q&&q.value.trim())p.set('q',q.value.trim());const ts=checked(tboxes),ms=checked(mboxes);if(ts.length)p.set('type',ts.join(','));if(ms.length)p.set('music',ms.join(','));if(when&&when.value!=='upcoming')p.set('when',when.value);if(sort&&sort.value!=='asc')p.set('sort',sort.value);if(ARR)p.set('arr',ARR);const s=p.toString().replace(/%2C/gi,','),search=s?'?'+s:'';if(search!==location.search)history.replaceState(null,'',location.origin+location.pathname+search+location.hash);tabs.forEach(a=>{a.setAttribute('href',a.dataset.base+search)})}
-function apply(){let now=day(new Date()),limit=new Date(now),w=when?when.value:'any',ts=checked(tboxes),ms=checked(mboxes),words=q?q.value.toLowerCase().split(/\s+/).filter(Boolean):[];if(w==='week')limit.setDate(limit.getDate()+7);if(w==='month')limit.setDate(limit.getDate()+30);let v=[];rows.forEach(c=>{let ser=c.dataset.series!=='',d=new Date(c.dataset.date+'T00:00:00'),en=new Date(c.dataset.end+'T00:00:00'),future=en>=now,oktime=true;if(w==='upcoming')oktime=future;else if(w==='today')oktime=d<=now&&en>=now;else if(w==='week'||w==='month')oktime=en>=now&&d<=limit;else if(w==='recurring')oktime=ser&&future;let ok=oktime&&(!ARR||(c.dataset.org||'').includes(ARR))&&(!ts.length||c.dataset.type.split(' ').some(t=>ts.includes(t)))&&(!ms.length||c.dataset.music.split(' ').some(m=>ms.includes(m)))&&words.every(x=>c.dataset.search.includes(x));c.classList.toggle('hidden',!ok);if(ok)v.push(c)});if(sort&&box){v.sort((a,b)=>sort.value==='title'?a.querySelector('h2').textContent.localeCompare(b.querySelector('h2').textContent,'nb'):(sort.value==='desc'?-1:1)*a.dataset.date.localeCompare(b.dataset.date));v.forEach(c=>box.appendChild(c))}let vis=new Set(v.map(c=>c.dataset.group));groups.forEach(g=>{let has=vis.has(g.dataset.group);g.dataset.keep?g.classList.toggle('noev',!has):g.classList.toggle('hidden',!has)});let n=new Set(v.map(c=>c.dataset.eid)).size;if(count)count.textContent=n+' av '+total+' arrangementer';if(empty)empty.style.display=v.length?'none':'block';writeURL()}
-if(q)q.addEventListener('input',apply);[when,sort,...tboxes,...mboxes].forEach(x=>x&&x.addEventListener('change',apply));let r=$('#reset');if(r)r.onclick=()=>{if(q)q.value='';tboxes.concat(mboxes).forEach(b=>{b.checked=false});if(when)when.value='upcoming';if(sort)sort.value='asc';apply();if(typeof countActive==='function')countActive()};let sh=$('#sharefilter');if(sh)sh.onclick=()=>{const u=location.href;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(()=>{sh.textContent='Lenke kopiert ✓';setTimeout(()=>{sh.textContent='Kopier lenke'},2500)});else prompt('Kopier lenken:',u)};let fb=$('#filters'),ft=$('#filtertoggle'),fc=$('#fcount');if(ft&&fb)ft.addEventListener('click',()=>{let o=fb.classList.toggle('open');ft.setAttribute('aria-expanded',o?'true':'false')});function countActive(){let n=checked(tboxes).length+checked(mboxes).length+(when&&when.value!=='upcoming'?1:0)+(sort&&sort.value!=='asc'?1:0);if(fc)fc.textContent=n?' ('+n+')':''}[when,sort,...tboxes,...mboxes].forEach(x=>x&&x.addEventListener('change',countActive));window.apply=apply;readURL();apply();countActive();
+function apply(){let now=day(new Date()),limit=new Date(now),w=when?when.value:'any',ts=checked(tboxes),ms=checked(mboxes),words=q?q.value.toLowerCase().split(/\s+/).filter(Boolean):[];if(w==='week')limit.setDate(limit.getDate()+7);if(w==='month')limit.setDate(limit.getDate()+30);let v=[];rows.forEach(c=>{let ser=c.dataset.series!=='',d=new Date(c.dataset.date+'T00:00:00'),en=new Date(c.dataset.end+'T00:00:00'),future=en>=now,oktime=true;if(w==='upcoming')oktime=future;else if(w==='today')oktime=d<=now&&en>=now;else if(w==='week'||w==='month')oktime=en>=now&&d<=limit;else if(w==='recurring')oktime=ser&&future;let ok=oktime&&(!ARR||(c.dataset.org||'').includes(ARR))&&(!ts.length||c.dataset.type.split(' ').some(t=>ts.includes(t)))&&(!ms.length||c.dataset.music.split(' ').some(m=>ms.includes(m)))&&words.every(x=>c.dataset.search.includes(x));c.classList.toggle('hidden',!ok);if(ok)v.push(c)});if(sort&&box){v.sort((a,b)=>sort.value==='title'?a.querySelector('h2').textContent.localeCompare(b.querySelector('h2').textContent,T.locale):(sort.value==='desc'?-1:1)*a.dataset.date.localeCompare(b.dataset.date));v.forEach(c=>box.appendChild(c))}let vis=new Set(v.map(c=>c.dataset.group));groups.forEach(g=>{let has=vis.has(g.dataset.group);g.dataset.keep?g.classList.toggle('noev',!has):g.classList.toggle('hidden',!has)});let n=new Set(v.map(c=>c.dataset.eid)).size;if(count)count.textContent=n+T.of+total+T.events;if(empty)empty.style.display=v.length?'none':'block';writeURL()}
+if(q)q.addEventListener('input',apply);[when,sort,...tboxes,...mboxes].forEach(x=>x&&x.addEventListener('change',apply));let r=$('#reset');if(r)r.onclick=()=>{if(q)q.value='';tboxes.concat(mboxes).forEach(b=>{b.checked=false});if(when)when.value='upcoming';if(sort)sort.value='asc';apply();if(typeof countActive==='function')countActive()};let sh=$('#sharefilter');if(sh)sh.onclick=()=>{const u=location.href;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(()=>{sh.textContent=T.copied;setTimeout(()=>{sh.textContent=T.copy},2500)});else prompt(T.prompt,u)};let fb=$('#filters'),ft=$('#filtertoggle'),fc=$('#fcount');if(ft&&fb)ft.addEventListener('click',()=>{let o=fb.classList.toggle('open');ft.setAttribute('aria-expanded',o?'true':'false')});function countActive(){let n=checked(tboxes).length+checked(mboxes).length+(when&&when.value!=='upcoming'?1:0)+(sort&&sort.value!=='asc'?1:0);if(fc)fc.textContent=n?' ('+n+')':''}[when,sort,...tboxes,...mboxes].forEach(x=>x&&x.addEventListener('change',countActive));window.apply=apply;readURL();apply();countActive();
 const weeks=[...document.querySelectorAll('.week')];if(weeks.length){if(document.documentElement)document.documentElement.classList.add('js');function isoWeek(d){let t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);let y=t.getUTCFullYear(),w=Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7);return y+'-W'+String(w).padStart(2,'0')}function current(){let k=isoWeek(new Date()),i=weeks.findIndex(x=>x.dataset.week>=k);return i<0?weeks.length-1:i}let i=current();let pv=$('#prevw'),nx=$('#nextw'),lb=$('#weeklabel'),td=new Date(),tk=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');[...document.querySelectorAll('.col')].forEach(c=>{if(c.dataset.group===tk)c.classList.add('today')});function show(j,push){i=Math.max(0,Math.min(weeks.length-1,j));weeks.forEach((x,k)=>x.classList.toggle('off',k!==i));if(lb)lb.textContent=weeks[i].dataset.label;if(pv)pv.disabled=i===0;if(nx)nx.disabled=i===weeks.length-1;if(push)history.replaceState(null,'',location.origin+location.pathname+location.search+'#'+weeks[i].id);let t=weeks[i].querySelector&&weeks[i].querySelector('.col.today');if(t&&t.scrollIntoView&&window.innerWidth<760)t.parentNode.scrollLeft=t.offsetLeft-12}function fromHash(){let k=weeks.findIndex(x=>'#'+x.id===location.hash);show(k<0?current():k,false)}$('#prevw').onclick=()=>show(i-1,true);$('#nextw').onclick=()=>show(i+1,true);$('#todayw').onclick=()=>show(current(),true);window.addEventListener('hashchange',fromHash);document.addEventListener('keydown',ev=>{if(/INPUT|SELECT|TEXTAREA/.test((ev.target&&ev.target.tagName)||''))return;if(ev.key==='ArrowLeft')show(i-1,true);if(ev.key==='ArrowRight')show(i+1,true)});window.showWeek=show;fromHash()}})();"""
-const _VIEWS=["compact"=>("index.html","Liste"),"week"=>("uke.html","Uke"),"cards"=>("kort.html","Kort")]
+"View => (file, label key). The file names are the same in every language tree."
+const _VIEWS=["compact"=>("index.html","view.compact"),"week"=>("uke.html","view.week"),"cards"=>("kort.html","view.cards")]
+"Strings for the page script (`T` in `_JS`), as a JS object literal."
+_js_strings()=JSON.json(Dict("of"=>_t("count.of"),"events"=>_t("count.events"),"copied"=>_t("copied"),"copy"=>_t("copylink"),"prompt"=>_t("copyprompt"),"locale"=>JS_LOCALE[_lang()]))
+"The page script with its strings: one <script> block (test/js/filters.js evaluates it as a whole)."
+_page_script()="<script>var T=$(replace(_js_strings(),"</"=>"<\\/"));$_JS</script>"
 _href(e)="arrangement/$(_esc(string(_val(e,"id",""))))/"
 _haspage(e)=!isempty(string(_val(e,"id",""))) && !isempty(string(_val(e,"start","")))
 "Title, linked to the event page when `links` (only the full site has event pages)."
-_title_html(e,links)=(t=_esc(_val(e,"title","Uten tittel")); links && _haspage(e) ? "<a href=\"$(_href(e))\">$t</a>" : t)
+function _title_html(e,links)
+ (t,l)=_text(e,"title"); t=_esc(isempty(t) ? _t("untitled") : t); la=_langattr(l)
+ links && _haspage(e) ? "<a href=\"$(_href(e))\"$la>$t</a>" : isempty(la) ? t : "<span$la>$t</span>"
+end
 "Common `data-` attributes for a filterable row/card; `day` overrides the date for per-day rows of multi-day events."
 function _data_attrs(e; day=nothing, group=nothing)
  (vname,vaddr)=_venue(e); cancelled=_val(e,"status","")=="cancelled"
- search=lowercase(join([_val(e,"title",""),vname,vaddr,_val(e,"organizer",""),_val(e,"dj",""),_val(e,"description",""),cancelled ? "avlyst" : ""]," "))
+ search=lowercase(join([_alltext(e,"title"),vname,vaddr,_val(e,"organizer",""),_val(e,"dj",""),_alltext(e,"description"),cancelled ? _t("cancelled") : ""]," "))
  d=isnothing(day) ? _iso(e) : string(day); en=isnothing(day) ? _end_day(e) : string(day)
  g=isnothing(group) ? "" : " data-group=\"$(_esc(group))\""
  "data-eid=\"$(_esc(_val(e,"id",_val(e,"title",""))))\" data-type=\"$(_esc(join(_types(e)," ")))\" data-date=\"$d\" data-end=\"$en\" data-series=\"$(_esc(_val(e,"series","")))\" data-search=\"$(_esc(search))\" data-music=\"$(_esc(join(_music(e)," ")))\" data-org=\"$(_esc(lowercase(string(_val(e,"organizer","")))))\"$g"
@@ -132,13 +139,15 @@ function _days(e)
  iso=_iso(e); isempty(iso) && return Date[]
  d0=Date(iso); d1=Date(_end_day(e)); d1<d0 || d1>d0+Day(30) ? [d0] : collect(d0:Day(1):d1)
 end
+"True when `e` started on an earlier day than `d` (later days of a multi-day event)."
+_ongoing(e,d)=(p=_parse_dt(string(_val(e,"start",""))); !isnothing(p) && Date(p[1])!=d)
 "Time column for the list/week rows: `21:00–01:30`, `fra 17:00`, `hele dagen` or `pågår`."
 function _time_cell(e,d)
- p=_parse_dt(string(_val(e,"start",""))); isnothing(p) && return "hele dagen"
- dt,timed=p; Date(dt)==d || return "pågår"
- timed || return "hele dagen"
+ p=_parse_dt(string(_val(e,"start",""))); isnothing(p) && return _t("allday")
+ dt,timed=p; Date(dt)==d || return _t("ongoing")
+ timed || return _t("allday")
  q=_parse_dt(string(_val(e,"end","")))
- isnothing(q) || !q[2] || _evening_end(dt,q[1],q[2])!=Date(dt) ? (length(_days(e))>1 ? "fra $(_hm(dt))" : _hm(dt)) : "$(_hm(dt))–$(_hm(q[1]))"
+ isnothing(q) || !q[2] || _evening_end(dt,q[1],q[2])!=Date(dt) ? (length(_days(e))>1 ? _t("from",_hm(dt)) : _hm(dt)) : "$(_hm(dt))–$(_hm(q[1]))"
 end
 _first_sentence(s)=(t=strip(string(s)); m=match(r"^(.{20,180}?[.!?])(\s|$)",t); isnothing(m) ? (length(t)>180 ? first(t,177)*"…" : t) : m[1])
 "One dense row (compact list and week view) for event `e` on day `d`."
@@ -146,14 +155,12 @@ function _row(e,d; links=true, lead=false)
  days=_days(e); n=length(days); k=findfirst(==(d),days); cancelled=_val(e,"status","")=="cancelled"
  (vname,vaddr)=_venue(e)
  facts=String[]; fact(ic,label,v)=push!(facts,"<span class=\"f\" title=\"$label\">$(_icon(ic,label))$(_esc(v))</span>")
- p=_price(e); p!="Pris ikke oppgitt" && fact("price","Pris",p)
+ p=_price(e); isempty(p) || fact("price",_t("price"),p)
  dj=string(_val(e,"dj","")); isempty(dj) || fact("dj","DJ",dj)
- t=join(something(_val(e,"teachers",Any[]),Any[]),", "); isempty(t) || fact("teachers","Lærere",t)
- desc=string(_val(e,"description","")); leadhtml=lead && !isempty(desc) ? "<div class=\"lead\">$(_esc(_first_sentence(desc)))</div>" : ""
- """<article class="row ev$(cancelled ? " cancelled" : "")" $(_data_attrs(e; day=d, group=string(d)))><div class="time">$(_esc(_time_cell(e,d)))</div><div class="what"><h3>$(_title_html(e,links))</h3>$(_type_chips(e))$(cancelled ? " <span class=\"chip avlyst\">Avlyst</span>" : "")$(n>1 ? "<span class=\"dayn\">dag $k av $n</span>" : "")<div class="where">$(_icon("pin","Sted"))$(_esc(vname)) · $(_esc(vaddr))</div>$(isempty(facts) ? "" : "<div class=\"facts\">$(join(facts,""))</div>")$leadhtml</div></article>"""
+ t=join(something(_val(e,"teachers",Any[]),Any[]),", "); isempty(t) || fact("teachers",_t("teachers"),t)
+ desc=first(_text(e,"description")); leadhtml=lead && !isempty(desc) ? "<div class=\"lead\">$(_esc(_first_sentence(desc)))</div>" : ""
+ """<article class="row ev$(cancelled ? " cancelled" : "")" $(_data_attrs(e; day=d, group=string(d)))><div class="time">$(_esc(_time_cell(e,d)))</div><div class="what"><h3>$(_title_html(e,links))</h3>$(_type_chips(e))$(cancelled ? " <span class=\"chip avlyst\">$(_t("cancelled"))</span>" : "")$(n>1 ? "<span class=\"dayn\">$(_t("dayn",k,n))</span>" : "")<div class="where">$(_icon("pin",_t("venue")))$(_esc(vname)) · $(_esc(vaddr))</div>$(isempty(facts) ? "" : "<div class=\"facts\">$(join(facts,""))</div>")$leadhtml</div></article>"""
 end
-const _MONTHS_LONG=["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"]
-_longday(d)="$(_WD[dayofweek(d)]) $(day(d)). $(_MONTHS_LONG[month(d)])"
 _byday(ev)=(m=Dict{Date,Vector{Any}}(); for e in ev, d in _days(e); push!(get!(m,d,Any[]),e); end; m)
 _dayrows(m,d;kw...)=join((_row(e,d;kw...) for e in sort(m[d],by=_sortkey)),"")
 function _compact_view(ev; links=true)
@@ -162,14 +169,13 @@ function _compact_view(ev; links=true)
 end
 "ISO week key `2026-W41` and the Monday of that week."
 _isoweek(d)=(y=year(d+Day(4-dayofweek(d))); w=week(d); "$y-W$(lpad(w,2,'0'))")
-const _WD3=["man","tir","ons","tor","fre","lør","søn"]
 "One compact event block in a week-grid column (day `d`)."
 function _cell(e,d; links=true)
  days=_days(e); n=length(days); k=findfirst(==(d),days); cancelled=_val(e,"status","")=="cancelled"
  (vname,_)=_venue(e)
- facts=String[]; p=_price(e); p!="Pris ikke oppgitt" && push!(facts,"<span class=\"f\" title=\"Pris\">$(_icon("price","Pris"))$(_esc(p))</span>")
+ facts=String[]; p=_price(e); isempty(p) || push!(facts,"<span class=\"f\" title=\"$(_t("price"))\">$(_icon("price",_t("price")))$(_esc(p))</span>")
  dj=string(_val(e,"dj","")); isempty(dj) || push!(facts,"<span class=\"f\" title=\"DJ\">$(_icon("dj","DJ"))$(_esc(dj))</span>")
- """<article class="cell ev $(_esc(_type_class(e)))$(cancelled ? " cancelled" : "")" $(_data_attrs(e; day=d, group=string(d)))><div class="time">$(_esc(_time_cell(e,d)))$(n>1 ? " <span class=\"dayn\">$k/$n</span>" : "")</div><h3>$(_title_html(e,links))</h3><div class="tags">$(_type_chips(e))$(cancelled ? " <span class=\"chip avlyst\">Avlyst</span>" : "")</div><div class="where">$(_icon("pin","Sted"))$(_esc(vname))</div>$(isempty(facts) ? "" : "<div class=\"facts\">$(join(facts,""))</div>")</article>"""
+ """<article class="cell ev $(_esc(_type_class(e)))$(cancelled ? " cancelled" : "")" $(_data_attrs(e; day=d, group=string(d)))><div class="time">$(_esc(_time_cell(e,d)))$(n>1 ? " <span class=\"dayn\">$k/$n</span>" : "")</div><h3>$(_title_html(e,links))</h3><div class="tags">$(_type_chips(e))$(cancelled ? " <span class=\"chip avlyst\">$(_t("cancelled"))</span>" : "")</div><div class="where">$(_icon("pin",_t("venue")))$(_esc(vname))</div>$(isempty(facts) ? "" : "<div class=\"facts\">$(join(facts,""))</div>")</article>"""
 end
 """
 Week calendar: one `<section class="week">` per ISO week (from the first to the last event), each a 7-column grid
@@ -182,59 +188,66 @@ function _week_view(ev; links=true, today::Date=Dates.today())
  secs=String[]
  for w in first_:Week(1):last_
   key=_isoweek(w); sun=w+Day(6)
-  range_=month(w)==month(sun) ? "$(day(w)).–$(day(sun)). $(_MO[month(sun)])" : "$(day(w)). $(_MO[month(w)]) – $(day(sun)). $(_MO[month(sun)])"
-  label="Uke $(week(w)) · $range_"
-  cols=join(("<div class=\"group col$(dayofweek(d)>=6 ? " weekend" : "")\" data-keep=\"1\" data-group=\"$d\"><h3 class=\"colhead\" title=\"$(_esc(_longday(d)))\"><span class=\"wd\">$(_WD3[dayofweek(d)])</span> <span class=\"dm\">$(day(d)). $(_MO[month(d)])</span></h3>$(haskey(m,d) ? join((_cell(e,d;links) for e in sort(m[d],by=_sortkey)),"") : "")<p class=\"none\">–</p></div>" for d in w:Day(1):sun),"")
+  label=_weeklabel(w)
+  cols=join(("<div class=\"group col$(dayofweek(d)>=6 ? " weekend" : "")\" data-keep=\"1\" data-group=\"$d\"><h3 class=\"colhead\" title=\"$(_esc(_longday(d)))\"><span class=\"wd\">$(_wd3(d))</span> <span class=\"dm\">$(_dm(d))</span></h3>$(haskey(m,d) ? join((_cell(e,d;links) for e in sort(m[d],by=_sortkey)),"") : "")<p class=\"none\">–</p></div>" for d in w:Day(1):sun),"")
   push!(secs,"<section class=\"week\" id=\"uke-$(replace(key,"-W"=>"-"))\" data-week=\"$key\" data-label=\"$(_esc(label))\" aria-label=\"$(_esc(label))\"><h2 class=\"weektitle\">$(_esc(label))</h2><div class=\"weekgrid\">$cols</div></section>")
  end
- "<div class=\"weeknav\"><button id=\"prevw\" type=\"button\" aria-label=\"Forrige uke\">‹<span class=\"lbl\"> Forrige</span></button><div class=\"wk\"><strong id=\"weeklabel\" aria-live=\"polite\"></strong><button id=\"todayw\" type=\"button\">I dag</button></div><button id=\"nextw\" type=\"button\" aria-label=\"Neste uke\"><span class=\"lbl\">Neste </span>›</button></div>"*join(secs,"\n")
+ "<div class=\"weeknav\"><button id=\"prevw\" type=\"button\" aria-label=\"$(_t("week.prev"))\">‹<span class=\"lbl\"> $(_t("week.prev.short"))</span></button><div class=\"wk\"><strong id=\"weeklabel\" aria-live=\"polite\"></strong><button id=\"todayw\" type=\"button\">$(_t("week.today"))</button></div><button id=\"nextw\" type=\"button\" aria-label=\"$(_t("week.next"))\"><span class=\"lbl\">$(_t("week.next.short")) </span>›</button></div>"*join(secs,"\n")
 end
 function _filterbar(ev; when=true, sort=true)
  types=filter(t->any(t in _types(e) for e in ev),TYPE_ORDER); musics=sort!(unique(m for e in ev for m in _music(e)))
  pill(name,v,l)="<label class=\"pill\"><input type=\"checkbox\" name=\"$name\" value=\"$(_esc(v))\"><span>$(_esc(l))</span></label>"
  tpills=join((pill("type",t,_type_label(t)) for t in types),""); mpills=join((pill("music",m,_music_label(m)) for m in musics),"")
- whenhtml=when ? "<div><label for=\"when\">Tidspunkt</label><select id=\"when\"><option value=\"upcoming\" selected>Kommende</option><option value=\"all\">Alle (også tidligere)</option><option value=\"today\">I dag</option><option value=\"week\">Neste 7 dager</option><option value=\"month\">Neste 30 dager</option><option value=\"recurring\">Faste aktiviteter</option></select></div>" : ""
- sorthtml=sort ? "<div><label for=\"sort\">Sortering</label><select id=\"sort\"><option value=\"asc\">Tidligste først</option><option value=\"desc\">Seneste først</option><option value=\"title\">Alfabetisk</option></select></div>" : ""
+ opts(keys,pre)=join(("<option value=\"$k\"$(k==first(keys) ? " selected" : "")>$(_t(pre*k))</option>" for k in keys),"")
+ whenhtml=when ? "<div><label for=\"when\">$(_t("when"))</label><select id=\"when\">$(opts(["upcoming","all","today","week","month","recurring"],"when."))</select></div>" : ""
+ sorthtml=sort ? "<div><label for=\"sort\">$(_t("sort"))</label><select id=\"sort\">$(opts(["asc","desc","title"],"sort."))</select></div>" : ""
  cols=when+sort
  # Search is always visible; on phones the rest folds into «Filter» (shows the number of active filters)
- "<div class=\"filters\" id=\"filters\"><div class=\"topline\"><div class=\"search\"><label for=\"q\">Søk</label><input id=\"q\" type=\"search\" placeholder=\"Sted, DJ, arrangør …\" title=\"Flere ord: alle må stemme\" autocomplete=\"off\"></div>"*
- "<button id=\"filtertoggle\" class=\"ftoggle\" type=\"button\" aria-expanded=\"false\" aria-controls=\"morefilters\">Filter<span id=\"fcount\"></span> <span class=\"chev\" aria-hidden=\"true\">▾</span></button></div>"*
+ "<div class=\"filters\" id=\"filters\"><div class=\"topline\"><div class=\"search\"><label for=\"q\">$(_t("search"))</label><input id=\"q\" type=\"search\" placeholder=\"$(_t("search.placeholder"))\" title=\"$(_t("search.title"))\" autocomplete=\"off\"></div>"*
+ "<button id=\"filtertoggle\" class=\"ftoggle\" type=\"button\" aria-expanded=\"false\" aria-controls=\"morefilters\">$(_t("filter"))<span id=\"fcount\"></span> <span class=\"chev\" aria-hidden=\"true\">▾</span></button></div>"*
  "<div class=\"more\" id=\"morefilters\">$(cols>0 ? "<div class=\"frow\" style=\"grid-template-columns:repeat($cols,minmax(160px,260px))\">$whenhtml$sorthtml</div>" : "")"*
- "<div class=\"frow pills-row\"><fieldset class=\"pills\"><legend>Type</legend>$tpills</fieldset>$(isempty(musics) ? "" : "<fieldset class=\"pills\"><legend>Musikk</legend>$mpills</fieldset>")</div></div></div>"
+ "<div class=\"frow pills-row\"><fieldset class=\"pills\"><legend>$(_t("type"))</legend>$tpills</fieldset>$(isempty(musics) ? "" : "<fieldset class=\"pills\"><legend>$(_t("music"))</legend>$mpills</fieldset>")</div></div></div>"
 end
 """
-    render_events_html(events; view="cards", site=false, …) -> String
+    render_events_html(events; view="cards", site=false, lang="nb", …) -> String
 
 One calendar page. `view` is `"cards"`, `"compact"` (dense list grouped by day) or `"week"` (one week at a time).
-`site=true` (used by `write_site`) adds the view tabs, links to event pages and the feed links.
+`site=true` (used by `write_site`) adds the view tabs, links to event pages, the feed links and the language switcher.
+`lang` is "nb", "en" or "es" (see src/i18n.jl).
 """
-function render_events_html(events; view="cards",site=false,title=SITE_NAME,subtitle="Milongaer, practicaer, kurs og festivaler",generated_at=Dates.format(now(),dateformat"yyyy-mm-dd HH:MM"),submit_url=nothing,correct_url=CORRECT_URL,embed::Bool=false,today::Date=Dates.today())
+render_events_html(events; lang="nb", kwargs...)=_with_lang(()->_render_events_html(events; kwargs...),lang)
+function _render_events_html(events; view="cards",site=false,title=SITE_NAME,subtitle=nothing,generated_at=Dates.format(now(),dateformat"yyyy-mm-dd HH:MM"),submit_url=nothing,correct_url=CORRECT_URL,embed::Bool=false,today::Date=Dates.today())
  view in first.(_VIEWS) || throw(ArgumentError("unknown view $view"))
+ subtitle=something(subtitle,_t("site.subtitle"))
  # one «Legg til arrangement» link: the combined page on the site, the issue form directly for a standalone page
  su=string(something(submit_url, site ? ADD_PAGE : SUBMIT_URL))
  submit=_esc(occursin(r"^(https?://|[A-Za-z0-9._-]+\.html(#[a-z-]+)?$)",su) ? su : "")   # absolute URL or a relative page
  ext=startswith(su,"http") ? " target=\"_blank\" rel=\"noopener\"" : ""
- hero_submit=isempty(submit) ? "" : "<a class=\"submit\" href=\"$submit\"$ext>+ Legg til arrangement</a>"
- footer_submit=isempty(submit) ? "" : " · <a href=\"$submit\"$ext>Legg til arrangement</a>"
- tabs=site ? "<nav class=\"tabs\" aria-label=\"Visning\">"*join(("<a href=\"$f\"$(v==view ? " class=\"on\" aria-current=\"page\"" : "")>$l</a>" for (v,(f,l)) in _VIEWS),"")*"</nav>" : ""
- feeds=site ? " · <a href=\"$ABOUT_PAGE\">Om kalenderen</a> · <a href=\"$EMBED_PAGE\">Bygg inn</a> · <span class=\"feeds\"><a href=\"webcal://$(replace(SITE_URL,r"^https?://"=>""))/kalender.ics\">Abonner på kalenderen</a> · <a href=\"kalender.ics\">.ics</a> · <a href=\"rss.xml\">RSS</a></span>" : ""
- headlinks=site ? "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$(_esc(SITE_NAME))\" href=\"rss.xml\"><link rel=\"canonical\" href=\"$SITE_URL/$(Dict(_VIEWS)[view][1]=="index.html" ? "" : Dict(_VIEWS)[view][1])\">" : ""
+ hero_submit=isempty(submit) ? "" : "<a class=\"submit\" href=\"$submit\"$ext>+ $(_t("add"))</a>"
+ footer_submit=isempty(submit) ? "" : " · <a href=\"$submit\"$ext>$(_t("add"))</a>"
+ tabs=site ? "<nav class=\"tabs\" aria-label=\"$(_t("nav.views"))\">"*join(("<a href=\"$f\"$(v==view ? " class=\"on\" aria-current=\"page\"" : "")>$(_t(l))</a>" for (v,(f,l)) in _VIEWS),"")*"</nav>" : ""
+ feeds=site ? " · <a href=\"$ABOUT_PAGE\">$(_t("about"))</a> · <a href=\"$EMBED_PAGE\">$(_t("embed"))</a> · <span class=\"feeds\"><a href=\"webcal://$(replace(_lang_url("kalender.ics"),r"^https?://"=>""))\">$(_t("subscribe"))</a> · <a href=\"kalender.ics\">.ics</a> · <a href=\"rss.xml\">RSS</a></span>" : ""
+ file=Dict(_VIEWS)[view][1]; rel=file=="index.html" ? "" : file
+ headlinks=site ? "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$(_esc(SITE_NAME))\" href=\"rss.xml\">$(_alternates(rel))$(_lang_js(rel))" : ""
+ langnav=site ? _langnav(rel) : ""
  ev=sort(collect(events),by=_sortkey)
+ summary="<div class=\"summary\"><span id=\"count\"></span><span class=\"sumbtns\"><button id=\"sharefilter\" type=\"button\">$(_t("copylink"))</button><button id=\"reset\" type=\"button\">$(_t("reset"))</button></span></div>"
+ nomatch="<div class=\"empty\" id=\"empty\">$(_t("nomatch"))</div>"
  body=if view=="cards"
-  _filterbar(ev)*"<main class=\"main\"><div class=\"summary\"><span id=\"count\"></span><span class=\"sumbtns\"><button id=\"sharefilter\" type=\"button\">Kopier lenke</button><button id=\"reset\" type=\"button\">Nullstill</button></span></div><div class=\"events\" id=\"events\">$(join((_card(e;correct_url,links=site) for e in ev),"\n"))</div><div class=\"empty\" id=\"empty\">Ingen treff</div></main>"
+  _filterbar(ev)*"<main class=\"main\">$summary<div class=\"events\" id=\"events\">$(join((_card(e;correct_url,links=site) for e in ev),"\n"))</div>$nomatch</main>"
  elseif view=="compact"
-  _filterbar(ev;sort=false)*"<main class=\"main\"><div class=\"summary\"><span id=\"count\"></span><span class=\"sumbtns\"><button id=\"sharefilter\" type=\"button\">Kopier lenke</button><button id=\"reset\" type=\"button\">Nullstill</button></span></div><div id=\"list\">$(_compact_view(ev;links=site))</div><div class=\"empty\" id=\"empty\">Ingen treff</div></main>"
+  _filterbar(ev;sort=false)*"<main class=\"main\">$summary<div id=\"list\">$(_compact_view(ev;links=site))</div>$nomatch</main>"
  else
-  _filterbar(ev;when=false,sort=false)*"<main class=\"main\"><div class=\"summary\"><span id=\"count\"></span><span class=\"sumbtns\"><button id=\"sharefilter\" type=\"button\">Kopier lenke</button><button id=\"reset\" type=\"button\">Nullstill</button></span></div>$(_week_view(ev;links=site,today))</main>"
+  _filterbar(ev;when=false,sort=false)*"<main class=\"main\">$summary$(_week_view(ev;links=site,today))</main>"
  end
  if embed   # for <iframe> on other sites: just the list; URL filters (?type=, ?q=, ?when=, ?arr=) still apply
-  return """<!doctype html><html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title))</title><base href="$SITE_URL/" target="_top"><meta name="robots" content="noindex"><style>
-$_CSS.embedhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,#26151d,#8b2949)}.embedhead a{color:white;text-decoration:none;font:500 1.15rem Georgia}.embedhead small{color:#f7dce5}.embed .filters,.embed .summary{display:none}.embed .main{padding:6px 12px 10px}.embedfoot{text-align:center;font-size:.78rem;padding:8px}.embedfoot a{color:var(--wine);font-weight:700}
-</style></head><body class="embed">$_SPRITE<div class="embedhead"><a href="./">$(_esc(title))</a><small>Kommende arrangementer</small></div>$body<div class="embedfoot"><a href="./">Se hele kalenderen →</a></div><script>$_JS</script></body></html>"""
+  return """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title))</title><base href="$(_lang_url(""))" target="_top"><meta name="robots" content="noindex"><style>
+$_CSS$_LANG_CSS.embedhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,#26151d,#8b2949)}.embedhead a{color:white;text-decoration:none;font:500 1.15rem Georgia}.embedhead small{color:#f7dce5}.embed .filters,.embed .summary{display:none}.embed .main{padding:6px 12px 10px}.embedfoot{text-align:center;font-size:.78rem;padding:8px}.embedfoot a{color:var(--wine);font-weight:700}
+</style></head><body class="embed">$_SPRITE<div class="embedhead"><a href="./">$(_esc(title))</a><small>$(_t("embed.upcoming"))</small></div>$body<div class="embedfoot"><a href="./">$(_t("embed.all"))</a></div>$(_page_script())</body></html>"""
  end
- """<!doctype html><html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title))</title>$headlinks<style>
-$_CSS
-</style></head><body>$_SPRITE<div class="hero"><div class="wrap"><small>ARGENTINSK TANGO I OSLO</small><h1>$(_esc(title))</h1><p>$(_esc(subtitle))</p>$hero_submit$tabs</div></div>$body<div class="sitefooter">Generert $(_esc(generated_at)) · Kontroller alltid detaljer hos arrangøren.$footer_submit$feeds</div><script>$_JS</script></body></html>"""
+ """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title))</title>$headlinks<style>
+$_CSS$_LANG_CSS
+</style></head><body>$_SPRITE<div class="hero"><div class="wrap"><div class="topbar"><small>$(_t("site.tagline"))</small>$langnav</div><h1>$(_esc(title))</h1><p>$(_esc(subtitle))</p>$hero_submit$tabs</div></div>$body<div class="sitefooter">$(_t("generated")) $(_esc(generated_at)) · $(_t("check"))$footer_submit$feeds</div>$(_page_script())</body></html>"""
 end
 function render_events_file(input::AbstractString,output::AbstractString="index.html";kwargs...)
  html=render_events_html(load_events(input);kwargs...); mkpath(dirname(abspath(output))); write(output,html); output

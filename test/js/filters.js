@@ -4,7 +4,7 @@
 //          groups:{when:[…]}, reset, afterReset:{search,checked}, weeks:{…}}   (weeks only on the week page)
 // Only class names are simulated here; test/js/browser.js checks what a real browser actually shows.
 const fs=require('fs'); const html=fs.readFileSync(process.argv[2],'utf8'); const NOW=process.argv[3]; const HASH=process.argv[4]||''; const SEARCH=process.argv[5]||'';
-const script=html.match(/<script>([\s\S]*)<\/script>/)[1];
+const script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.startsWith('var T='));   // the page script (the head script handles languages: test/js/lang.js)
 const strip=s=>s.replace(/<[^>]*>/g,'');
 function classList(init){const c=new Set(init.split(/\s+/).filter(Boolean));return {toggle:(k,on)=>{(on===undefined?!c.has(k):on)?c.add(k):c.delete(k)},has:k=>c.has(k),add:k=>c.add(k)}}
 function attrs(s){const d={};for(const a of s.matchAll(/data-([a-z]+)="([^"]*)"/g))d[a[1]]=a[2];return d}

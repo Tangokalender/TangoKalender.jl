@@ -19,6 +19,7 @@ const EXAMPLE_OUTPUT="""{
   "student_price_nok": 100,
   "class_price_nok": null,
   "description": "Milonga med tradisjonell tango hele kvelden.",
+  "lang": "nb",
   "flyer_url": null,
   "video_url": null,
   "link": "https://www.facebook.com/events/000000000000000"
@@ -34,7 +35,9 @@ llm_rules()="""- Output ONLY a JSON value that conforms to this JSON Schema, wit
 - Prices are whole Norwegian kroner as integers: "price_nok" (regular entry), "student_price_nok", "class_price_nok" (the class or course part). If a price covers a whole course or several dates (e.g. 910 kr for a 6-session course), put it in "class_price_nok" on each date, leave "price_nok" null, and say what it covers in "description" (e.g. "Pris for hele kurset.").
 - "venue" is {"name", "address", "city"}; "city" is usually "Oslo".
 - "link" is the URL of the event page (for example the Facebook event). "flyer_url" and "video_url" (YouTube or Vimeo) only if such links appear in the source.
-- "description": 1–3 short, neutral sentences in the language of the source (level, entry, dress code). No marketing language.
+- "description": 1–3 short, neutral sentences (level, entry, dress code). No marketing language. Write it in the language of the source if that is Norwegian or English, otherwise in English.
+- "lang" is the language of "title" and "description": "nb" (Norwegian) or "en" (English).
+- "translations" only if the source itself has the text in both languages: {"en": {"title": …, "description": …}} for a Norwegian event (or {"nb": …} for an English one). Never translate yourself.
 - Use null (or [] for lists) for anything the source does not state. Never guess names, prices, times or addresses.
 - Write people's names (DJ, teachers, organiser) only as they appear in the public event."""
 "Copy-ready prompt for a chat assistant; the person pastes the event text or screenshot after it."
@@ -85,36 +88,41 @@ $EXAMPLE_OUTPUT
 - [Stored event schema]($SITE_URL/schema/tango-event.schema.json): how events are stored after review (ids, series and metadata are set by the bot)
 - [JSON submission form]($JSON_FORM_URL)
 - [Upcoming events as JSON]($SITE_URL/events.json): the stored format, for reading the calendar programmatically
-- [Instructions for people, in Norwegian]($SITE_URL/$ADD_PAGE#ki)
+- [Instructions for people]($SITE_URL/en/$ADD_PAGE#ki) (also in [Norwegian]($SITE_URL/$ADD_PAGE#ki) and [Spanish]($SITE_URL/es/$ADD_PAGE#ki))
 """
 """
     write_site(dir, events; today=Dates.today(), kwargs...) -> files
 
-Write the whole static site: the three views (index.html = compact list, uke.html, kort.html), one page and one
-.ics per event (arrangement/<id>/index.html, arrangement/<id>.ics), kalender.ics, rss.xml, legg-til.html (+ the old
-for-ki.html as a redirect and the spreadsheet template),
-llms.txt and both schemas. `kwargs` go to `render_events_html`.
+Write the whole static site. Per language (Norwegian at the root, English under `en/`, Spanish under `es/`, same file
+names): the three views (index.html = compact list, uke.html, kort.html), one page and one .ics per event
+(arrangement/<id>/index.html, arrangement/<id>.ics), kalender.ics, rss.xml, legg-til.html, om.html, bygg-inn.html and
+the embeds (embed/). Once, at the root: events.json, the old for-ki.html redirect, the spreadsheet template, llms.txt
+and both schemas. `kwargs` go to `render_events_html`.
 """
 function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwargs...)
- mkpath(joinpath(dir,"schema")); mkpath(joinpath(dir,"arrangement")); files=String[]
- w(rel,content)=(f=joinpath(dir,rel); mkpath(dirname(f)); write(f,content); push!(files,f))
- ev=collect(events)
- for (view,(file,_)) in _VIEWS; w(file,render_events_html(ev;view,site=true,today,kwargs...)); end
- cu=get(Dict(kwargs),:correct_url,CORRECT_URL)
- for e in ev
-  _haspage(e) || continue
-  w(joinpath("arrangement",string(e["id"]),"index.html"),render_event_page(e,ev;today,correct_url=cu))
-  w(joinpath("arrangement","$(e["id"]).ics"),event_ics(e;today))
+ mkpath(joinpath(dir,"schema")); files=String[]
+ ev=collect(events); cu=get(Dict(kwargs),:correct_url,CORRECT_URL)
+ for lang in LANGS
+  root=joinpath(dir,_prefix(lang))
+  w(rel,content)=(f=joinpath(root,rel); mkpath(dirname(f)); write(f,content); push!(files,f))
+  for (view,(file,_)) in _VIEWS; w(file,render_events_html(ev;view,site=true,today,lang,kwargs...)); end
+  for e in ev
+   _haspage(e) || continue
+   w(joinpath("arrangement",string(e["id"]),"index.html"),render_event_page(e,ev;today,correct_url=cu,lang))
+   w(joinpath("arrangement","$(e["id"]).ics"),event_ics(e;today,lang))
+  end
+  w("kalender.ics",calendar_ics([e for e in ev if _haspage(e) && Date(_end_day(e))>=today-Day(30)];today,lang))
+  w("rss.xml",rss_xml(ev;today,lang))
+  w(ADD_PAGE,legg_til_html(;lang)); w(ABOUT_PAGE,om_html(;lang)); w(EMBED_PAGE,bygg_inn_html(;lang))
+  # embeds for other websites; «today» is the build date (nightly rebuild)
+  w(EMBED_TODAY,today_svg(ev;today,lang)); w(EMBED_WEEK,week_svg(ev;today,lang))
+  w(EMBED_LIST,render_events_html(ev;view="compact",site=true,embed=true,today,lang,kwargs...))
  end
- w("kalender.ics",calendar_ics([e for e in ev if _haspage(e) && Date(_end_day(e))>=today-Day(30)];today))
- w("rss.xml",rss_xml(ev;today))
- w(ADD_PAGE,legg_til_html()); w(ABOUT_PAGE,om_html()); w(EMBED_PAGE,bygg_inn_html())
- # embeds for other websites; «today» is the build date (nightly rebuild)
- w(EMBED_TODAY,today_svg(ev;today)); w(EMBED_WEEK,week_svg(ev;today)); w("events.json",events_json(ev;today))
- w(EMBED_LIST,render_events_html(ev;view="compact",site=true,embed=true,today,kwargs...))
- w(AI_PAGE,for_ki_redirect_html()); w("llms.txt",llms_txt())
- w(TEMPLATE_CSV,table_template_csv())
+ wr(rel,content)=(f=joinpath(dir,rel); mkpath(dirname(f)); write(f,content); push!(files,f))
+ wr("events.json",events_json(ev;today))
+ wr(AI_PAGE,for_ki_redirect_html()); wr("llms.txt",llms_txt())
+ wr(TEMPLATE_CSV,table_template_csv())
  cp(SCHEMA_FILE,joinpath(dir,"schema","tango-event.schema.json");force=true); push!(files,joinpath(dir,"schema","tango-event.schema.json"))
- w(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))
+ wr(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))
  touch(joinpath(dir,".nojekyll")); files
 end

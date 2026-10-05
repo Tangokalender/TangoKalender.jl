@@ -5,7 +5,8 @@ Usage:
   tangokalender [build] [INPUT] [OUTPUT]   validate, then render (default: events public/index.html)
   tangokalender site [INPUT] [DIR]         validate, then write the whole site to DIR (default: events _site):
                                            index.html (list), uke.html, kort.html, arrangement/<id>/ pages and .ics,
-                                           kalender.ics, rss.xml, for-ki.html, llms.txt, schema/*.json
+                                           kalender.ics, rss.xml, … – in Norwegian, and again under en/ and es/ –
+                                           plus events.json, for-ki.html, llms.txt, schema/*.json
   tangokalender validate [INPUT]           validate only
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
 
@@ -37,7 +38,7 @@ function _issue_report(events,files,errs)
   "\n</details>\n\nEn redaktør ser over forslaget før det publiseres."
 end
 "Short date for titles: «2. okt»."
-_short_day(e)=(d=Date(first(string(e["start"]),10)); "$(day(d)). $(_MO[month(d)])")
+_short_day(e)=_dm(Date(first(string(e["start"]),10)))
 _one_line(s)=replace(string(s),r"\s+"=>" ")
 "Short one-line summary for PR/issue titles: «Milonga X (2. okt)» or «Kurs Y (8 datoer fra 20. okt)»."
 function _summary_title(events)

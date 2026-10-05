@@ -1,7 +1,8 @@
 # iCalendar (RFC 5545): one .ics per event and the subscribable kalender.ics.
 # Times are written in UTC (converted from the stored offset), so no VTIMEZONE block is needed.
 const ICS_DOMAIN="tangokalender.github.io"
-event_url(e)="$SITE_URL/arrangement/$(e["id"])/"
+"Absolute URL of an event's page in the current language."
+event_url(e)=_lang_url("arrangement/$(e["id"])/")
 "Escape a TEXT value (backslash, semicolon, comma, newline)."
 _icstext(s)=replace(string(s),'\\'=>"\\\\",';'=>"\\;",','=>"\\,","\r\n"=>"\\n",'\n'=>"\\n",'\r'=>"\\n")
 "Fold a content line at 75 octets (continuation lines start with a space), never splitting a UTF-8 character."
@@ -38,13 +39,13 @@ function event_ics_lines(e; today::Date=Dates.today())
   d=Date(first(s,10)); push!(L,"DTSTART;VALUE=DATE:$(_icsdate(d))")
   last_=isempty(en) ? d : Date(first(en,10)); push!(L,"DTEND;VALUE=DATE:$(_icsdate(max(last_,d)+Day(1)))")   # exclusive
  end
- push!(L,"SUMMARY:"*_icstext(_val(e,"title","Tango")))
+ push!(L,"SUMMARY:"*_icstext(_title(e)))
  push!(L,"LOCATION:"*_icstext(join(filter(!isempty,[vname,vaddr]),", ")))
- desc=String[]; d_=_s(get(e,"description",nothing)); isempty(d_) || push!(desc,d_)
- p=_price(e); p=="Pris ikke oppgitt" || push!(desc,"Pris: $p")
- for (k,l) in ("dj"=>"DJ","organizer"=>"Arrangør"); v=_s(get(e,k,nothing)); isempty(v) || push!(desc,"$l: $v"); end
- t=join(something(get(e,"teachers",nothing),Any[]),", "); isempty(t) || push!(desc,"Lærere: $t")
- l=_http(get(e,"link",nothing)); isempty(l) || push!(desc,"Mer info: $l")
+ desc=String[]; d_=first(_text(e,"description")); isempty(d_) || push!(desc,d_)
+ p=_price(e); isempty(p) || push!(desc,"$(_t("price")): $p")
+ for (k,l) in ("dj"=>"DJ","organizer"=>_t("organizer")); v=_s(get(e,k,nothing)); isempty(v) || push!(desc,"$l: $v"); end
+ t=join(something(get(e,"teachers",nothing),Any[]),", "); isempty(t) || push!(desc,"$(_t("teachers")): $t")
+ l=_http(get(e,"link",nothing)); isempty(l) || push!(desc,"$(_t("moreinfo.plain")): $l")
  push!(desc,event_url(e))
  push!(L,"DESCRIPTION:"*_icstext(join(desc,"\n")))
  push!(L,"URL:"*event_url(e))
@@ -54,17 +55,19 @@ function event_ics_lines(e; today::Date=Dates.today())
  L
 end
 """
-    calendar_ics(events; name=SITE_NAME, today) -> String
+    calendar_ics(events; name=SITE_NAME, today, lang="nb") -> String
 
 A complete VCALENDAR (CRLF line endings, folded lines) with one VEVENT per event that has an id and a start.
+Text (titles, descriptions, labels) and event URLs are in language `lang`; UIDs are the same in every language.
 """
-function calendar_ics(events; name=SITE_NAME, today::Date=Dates.today())
+calendar_ics(events; lang="nb", kwargs...)=_with_lang(()->_calendar_ics(events;kwargs...),lang)
+function _calendar_ics(events; name=SITE_NAME, today::Date=Dates.today())
  L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tangokalender//TangoKalender.jl//NO","CALSCALE:GREGORIAN","METHOD:PUBLISH",
-  "X-WR-CALNAME:"*_icstext(name),"X-WR-TIMEZONE:Europe/Oslo","X-WR-CALDESC:"*_icstext("Argentinsk tango i Oslo – $SITE_URL/"),
+  "X-WR-CALNAME:"*_icstext(name),"X-WR-TIMEZONE:Europe/Oslo","X-WR-CALDESC:"*_icstext("$(_t("site.description")) – $(_lang_url(""))"),
   "REFRESH-INTERVAL;VALUE=DURATION:PT12H","X-PUBLISHED-TTL:PT12H"]
  for e in sort([e for e in events if _haspage(e)],by=_sortkey); append!(L,event_ics_lines(e;today)); end
  push!(L,"END:VCALENDAR")
  join((_fold(l) for l in L),"\r\n")*"\r\n"
 end
 "The single-event calendar file linked as «Legg i kalender»."
-event_ics(e; today::Date=Dates.today())=calendar_ics([e]; name=string(_val(e,"title","Tango")), today)
+event_ics(e; today::Date=Dates.today(), lang="nb")=_with_lang(()->_calendar_ics([e]; name=_title(e), today),lang)

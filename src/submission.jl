@@ -26,7 +26,9 @@ const _DESCRIPTIONS=Dict(
  "price_nok"=>"Regular entry price in whole Norwegian kroner (integer), or null.",
  "student_price_nok"=>"Student/reduced price in whole NOK, or null.",
  "class_price_nok"=>"Price for the class/course part in whole NOK, or null. A price for a whole course or series of dates goes here (on every date), with the description saying what it covers.",
- "description"=>"1–3 short neutral sentences in the source's language (level, entry, dress code). No marketing.",
+ "description"=>"1–3 short neutral sentences (level, entry, dress code), in the source's language if that is Norwegian or English, otherwise English. No marketing.",
+ "lang"=>"Language of title and description: \"nb\" (Norwegian) or \"en\" (English).",
+ "translations"=>"Only if the source itself has the text in two languages: {\"en\": {\"title\", \"description\"}} for a Norwegian event, {\"nb\": …} for an English one. Never translate yourself; otherwise null.",
  "flyer_url"=>"Direct https URL of the event image, only if it appears in the source; otherwise null.",
  "video_url"=>"YouTube or Vimeo link from the source, or null.",
  "link"=>"URL of the event page (e.g. the Facebook event or the organiser's page).")
@@ -91,6 +93,17 @@ function _local(raw)
  t=isnothing(m[2]) ? nothing : _time(m[2];allow24=true); (d,t)
 end
 _none(x)=x isa AbstractString && isempty(strip(x)) ? nothing : x
+"Submitted `translations` without blank texts and without the event's own language; `nothing` if nothing is left."
+function _clean_translations(tr,lang)
+ tr isa AbstractDict || return nothing
+ out=JSON.Object{String,Any}()
+ for (l,t) in tr
+  (l==lang || !(t isa AbstractDict)) && continue
+  c=JSON.Object{String,Any}(k=>strip(string(v)) for (k,v) in t if !isnothing(_none(v)) && !isnothing(v))
+  isempty(c) || (out[l]=c)
+ end
+ isempty(out) ? nothing : out
+end
 """
     events_from_json(text; issue_url=nothing, today=Dates.today()) -> (events, errors)
 
@@ -131,6 +144,7 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   id="$(slugs[k])-$(Dates.format(d,"yyyy-mm-dd"))"; id in seen && (err("$(at)samme arrangement og dato finnes to ganger ($id)."); continue); push!(seen,id)
   v=x["venue"]
   for (f,n) in ("name"=>"venue.name","address"=>"venue.address"); isnothing(_none(get(v,f,nothing))) && err("$(at)«$n» må fylles ut."); end
+  lang=something(_none(get(x,"lang",nothing)),"nb")
   vurl=_none(get(x,"video_url",nothing)); video=isnothing(vurl) ? nothing : _video_from_url(vurl)
   !isnothing(vurl) && isnothing(video) && err("$(at)«video_url» må være en lenke til YouTube eller Vimeo.")
   e=JSON.Object{String,Any}("id"=>id,"title"=>strip(_s(x["title"])),"types"=>sort!(unique(string.(x["types"])),by=t->something(findfirst(==(t),TYPE_ORDER),99)),"status"=>something(_none(get(x,"status",nothing)),"scheduled"),
@@ -138,7 +152,7 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
    "venue"=>JSON.Object{String,Any}("name"=>_none(get(v,"name",nothing)),"address"=>_none(get(v,"address",nothing)),"city"=>something(_none(get(v,"city",nothing)),"Oslo")),
    "organizer"=>_none(get(x,"organizer",nothing)),"dj"=>_none(get(x,"dj",nothing)),"teachers"=>collect(something(get(x,"teachers",nothing),Any[])),
    "price_nok"=>get(x,"price_nok",nothing),"student_price_nok"=>get(x,"student_price_nok",nothing),"class_price_nok"=>get(x,"class_price_nok",nothing),
-   "description"=>_none(get(x,"description",nothing)),"music_style"=>collect(something(get(x,"music_style",nothing),Any[])),
+   "description"=>_none(get(x,"description",nothing)),"lang"=>lang,"translations"=>_clean_translations(get(x,"translations",nothing),lang),"music_style"=>collect(something(get(x,"music_style",nothing),Any[])),
    "flyer_url"=>_none(get(x,"flyer_url",nothing)),"video"=>video,"link"=>x["link"],
    "source"=>"Innsendt via KI-skjema","source_url"=>isnothing(issue_url) ? nothing : string(issue_url),"published_date"=>string(today),
    "first_seen"=>string(today),"last_verified"=>string(today),"crawl_timestamp"=>nothing,"confidence"=>1.0)

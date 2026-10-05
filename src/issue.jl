@@ -1,6 +1,8 @@
 # Issue form (.github/ISSUE_TEMPLATE/nytt-arrangement.yml) → v2 events. The body is untrusted input: parse it as data only.
-const FORM_FIELDS=["Tittel","Type","Dato","Starttid","Sluttid","Gjentas","Gjentas til","Unntatt datoer","Sted","Adresse","Arrangør",
- "DJ","Lærere","Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Samtykke"]
+const FORM_FIELDS=["Tekstspråk","Tittel","Type","Dato","Starttid","Sluttid","Gjentas","Gjentas til","Unntatt datoer","Sted","Adresse","Arrangør",
+ "DJ","Lærere","Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tittel (andre språk)","Beskrivelse (andre språk)","Samtykke"]
+"Optional text in the other language (English for a Norwegian event, Norwegian for an English one): label => key."
+const OTHER_TEXT_FIELDS=["Tittel (andre språk)"=>"title","Beskrivelse (andre språk)"=>"description"]
 const MAX_WEEKS=53
 "Split an issue-form body into `heading => value`. GitHub's `_No response_` becomes an empty string."
 function parse_issue_form(body::AbstractString)
@@ -17,10 +19,10 @@ function _slug(s)
  s=strip(replace(Base.Unicode.normalize(s;stripmark=true),r"[^a-z0-9]+"=>"-"),'-')
  s=String(rstrip(first(s,50),'-')); isempty(s) ? "arrangement" : s
 end
-"A date as `ÅÅÅÅ-MM-DD`, or `DD.MM.ÅÅÅÅ` as Norwegian Excel displays (and copies) dates; `nothing` if invalid."
+"A date as `ÅÅÅÅ-MM-DD`, or `DD.MM.ÅÅÅÅ` (Norwegian Excel) / `DD/MM/YYYY` (UK, Argentina); `nothing` if invalid."
 function _date(s)
  m=match(r"^\s*(\d{4})-(\d{1,2})-(\d{1,2})\s*$",s); isnothing(m) || return tryparse(Date,"$(m[1])-$(lpad(m[2],2,'0'))-$(lpad(m[3],2,'0'))")
- m=match(r"^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$",s); isnothing(m) || return tryparse(Date,"$(m[3])-$(lpad(m[2],2,'0'))-$(lpad(m[1],2,'0'))")
+ m=match(r"^\s*(\d{1,2})[./](\d{1,2})[./](\d{4})\s*$",s); isnothing(m) || return tryparse(Date,"$(m[3])-$(lpad(m[2],2,'0'))-$(lpad(m[1],2,'0'))")
  nothing
 end
 function _time(s;allow24=false)
@@ -43,6 +45,20 @@ function _video_from_url(s)
  isnothing(m) ? nothing : JSON.Object{String,Any}("platform"=>"vimeo","id"=>String(m[1]))
 end
 _lookup(d,label)=(k=findfirst(==(label),d); isnothing(k) ? nothing : k)
+"Slug for a type or music label in any language («Kurs», «Class», «clase», «class»), or `nothing`."
+function _label_slug(nb::AbstractDict,i18n::AbstractDict,label)
+ k=lowercase(strip(label)); haskey(nb,k) && return k
+ for d in (nb,values(i18n)...); s=findfirst(v->lowercase(v)==k,d); isnothing(s) || return s; end
+ nothing
+end
+"Language of the title/description from «Tekstspråk» (blank = Norwegian), or `nothing` if unknown."
+_parse_lang(s)=(k=lowercase(strip(s)); k in ("","norsk","nb","no","norwegian","bokmål") ? "nb" : k in ("english","engelsk","en","inglés","ingles") ? "en" : nothing)
+_other_lang(l)=l=="nb" ? "en" : "nb"
+"`translations` for the other-language fields (`nothing` when both are blank)."
+function _translations(lang,f)
+ tr=JSON.Object{String,Any}(k=>String(strip(get(f,label,""))) for (label,k) in OTHER_TEXT_FIELDS if !isempty(strip(get(f,label,""))))
+ isempty(tr) ? nothing : JSON.Object{String,Any}(_other_lang(lang)=>tr)
+end
 const PRICE_FIELDS=["price_nok"=>"Pris (kr)","student_price_nok"=>"Studentpris (kr)","class_price_nok"=>"Kurspris (kr)"]
 """
     _parse_field(label, s) -> (value, error)
@@ -57,7 +73,7 @@ function _parse_field(label::AbstractString,s::AbstractString)
   items=occursin(r"^\s*- \[",s) ? _checked(s) : split(s,r"\s*(?:[,;+&/]|\bog\b)\s*";keepempty=false)
   ts=String[]
   for it in items
-   k=strip(it); t=something(_lookup(_TYPES,k),findfirst(v->lowercase(v)==lowercase(k),_TYPES),haskey(_TYPES,lowercase(k)) ? lowercase(k) : nothing,Some(nothing))
+   k=strip(it); t=something(_lookup(_TYPES,k),_label_slug(_TYPES,_TYPES_I18N,k),Some(nothing))
    isnothing(t) ? (return bad("Ukjent «Type»: $k.")) : (t in ts || push!(ts,t))
   end
   isempty(ts) ? bad("Velg minst én «Type».") : (sort!(ts,by=t->findfirst(==(t),TYPE_ORDER)),nothing)
@@ -78,7 +94,7 @@ function _parse_field(label::AbstractString,s::AbstractString)
  elseif label=="Musikk"
   music=Any[]
   for l in _checked(s)
-   m=_lookup(_MUSIC,l); isnothing(m) && return bad("Ukjent «Musikk»: $l."); push!(music,m)
+   m=something(_lookup(_MUSIC,l),_label_slug(_MUSIC,_MUSIC_I18N,l),Some(nothing)); isnothing(m) && return bad("Ukjent «Musikk»: $l."); push!(music,m)
   end
   (music,nothing)
  else
@@ -98,6 +114,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  val(k;required=false)=(s=required ? req(k) : get_(k); isempty(s) ? nothing : ((v,e)=_parse_field(k,s); isnothing(e) || err(e); v))
  title=req("Tittel"); typ=val("Type";required=true); date=val("Dato";required=true); st=val("Starttid";required=true)
  venue=req("Sted"); address=req("Adresse"); org=req("Arrangør"); link=val("Lenke";required=true)
+ lang=_parse_lang(get_("Tekstspråk")); isnothing(lang) && (err("«Tekstspråk» må være «Norsk» eller «English» (fikk «$(get_("Tekstspråk"))»)."); lang="nb")
  !isnothing(date) && date<today && err("«Dato» ($date) har allerede vært.")
  et=val("Sluttid")
  weekly=get_("Gjentas")=="Ukentlig"; until=nothing; except=Date[]
@@ -123,7 +140,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
   "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>"Oslo"),"organizer"=>org,"dj"=>none(get_("DJ")),
   "teachers"=>something(val("Lærere"),Any[]),
   "price_nok"=>prices["price_nok"],"student_price_nok"=>prices["student_price_nok"],"class_price_nok"=>prices["class_price_nok"],
-  "description"=>none(get_("Beskrivelse")),"music_style"=>music,"flyer_url"=>flyer,"video"=>video,"link"=>link,
+  "description"=>none(get_("Beskrivelse")),"lang"=>lang,"translations"=>_translations(lang,f),"music_style"=>music,"flyer_url"=>flyer,"video"=>video,"link"=>link,
   "source"=>"Innsendt via skjema","source_url"=>isnothing(issue_url) ? nothing : string(issue_url),"published_date"=>string(today),
   "first_seen"=>string(today),"last_verified"=>string(today),"crawl_timestamp"=>nothing,"confidence"=>1.0)
  events=if weekly
