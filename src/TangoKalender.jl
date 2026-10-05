@@ -13,9 +13,11 @@ include("rss.jl")
 include("render/event.jl")
 include("render/submit.jl")
 include("render/about.jl")
+include("render/svg.jl")
+include("render/embed.jl")
 include("llms.jl")
 include("cli.jl")
 export create_event, load_events, save_events, render_events_html, render_events_file
-export render_event_page, calendar_ics, event_ics, rss_xml, write_site
+export today_svg, week_svg, events_json, render_event_page, calendar_ics, event_ics, rss_xml, write_site
 export event_path, load_event_tree, save_event_tree, expand_weekly, oslo_offset, validate_event, validate_event_tree
 end

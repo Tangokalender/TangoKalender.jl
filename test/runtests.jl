@@ -409,9 +409,11 @@ end
   broken=String[]
   for (r,_,fs) in walkdir(d), f in fs
    endswith(f,".html") || continue
-   for m in eachmatch(r"(?:href|src)=\"([^\"]+)\"",read(joinpath(r,f),String))
+   html=replace(read(joinpath(r,f),String),r"<script>.*?</script>"s=>"")      # code in scripts is not a link
+   base=occursin("<base href=\"$(TangoKalender.SITE_URL)/\"",html) ? d : r          # <base> = relative to the site root
+   for m in eachmatch(r"(?:href|src)=\"([^\"]+)\"",html)
     u=replace(m[1],"&amp;"=>"&"); occursin(r"^(https?:|webcal:|mailto:|#|data:)",u) && continue
-    t=normpath(joinpath(r,first(split(u,['#','?'])))); (endswith(u,"/") || isdir(t)) && (t=joinpath(t,"index.html"))
+    t=normpath(joinpath(base,first(split(u,['#','?'])))); (endswith(u,"/") || isdir(t)) && (t=joinpath(t,"index.html"))
     isfile(t) || push!(broken,"$(relpath(joinpath(r,f),d)) → $u")
    end
   end
@@ -615,4 +617,53 @@ end
  @test occursin("type: checkboxes\n    id: type",tr) && all(occursin("- label: $l\n",tr) for l in values(TK._TYPES))
  # the stored data has no combined or singular types left
  @test all(haskey(e,"types") && !haskey(e,"type") for e in load_events(TREE))
+end
+@testset "embeds: SVG today/week, iframe list, events.json, guide" begin
+ TK=TangoKalender; D=Date(2035,3,6)   # a Tuesday
+ E(id,st;kw...)=Dict{String,Any}("id"=>id,"title"=>"Milonga $id","types"=>["milonga"],"start"=>st,"venue"=>Dict("name"=>"Salen","address"=>"Gata 1"),"organizer"=>"Klubben",(string(k)=>v for (k,v) in kw)...)
+ evs=[E("a","2035-03-06T20:00:00+01:00";title="Milonga & <Venner> med et svært langt navn som må brytes over flere linjer i bildet"),
+      E("f","2035-03-05";types=["festival"],var"end"="2035-03-07",title="Festival F",organizer="Festivalen"),
+      E("x","2035-03-06T19:00:00+01:00";status="cancelled",types=["class","milonga"]),
+      E("old","2035-02-01T20:00:00+01:00")]
+ # _wrap: limits respected, ellipsis when cut
+ l=TK._wrap("Moira Castellano & Sebastian de la Vallina i Oslo",15,3)
+ @test length(l)<=3 && all(length(x)<=15 for x in l) && endswith(l[end],"…")
+ @test TK._wrap("Kort",15,2)==["Kort"] && TK._wrap("Supercalifragilistisk",10,1)==["Supercali…"]
+ xmlok(s)=isnothing(Sys.which("python3")) || mktempdir() do d; f=joinpath(d,"x.svg"); write(f,s); success(`python3 -c "import xml.dom.minidom,sys; xml.dom.minidom.parse(sys.argv[1])" $f`); end
+ t=TK.today_svg(evs;today=D)
+ @test xmlok(t) && startswith(t,"<svg xmlns=\"http://www.w3.org/2000/svg\"") && occursin("viewBox=\"0 0 600 ",t)
+ @test occursin("<a href=\"$(TK.SITE_URL)/\" xlink:href=\"$(TK.SITE_URL)/\" target=\"_top\">",t)                      # title → the list
+ @test occursin("href=\"$(TK.SITE_URL)/arrangement/a/\"",t) && occursin("href=\"$(TK.SITE_URL)/arrangement/f/\"",t) && !occursin("arrangement/old/",t)
+ @test occursin("Milonga &amp; &lt;Venner&gt;",t) && !occursin("<Venner>",t) && occursin(">pågår<",t)                  # escaped; festival in progress
+ @test occursin("text-decoration=\"line-through\"",t) && occursin(">AVLYST<",t) && count("target=\"_top\"",t)>=4
+ h1=parse(Int,match(r"viewBox=\"0 0 600 (\d+)\"",t)[1]); h0=parse(Int,match(r"viewBox=\"0 0 600 (\d+)\"",TK.today_svg(evs[1:1];today=D))[1]); @test h1>h0   # grows with rows
+ empty=TK.today_svg(evs;today=Date(2035,4,1)); @test occursin("Ingen arrangementer i dag",empty) && xmlok(empty)
+ w=TK.week_svg(evs;today=D)
+ @test xmlok(w) && occursin("viewBox=\"0 0 980 ",w) && occursin("href=\"$(TK.SITE_URL)/uke.html#uke-2035-10\"",w) && occursin("Uke 10 · 5.–11. mar",w)
+ days=[m[1] for m in eachmatch(r"<g data-day=\"([0-9-]+)\">",w)]; @test days==string.(Date(2035,3,5):Day(1):Date(2035,3,11))   # Monday first, 7 columns
+ @test count(" href=\"$(TK.SITE_URL)/arrangement/f/\"",w)==3 && occursin("stroke=\"#872b49\" stroke-width=\"2\"",w)                            # festival on each day; today outlined
+ # iframe list: just the list, links open in the top window, URL filters incl. ?arr= (organiser)
+ L=render_events_html(evs;view="compact",site=true,embed=true)
+ @test occursin("<base href=\"$(TK.SITE_URL)/\" target=\"_top\">",L) && occursin("<body class=\"embed\">",L) && !occursin("class=\"hero\"",L) && !occursin("class=\"tabs\"",L)
+ @test occursin("data-org=\"festivalen\"",L)
+ node=Sys.which("node")
+ if !isnothing(node)
+  mktempdir() do d
+   f=joinpath(d,"l.html"); write(f,L)
+   vis(q)=Set(x[3] for x in JSON.parse(read(`$node $(joinpath(@__DIR__,"js","filters.js")) $f 2035-03-01 "" $q`,String))["initial"]["rows"])   # after «old»
+   @test vis("?arr=festivalen")==Set(["f"]) && vis("?arr=klubb&type=milonga")==Set(["a","x"])
+   @test JSON.parse(read(`$node $(joinpath(@__DIR__,"js","filters.js")) $f 2035-01-01 "" "?arr=festivalen"`,String))["initial"]["search"]=="?arr=festivalen"   # kept in the URL
+  end
+ end
+ # events.json: upcoming only, every item valid
+ j=JSON.parse(TK.events_json(evs;today=D)); @test [x["id"] for x in j]==["f","x","a"] && all(isempty∘validate_event,j)
+ # guide page and links to it
+ g=TK.bygg_inn_html()
+ @test occursin("data=&quot;$(TK.SITE_URL)/embed/i-dag.svg&quot;",g) && occursin("data=&quot;$(TK.SITE_URL)/embed/uke.svg&quot;",g) && occursin("$(TK.SITE_URL)/embed/liste.html",g)   # code examples are HTML-escaped
+ @test occursin("&lt;img&gt;",g) && occursin("Egendefinert HTML",g) && count("class=\"copybtn\"",g)==4
+ @test occursin("href=\"bygg-inn.html\"",TK.om_html()) && occursin("href=\"bygg-inn.html\">Bygg inn</a>",render_events_html(evs;view="compact",site=true))
+ mktempdir() do d
+  TK.write_site(d,evs;today=D)
+  @test all(isfile(joinpath(d,f)) for f in ("bygg-inn.html","events.json",joinpath("embed","i-dag.svg"),joinpath("embed","uke.svg"),joinpath("embed","liste.html")))
+ end
 end

@@ -15,6 +15,9 @@ Kildekode: https://github.com/Tangokalender/tangokalender.github.io
   https://tangokalender.github.io/?type=milonga,practica
 - Abonner på hele kalenderen: `webcal://tangokalender.github.io/kalender.ics`.
   RSS: https://tangokalender.github.io/rss.xml
+- **Bygg inn på egen nettside:** https://tangokalender.github.io/bygg-inn.html – dagens og ukens program som bilde
+  med lenker (`<object>`, oppdateres hver natt), en liste med filtre for `<iframe>` (f.eks. bare én arrangørs
+  arrangementer med `?arr=`), samt `kalender.ics`, `rss.xml` og `events.json`.
 - ActivityPub står på [TODO](TODO.md).
 
 ## Legge inn arrangementer

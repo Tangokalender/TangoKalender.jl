@@ -21,8 +21,8 @@ const ids=['q','when','sort','count','empty','reset','sharefilter','prevw','next
 const el={}; for(const i of ids) if(html.includes(`id="${i}"`)) el['#'+i]=ctl();
 if(html.includes('id="events"')) el['#events']={appendChild(){}};
 const RealDate=Date; global.Date=class extends RealDate{constructor(...a){super(...(a.length?a:[NOW+'T12:00:00']))};static UTC(...a){return RealDate.UTC(...a)}};
-global.location={hash:HASH,search:SEARCH,pathname:'/p.html'};
-global.history={replaceState:(a,b,u)=>{const m=u.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);location.pathname=m[1]||location.pathname;location.search=m[2]||'';location.hash=m[3]||''}};
+global.location={hash:HASH,search:SEARCH,pathname:'/p.html',origin:'http://localhost'};
+global.history={replaceState:(a,b,u)=>{u=u.replace(/^https?:\/\/[^/]+/,'');const m=u.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);location.pathname=m[1]||location.pathname;location.search=m[2]||'';location.hash=m[3]||''}};
 global.window={addEventListener(){}};
 const sel={'.ev':rows,'.group':groups,'.week':weeks,'.col':cols,'input[name=type]':boxes.filter(b=>b.name==='type'),'input[name=music]':boxes.filter(b=>b.name==='music'),'.tabs a':tabs};
 global.document={addEventListener(t,f){if(t==='keydown')global.keydown=f},documentElement:{classList:classList('')},querySelectorAll:s=>sel[s]||[],querySelector:s=>el[s]||null};

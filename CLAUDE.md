@@ -50,6 +50,15 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
   - `table_template_csv()` is the downloadable `mal/arrangementer-mal.csv` (semicolon-separated, with a UTF-8 BOM for Norwegian Excel). A test checks that it converts cleanly.
   - `_date` (in `issue.jl`) also accepts `DD.MM.ÅÅÅÅ`, which is how Norwegian Excel copies dates.
 - `src/render/submit.jl`: `legg_til_html()` is the single «Legg til arrangement» page with sections `#skjema`, `#tabell`, `#ki` (prompt with copy button) and `#rette`. On the site, the main page's hero and footer link only there (`ADD_PAGE`). `for-ki.html` is now a redirect to `legg-til.html#ki`.
+- `src/render/svg.jl`: `today_svg`/`week_svg` produce `embed/i-dag.svg` (600px, list style) and `embed/uke.svg` (980px, 7 columns).
+  - **«Today» is the build date** (Pages rebuilds nightly with `TZ=Europe/Oslo`).
+  - Links use `href` plus `xlink:href` and `target="_top"`. They only work when the SVG is embedded with `<object>`/`<iframe>`, not `<img>`.
+  - SVG text doesn't wrap, so `_wrap` breaks it by a character budget, and week columns are clipped (`clipPath`) so different fonts can never spill over.
+  - Escaping goes through `_xml`.
+- `src/render/embed.jl`: `bygg_inn_html()` is the guide (live `<object>` previews, copyable code, the iframe builder, platform notes, feeds), and `events_json` is the developer feed (upcoming events, stored format).
+  - The iframe list is `render_events_html(view="compact", embed=true)`: no hero, tabs or filter bar, and `<base href="SITE_URL/" target="_top">`.
+  - All URL filters work, plus `?arr=` on the organiser (`data-org`).
+  - Because of `<base>`, `history.replaceState` must always get an absolute URL (`location.origin+…`).
 - `src/llms.jl`: `llm_rules()` is written once and used both in `llms_txt()` (English, for models) and in the copy-ready prompt on `legg_til_html()#ki` (Norwegian). `EXAMPLE_INPUT`/`EXAMPLE_OUTPUT` are the published worked example, and the tests check that the example converts cleanly. `write_site` writes everything for Pages. The type and music lists come from `_TYPES`/`_MUSIC`, with English help text in `TYPE_HELP`/`MUSIC_HELP`, so add new enum values there too.
 - `src/validate.jl`: `validate_event` checks one event against `schema/tango-event.schema.json` with JSONSchema.jl. `validate_event_tree` also flags duplicate ids and files not at their `event_path`.
 - `src/render/html.jl`: the calendar views. `render_events_html(events; view="cards"|"compact"|"week", site=false)`: `site=true` (used by `write_site`) adds the view tabs, links to event pages, and the feed links and canonical URL. The views share `_CSS`, `_filterbar` and one raw-string script `_JS`.

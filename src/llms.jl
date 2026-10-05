@@ -84,6 +84,7 @@ $EXAMPLE_OUTPUT
 - [Submission JSON Schema]($SUBMISSION_SCHEMA_URL): what to output
 - [Stored event schema]($SITE_URL/schema/tango-event.schema.json): how events are stored after review (ids, series and metadata are set by the bot)
 - [JSON submission form]($JSON_FORM_URL)
+- [Upcoming events as JSON]($SITE_URL/events.json): the stored format, for reading the calendar programmatically
 - [Instructions for people, in Norwegian]($SITE_URL/$ADD_PAGE#ki)
 """
 """
@@ -107,7 +108,11 @@ function write_site(dir::AbstractString, events; today::Date=Dates.today(), kwar
  end
  w("kalender.ics",calendar_ics([e for e in ev if _haspage(e) && Date(_end_day(e))>=today-Day(30)];today))
  w("rss.xml",rss_xml(ev;today))
- w(ADD_PAGE,legg_til_html()); w(ABOUT_PAGE,om_html()); w(AI_PAGE,for_ki_redirect_html()); w("llms.txt",llms_txt())
+ w(ADD_PAGE,legg_til_html()); w(ABOUT_PAGE,om_html()); w(EMBED_PAGE,bygg_inn_html())
+ # embeds for other websites; «today» is the build date (nightly rebuild)
+ w(EMBED_TODAY,today_svg(ev;today)); w(EMBED_WEEK,week_svg(ev;today)); w("events.json",events_json(ev;today))
+ w(EMBED_LIST,render_events_html(ev;view="compact",site=true,embed=true,today,kwargs...))
+ w(AI_PAGE,for_ki_redirect_html()); w("llms.txt",llms_txt())
  w(TEMPLATE_CSV,table_template_csv())
  cp(SCHEMA_FILE,joinpath(dir,"schema","tango-event.schema.json");force=true); push!(files,joinpath(dir,"schema","tango-event.schema.json"))
  w(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))

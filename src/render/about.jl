@@ -18,7 +18,8 @@ $_PAGE_CSS.thanks{font:500 1.25rem Georgia;color:var(--wine);margin:0}.wink{font
 <section class="card"><h2>Slik støtter du kalenderen</h2>
 <ol><li><b>Bruk den.</b> Sjekk kalenderen når du lurer på hvor du kan danse – i dag, denne uken eller neste måned.</li>
 <li><b>Del arrangementer.</b> Hvert arrangement har sin egen side du kan dele, og filtrene ligger i lenken – del gjerne «alle milongaer denne måneden» med en venn. Du kan også abonnere på hele kalenderen i din egen kalender-app.</li>
-<li><b>Hjelp til med å holde den oppdatert.</b> Ser du et arrangement som mangler, en feil tid eller en avlysning? Det tar et par minutter å <a href="$ADD_PAGE">legge inn eller rette opp</a>. Jo flere som hjelper til, jo mer kan alle stole på kalenderen.</li></ol>
+<li><b>Hjelp til med å holde den oppdatert.</b> Ser du et arrangement som mangler, en feil tid eller en avlysning? Det tar et par minutter å <a href="$ADD_PAGE">legge inn eller rette opp</a>. Jo flere som hjelper til, jo mer kan alle stole på kalenderen.</li>
+<li><b>Vis kalenderen på nettsiden din.</b> Klubber og arrangører kan <a href="$EMBED_PAGE">bygge inn</a> dagens eller ukens program, eller en liste med bare sine egne arrangementer.</li></ol>
 <p class="wink">Og vil noen vise sin takknemlighet ved å spandere en drink på den som står bak kalenderen på neste milonga, er det neppe noen som klager … 😉</p></section>
 <section class="card"><h2>Hvordan det fungerer</h2>
 <p>Kalenderen er en statisk nettside uten reklame, sporing eller innlogging for besøkende. Arrangementene ligger som åpne data, og alt – kode, data og endringshistorikk – er åpent på <a href="$(_esc(REPO_URL))" target="_blank" rel="noopener">GitHub</a>. For å sende inn trenger du en gratis GitHub-konto; en robot sjekker innsendingen og en redaktør godkjenner den.</p>
