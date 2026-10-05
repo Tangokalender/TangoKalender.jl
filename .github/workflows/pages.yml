@@ -11,7 +11,11 @@ on:
       - '.github/workflows/pages.yml'
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * *'   # nightly, refreshes the "Generert" timestamp
+    # Just after midnight Oslo time (22:17 UTC in summer, 23:17 UTC in winter; the other run is harmless). Odd minutes
+    # avoid the congestion that delays on-the-hour schedules by hours. The embedded SVGs pick the right day themselves
+    # (in <object>); the nightly build mainly refreshes <img> embeds, past events and the «Generert» timestamp.
+    - cron: '17 22 * * *'
+    - cron: '17 23 * * *'
 permissions:
   contents: read
   pages: write

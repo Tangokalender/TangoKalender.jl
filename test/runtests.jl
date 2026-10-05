@@ -638,9 +638,26 @@ end
  @test occursin("text-decoration=\"line-through\"",t) && occursin(">AVLYST<",t) && count("target=\"_top\"",t)>=4
  h1=parse(Int,match(r"viewBox=\"0 0 600 (\d+)\"",t)[1]); h0=parse(Int,match(r"viewBox=\"0 0 600 (\d+)\"",TK.today_svg(evs[1:1];today=D))[1]); @test h1>h0   # grows with rows
  empty=TK.today_svg(evs;today=Date(2035,4,1)); @test occursin("Ingen arrangementer i dag",empty) && xmlok(empty)
+ # the image carries 8 days (today_svg) / 2 weeks (week_svg); only the build date's group is visible without script
+ groups(s)=[(m[1],m[2]) for m in eachmatch(r"<g data-date=\"([^\"]+)\"[^>]*display=\"(inline|none)\"",s)]
+ @test [g[1] for g in groups(t)]==[string.(D:Day(1):D+Day(7));"stale"] && [g[2] for g in groups(t)]==["inline";fill("none",8)]
+ @test [g[1] for g in groups(TK.week_svg(evs;today=D))]==["2035-03-05","2035-03-12","stale"]
+ @test occursin("timeZone:'Europe/Oslo'",t) && occursin("<![CDATA[",t)
+ node=Sys.which("node")
+ if !isnothing(node)
+  mktempdir() do dd
+   tf=joinpath(dd,"t.svg"); wf=joinpath(dd,"w.svg"); write(tf,TK.today_svg(evs;today=Date(2026,10,9))); write(wf,TK.week_svg(evs;today=Date(2026,10,9)))
+   shown(f,at)=strip(read(`$node $(joinpath(@__DIR__,"js","svgday.js")) $f $at`,String))
+   @test shown(tf,"2026-10-09T10:00:00Z")=="2026-10-09"
+   @test shown(tf,"2026-10-11T22:30:00Z")=="2026-10-12" && shown(tf,"2026-10-11T21:30:00Z")=="2026-10-11"   # midnight in Oslo (CEST), not UTC
+   @test shown(tf,"2026-10-26T23:30:00Z")=="stale"                                                         # past the last day: notice, never an old program
+   @test shown(wf,"2026-10-11T22:30:00Z")=="2026-10-12" && shown(wf,"2026-10-11T21:30:00Z")=="2026-10-05"   # next ISO week from Oslo's Monday
+  end
+ end
  w=TK.week_svg(evs;today=D)
  @test xmlok(w) && occursin("viewBox=\"0 0 980 ",w) && occursin("href=\"$(TK.SITE_URL)/uke.html#uke-2035-10\"",w) && occursin("Uke 10 · 5.–11. mar",w)
- days=[m[1] for m in eachmatch(r"<g data-day=\"([0-9-]+)\">",w)]; @test days==string.(Date(2035,3,5):Day(1):Date(2035,3,11))   # Monday first, 7 columns
+ days=[m[1] for m in eachmatch(r"<g data-day=\"([0-9-]+)\">",w)]; @test days==string.(Date(2035,3,5):Day(1):Date(2035,3,18))   # Monday first, 7 columns × this and next week
+ @test length(Set(m[1] for m in eachmatch(r"<clipPath id=\"([^\"]+)\"",w)))==14                      # clip ids unique across weeks
  @test count(" href=\"$(TK.SITE_URL)/arrangement/f/\"",w)==3 && occursin("stroke=\"#872b49\" stroke-width=\"2\"",w)                            # festival on each day; today outlined
  # iframe list: just the list, links open in the top window, URL filters incl. ?arr= (organiser)
  L=render_events_html(evs;view="compact",site=true,embed=true)

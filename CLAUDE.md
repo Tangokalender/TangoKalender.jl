@@ -51,7 +51,9 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
   - `_date` (in `issue.jl`) also accepts `DD.MM.ÅÅÅÅ`, which is how Norwegian Excel copies dates.
 - `src/render/submit.jl`: `legg_til_html()` is the single «Legg til arrangement» page with sections `#skjema`, `#tabell`, `#ki` (prompt with copy button) and `#rette`. On the site, the main page's hero and footer link only there (`ADD_PAGE`). `for-ki.html` is now a redirect to `legg-til.html#ki`.
 - `src/render/svg.jl`: `today_svg`/`week_svg` produce `embed/i-dag.svg` (600px, list style) and `embed/uke.svg` (980px, 7 columns).
-  - **«Today» is the build date** (Pages rebuilds nightly with `TZ=Europe/Oslo`).
+  - **The images choose the day themselves.** `i-dag.svg` holds 8 `<g data-date>` day groups and `uke.svg` holds 2 weeks, all the same height. A script in the SVG (`_svg_dayscript`, using `Intl` with `timeZone:'Europe/Oslo'`) shows the group for the current Oslo date/week. Once the image is out of date it shows the `stale` group («Programmet er ikke oppdatert»).
+  - Without script (`<img>`), the build date's group is visible. Pages rebuilds just after Oslo midnight (cron `17 22` and `17 23` UTC; on-the-hour schedules were delayed by hours).
+  - `test/js/svgday.js` runs the script at fixed instants.
   - Links use `href` plus `xlink:href` and `target="_top"`. They only work when the SVG is embedded with `<object>`/`<iframe>`, not `<img>`.
   - SVG text doesn't wrap, so `_wrap` breaks it by a character budget, and week columns are clipped (`clipPath`) so different fonts can never spill over.
   - Escaping goes through `_xml`.
