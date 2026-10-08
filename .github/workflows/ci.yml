@@ -17,7 +17,7 @@ jobs:
       matrix:
         julia: ['1']   # latest release; Project.toml declares julia >= 1.12 (needed for Pkg apps)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.julia }}
@@ -27,7 +27,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
