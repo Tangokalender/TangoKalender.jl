@@ -69,7 +69,7 @@ The about page: the calendar is a community effort; thanks to volunteers and org
 om_html(; lang="nb", kwargs...)=_with_lang(()->_om_html(;kwargs...),lang)
 function _om_html(; title=nothing)
  a=_about()[_lang()]; title=something(title,a.title)
- """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title>$(_plain_head(ABOUT_PAGE))<meta name="description" content="$(_esc(a.meta))"><style>
+ """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title>$(_plain_head(ABOUT_PAGE))<meta name="description" content="$(_esc(a.meta))">$(_og_head(title="$title – $SITE_NAME",desc=a.meta,url=_lang_url(ABOUT_PAGE)))<style>
 $_PAGE_CSS$_LANG_CSS.thanks{font:500 1.25rem Georgia;color:var(--wine);margin:0}.wink{font-size:1.05rem}
 </style></head><body>$_SPRITE<div class="hero"><div class="wrap">$(_plain_top(ABOUT_PAGE))<h1>$(_esc(title))</h1><p>$(_esc(a.intro))</p></div></div><main>
 $(a.body)

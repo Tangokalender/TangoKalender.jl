@@ -123,6 +123,7 @@ function _write_site(dir::AbstractString, events; today::Date=Dates.today(), kwa
  wr("events.json",events_json(ev;today))
  wr(AI_PAGE,for_ki_redirect_html()); wr("llms.txt",llms_txt())
  wr(TEMPLATE_CSV,table_template_csv())
+ cp(OG_IMAGE_FILE,joinpath(dir,"og-image.png");force=true); push!(files,joinpath(dir,"og-image.png"))
  cp(SCHEMA_FILE,joinpath(dir,"schema","tango-event.schema.json");force=true); push!(files,joinpath(dir,"schema","tango-event.schema.json"))
  cp(VENUES_SCHEMA_FILE,joinpath(dir,"schema","venues.schema.json");force=true); push!(files,joinpath(dir,"schema","venues.schema.json"))
  wr(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))

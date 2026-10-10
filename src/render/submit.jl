@@ -144,7 +144,7 @@ function _legg_til_html(; title=nothing)
  toc=join(("<a href=\"#$id\">$(_esc(l))</a>" for (id,l) in zip(["skjema","tabell","ki","rette"],a.toc)),"")
  # the template and schemas are language-neutral and live at the site root
  root=_lang()=="nb" ? "" : "../"
- """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title>$(_plain_head(ADD_PAGE))<style>
+ """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title>$(_plain_head(ADD_PAGE))$(_og_head(title="$title – $SITE_NAME",desc=_t("site.description"),url=_lang_url(ADD_PAGE)))<style>
 $_PAGE_CSS$_LANG_CSS
 </style></head><body>$_SPRITE<div class="hero"><div class="wrap">$(_plain_top(ADD_PAGE))<h1>$(_esc(title))</h1><p>$(a.intro)</p>
 <nav class="toc" aria-label="$(_esc(a.toc[1]))">$toc</nav></div></div><main>

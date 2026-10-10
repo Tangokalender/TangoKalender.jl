@@ -22,7 +22,7 @@ julia --project=. -m TangoKalender from-issue BODY.md [--root=events] [--issue-u
 julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 ```
 
-`bin/build_site.jl` and `bin/validate_events.jl` are thin wrappers around `TangoKalender.main`.
+`bin/build_site.jl` and `bin/validate_events.jl` are thin wrappers around `TangoKalender.main`. `bin/make_og_image.jl` redraws `assets/og-image.png`.
 
 `test/runtests.jl` holds plain `@testset`s; it does not use TestItems. `test/fixtures/media/` is a small valid tree that exercises flyer, video and music style. The `julia` MCP server is set up in `/workspace/.mcp.json`. Prefer a persistent session (`julia_create_session` + `julia_eval_code`, with Revise) over repeated `julia` invocations, which recompile every time. `/workspace/dev-oslotango/` is a dev environment that `[sources]`-links this package by path.
 
@@ -90,7 +90,8 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
   - List and week rows come from `_row`. Multi-day events appear on each day (`_days`) with «dag k av n».
   - `SITE_NAME` («Tangokalender | Oslo», in `labels.jl`) is the site name everywhere.
   - Icons: small stroke icons in `_ICON_PATHS` (24×24, `currentColor`), placed once per page as a hidden sprite (`_SPRITE`, inserted right after `<body>`) and referenced with `_icon(name, label)` → `<use href="#i-name">`. They're decorative (`aria-hidden`); `label` adds visually hidden text (`.sr`) for screen readers. Add new icons to `_ICON_PATHS`; the `icons` test checks that every `<use>` has a matching symbol.
-- `src/render/event.jl`: `render_event_page` writes `arrangement/<id>/index.html` with relative links (`../../`). It includes schema.org JSON-LD (escaped `\u003c` for script context), OpenGraph tags and the other upcoming dates in the series. Pages are made for **all** events with an id and start, including past ones.
+- `src/render/event.jl`: `render_event_page` writes `arrangement/<id>/index.html` with relative links (`../../`). It includes schema.org JSON-LD (escaped `\u003c` for script context), link-preview tags (`_og_head`, og:title «<title> · <date>», «AVLYST: » prefix when cancelled) and the other upcoming dates in the series. Pages are made for **all** events with an id and start, including past ones.
+- `src/render/og.jl`: link previews for Facebook, Bluesky, Mastodon, Slack (OpenGraph + `twitter:card=summary_large_image`). `_og_head(; title, desc, url, image, alt)` takes plain text and escapes it. It is on every site page: event pages, the views (`site=true`, not `embed=true`), legg-til, om and bygg-inn. `og_image(e)` picks flyer → YouTube thumbnail (`i.ytimg.com/…/hqdefault.jpg`) → `OG_IMAGE`; Squarespace flyers without a query get `?format=1500w` (originals can be many MB). `OG_IMAGE` is `SITE_URL/og-image.png`: `assets/og-image.png` (1200×630), drawn by `bin/make_og_image.jl` (Cairo in a temp env; rerun and commit the PNG after changing the design) and copied once to the site root by `write_site`. Check a deployed page in the Facebook Sharing Debugger or by pasting the link into the Bluesky composer.
 - `src/ics.jl`: `calendar_ics`/`event_ics` write RFC 5545. Times are in **UTC**, converted from the stored offset, so there's no VTIMEZONE. Date-only events use `VALUE=DATE` with an exclusive DTEND. Lines are CRLF, folded at 75 octets without splitting UTF-8. `kalender.ics` covers events from 30 days back onward.
 - `src/rss.jl`: `rss_xml` lists upcoming events, newest `first_seen` first, capped at `RSS_MAX`. It escapes with `_xml`.
   - Julia string interpolation builds the markup directly; there is no templating library.

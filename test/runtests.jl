@@ -11,7 +11,7 @@ end
  ids=Set(e["id"] for e in tree)
  @test length(ids)==length(tree) && length(tree)>=49   # unique ids; grows as events are submitted
  @test count(startswith("oslotango-tue-"),ids)==11 && count(startswith("oslotango-thu-"),ids)==12
- @test all(get(e,"series",nothing)=="esa" for e in tree if startswith(e["id"],"esa-"))
+ @test all(get(e,"series",nothing)=="esa" for e in tree if occursin(r"^esa-\d",e["id"]))   # the milonga; its classes are esa-nybegynner/esa-tandas
  @test all(haskey(e,"start") && !isnothing(e["start"]) for e in tree)
  @test isempty(validate_event_tree(TREE))
  @test isempty(validate_event_tree(MEDIA))
@@ -359,7 +359,7 @@ end
  p=TK.render_event_page(evs[2],evs;today=T)
  ld=JSON.parse(match(r"<script type=\"application/ld\+json\">(.*?)</script>"s,p)[1])
  @test ld["@type"]=="Event" && ld["startDate"]=="2026-11-14T16:00:00+01:00" && ld["eventStatus"]=="https://schema.org/EventScheduled"
- @test occursin("<link rel=\"canonical\" href=\"$(TK.SITE_URL)/arrangement/b/\">",p) && occursin("property=\"og:title\" content=\"Milonga b\"",p)
+ @test occursin("<link rel=\"canonical\" href=\"$(TK.SITE_URL)/arrangement/b/\">",p) && occursin("property=\"og:title\" content=\"Milonga b · ",p)
  @test occursin("href=\"../b.ics\" download",p) && occursin("Rett opp ↗",p) && occursin("href=\"../d/\"",p) && occursin("Flere datoer i denne serien",p)
  pd=TK.render_event_page(evs[5],evs;today=T); @test occursin("EventCancelled",pd) && occursin("<b>Avlyst.</b>",pd) && occursin("DJ Æøå",pd)
  @test occursin("Dette arrangementet har vært",TK.render_event_page(evs[4],evs;today=T))
@@ -859,4 +859,37 @@ end
   @test all(isfile(joinpath(d,TK._prefix(l),"kart.html")) for l in TK.LANGS) && isfile(joinpath(d,"schema","venues.schema.json"))
   @test count("data-lat=",read(joinpath(d,"en","kart.html"),String))==3
  end
+end
+
+@testset "link previews (OpenGraph, Twitter card)" begin
+ TK=TangoKalender; T=Date(2026,10,1)
+ ev(; kw...)=Dict{String,Any}("id"=>"p","title"=>"Milonga P","types"=>["milonga"],"start"=>"2026-10-20T20:00:00+02:00",
+  "venue"=>Dict("name"=>"Salen","address"=>"Gata 1, Oslo","city"=>"Oslo"),(string(k)=>v for (k,v) in kw)...)
+ og(p,k)=(m=match(Regex("<meta (?:property|name)=\"$(replace(k,"."=>"\\."))\" content=\"([^\"]*)\">"),p); isnothing(m) ? nothing : m[1])
+ sq="https://images.squarespace-cdn.com/content/v1/abc/KTF.jpg"
+ @test TK.og_image(ev(flyer_url=sq))==(sq*"?format=1500w","Flyer: Milonga P")
+ @test first(TK.og_image(ev(flyer_url=sq*"?format=750w")))==sq*"?format=750w"
+ @test first(TK.og_image(ev(flyer_url="https://example.org/f.png")))=="https://example.org/f.png"
+ @test first(TK.og_image(ev(video=Dict("platform"=>"youtube","id"=>"7mY5BMxr_t0"))))=="https://i.ytimg.com/vi/7mY5BMxr_t0/hqdefault.jpg"
+ @test first(TK.og_image(ev(video=Dict("platform"=>"youtube","id"=>"\"><x")))) ==TK.OG_IMAGE
+ @test first(TK.og_image(ev(flyer_url="javascript:alert(1)")))==TK.OG_IMAGE && first(TK.og_image(ev()))==TK.OG_IMAGE
+ @test TK.OG_IMAGE==TK.SITE_URL*"/og-image.png" && isfile(TK.OG_IMAGE_FILE)
+ p=TK.render_event_page(ev(flyer_url="https://example.org/f.png"),[];today=T)
+ @test og(p,"og:image")=="https://example.org/f.png" && og(p,"twitter:image")=="https://example.org/f.png" && og(p,"og:image:alt")=="Flyer: Milonga P"
+ @test og(p,"twitter:card")=="summary_large_image" && og(p,"og:site_name")==TK._esc(TK.SITE_NAME) && og(p,"og:url")==TK.SITE_URL*"/arrangement/p/"
+ @test startswith(og(p,"og:title"),"Milonga P · ") && occursin("Salen",og(p,"og:description")) && isnothing(og(p,"og:image:width"))
+ @test og(p,"og:locale")=="nb_NO" && occursin("og:locale:alternate\" content=\"en_GB\"",p) && occursin("og:locale:alternate\" content=\"es_AR\"",p)
+ p=TK.render_event_page(ev(status="cancelled",title="<b>&"),[];today=T)
+ @test startswith(og(p,"og:title"),"AVLYST: &lt;b&gt;&amp; · ") && og(p,"og:image")==TK.OG_IMAGE && og(p,"og:image:width")=="1200"
+ @test startswith(og(TK.render_event_page(ev(status="cancelled"),[];today=T,lang="en"),"og:title"),"CANCELLED: Milonga P · ")
+ e=TK.render_event_page(ev(),[];today=T,lang="es"); @test og(e,"og:locale")=="es_AR" && og(e,"og:url")==TK.SITE_URL*"/es/arrangement/p/"
+ # site pages get the site image; the iframe list and standalone pages don't
+ i=render_events_html([ev()];view="compact",site=true,lang="en")
+ @test og(i,"og:image")==TK.OG_IMAGE && og(i,"og:url")==TK.SITE_URL*"/en/" && og(i,"og:description")==TK._with_lang(()->TK._t("site.description"),"en")
+ @test og(render_events_html([ev()];view="week",site=true),"og:url")==TK.SITE_URL*"/uke.html"
+ @test isnothing(og(render_events_html([ev()];view="compact",site=true,embed=true),"og:image")) && isnothing(og(render_events_html([ev()];view="cards"),"og:image"))
+ for (h,rel) in ((TK.legg_til_html(),TK.ADD_PAGE),(TK.om_html(),TK.ABOUT_PAGE),(TK.bygg_inn_html(),TK.EMBED_PAGE))
+  @test og(h,"og:image")==TK.OG_IMAGE && og(h,"og:url")==TK.SITE_URL*"/"*rel && endswith(og(h,"og:title"),TK._esc(TK.SITE_NAME))
+ end
+ mktempdir() do d; TK.write_site(d,[ev()];today=T); @test read(joinpath(d,"og-image.png"))==read(TK.OG_IMAGE_FILE) && !isfile(joinpath(d,"en","og-image.png")); end
 end

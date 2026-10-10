@@ -231,7 +231,7 @@ function _render_events_html(events; view="cards",site=false,title=SITE_NAME,sub
  tabs=site ? "<nav class=\"tabs\" aria-label=\"$(_t("nav.views"))\">"*join(("<a href=\"$f\"$(v==view ? " class=\"on\" aria-current=\"page\"" : "")>$(_t(l))</a>" for (v,(f,l)) in _VIEWS),"")*"</nav>" : ""
  feeds=site ? " · <a href=\"$ABOUT_PAGE\">$(_t("about"))</a> · <a href=\"$EMBED_PAGE\">$(_t("embed"))</a> · <span class=\"feeds\"><a href=\"webcal://$(replace(_lang_url("kalender.ics"),r"^https?://"=>""))\">$(_t("subscribe"))</a> · <a href=\"kalender.ics\">.ics</a> · <a href=\"rss.xml\">RSS</a></span>" : ""
  file=Dict(_VIEWS)[view][1]; rel=file=="index.html" ? "" : file
- headlinks=site ? "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$(_esc(SITE_NAME))\" href=\"rss.xml\">$(_alternates(rel))$(_lang_js(rel))" : ""
+ headlinks=site ? "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$(_esc(SITE_NAME))\" href=\"rss.xml\">$(_alternates(rel))$(_lang_js(rel))<meta name=\"description\" content=\"$(_esc(_t("site.description")))\">$(_og_head(;title,desc=_t("site.description"),url=_lang_url(rel)))" : ""
  langnav=site ? _langnav(rel) : ""
  ev=sort(collect(events),by=_sortkey)
  summary="<div class=\"summary\"><span id=\"count\"></span><span class=\"sumbtns\"><button id=\"sharefilter\" type=\"button\">$(_t("copylink"))</button><button id=\"reset\" type=\"button\">$(_t("reset"))</button></span></div>"
