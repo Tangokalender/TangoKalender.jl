@@ -48,6 +48,16 @@ jobs:
           NUMBER: ${{ github.event.issue.number }}
         run: |
           { cat "$RUNNER_TEMP/report.md"; printf '\nCloses #%s\n' "$NUMBER"; } > "$RUNNER_TEMP/pr-body.md"
+      # main may have moved since checkout (e.g. a merged Dependabot PR). A PR branch built on the old
+      # main would carry outdated workflow files, and GitHub refuses that push from GITHUB_TOKEN.
+      - name: Move changes onto the latest main
+        if: steps.convert.outcome == 'success'
+        run: |
+          [ -n "$(git status --porcelain -- events venues.json)" ] || exit 0
+          git stash push --include-untracked -- events venues.json
+          git fetch --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+          git reset --hard origin/main
+          git stash pop
       - name: Open or update pull request
         id: pr
         if: steps.convert.outcome == 'success'
