@@ -1,0 +1,169 @@
+# Opened from the «Rett opp» link on each card. Only arrangement_id and navaerende are prefilled via URL query
+# parameters (GitHub resets URL-prefilled fields when edited, so the editable fields start blank).
+# See correction_url in src/correction.jl. Labels are the keys read by the parser – rename together.
+name: Rett opp arrangement
+description: Rett opp feil eller meld avlysning for et arrangement i kalenderen.
+title: "[Rettelse]: "
+labels: ["rettelse"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Under «Nåværende opplysninger» ser du det som står i kalenderen nå. **Fyll bare inn feltene som skal endres**
+        og send inn – en robot lager et forslag som en redaktør ser over, og du får svar som en kommentar her.
+
+        - Et **tomt** felt betyr «ingen endring».
+        - Skriv **-** for å fjerne en opplysning (f.eks. DJ).
+  - type: input
+    id: arrangement_id
+    attributes:
+      label: Arrangement-ID
+      description: Fylles ut automatisk – ikke endre.
+    validations:
+      required: true
+  - type: textarea
+    id: navaerende
+    attributes:
+      label: Nåværende opplysninger
+      description: Til informasjon – endringer skrives i feltene under, ikke her.
+  - type: dropdown
+    id: gjelder
+    attributes:
+      label: Gjelder
+      options:
+        - Bare denne datoen
+        - Denne og alle senere datoer i serien
+      default: 0
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      options:
+        - Som før
+        - Avlyst
+        - Gjennomføres
+      default: 0
+  - type: input
+    id: tittel
+    attributes:
+      label: Tittel
+  - type: checkboxes
+    id: type
+    attributes:
+      label: Type
+      description: Kryss av bare hvis typen skal endres – da erstattes den med det du krysser av.
+      options:
+        - label: Milonga
+        - label: Practica
+        - label: Kurs
+        - label: Workshop
+        - label: Festival
+        - label: Maraton
+        - label: Utetango
+        - label: Annet
+  - type: input
+    id: dato
+    attributes:
+      label: Dato
+      description: ÅÅÅÅ-MM-DD. Kan bare endres for én dato om gangen.
+  - type: input
+    id: starttid
+    attributes:
+      label: Starttid
+      placeholder: "20:30"
+  - type: input
+    id: sluttid
+    attributes:
+      label: Sluttid
+      placeholder: "23:30"
+  - type: input
+    id: sted
+    attributes:
+      label: Sted
+  - type: input
+    id: adresse
+    attributes:
+      label: Adresse
+  - type: input
+    id: arrangor
+    attributes:
+      label: Arrangør
+  - type: input
+    id: dj
+    attributes:
+      label: DJ
+  - type: input
+    id: laerere
+    attributes:
+      label: Lærere
+      description: Skilt med komma.
+  - type: input
+    id: pris
+    attributes:
+      label: Pris (kr)
+  - type: input
+    id: studentpris
+    attributes:
+      label: Studentpris (kr)
+  - type: input
+    id: kurspris
+    attributes:
+      label: Kurspris (kr)
+  - type: checkboxes
+    id: musikk
+    attributes:
+      label: Musikk
+      description: Kryss av bare hvis musikken skal endres – da erstattes den med det du krysser av.
+      options:
+        - label: Tradisjonell
+        - label: Alternativ / neo
+        - label: Levende orkester
+  - type: input
+    id: flyer
+    attributes:
+      label: Flyer
+      description: Lenke til bildet (https://…).
+  - type: input
+    id: video
+    attributes:
+      label: Video
+      description: Lenke til YouTube eller Vimeo.
+  - type: input
+    id: lenke
+    attributes:
+      label: Lenke
+  - type: textarea
+    id: beskrivelse
+    attributes:
+      label: Beskrivelse
+  - type: dropdown
+    id: sprak
+    attributes:
+      label: Tekstspråk
+      description: Språket i Tittel og Beskrivelse. Endres bare hvis det er feil.
+      options:
+        - Som før
+        - Norsk
+        - English
+      default: 0
+  - type: input
+    id: tittel_annet
+    attributes:
+      label: Tittel (andre språk)
+      description: Tittelen på det andre språket (engelsk for norsk tekst, og omvendt). - fjerner den.
+  - type: textarea
+    id: beskrivelse_annet
+    attributes:
+      label: Beskrivelse (andre språk)
+  - type: textarea
+    id: kommentar
+    attributes:
+      label: Kommentar
+      description: Valgfritt – forklar endringen for redaktøren.
+  - type: checkboxes
+    id: samtykke
+    attributes:
+      label: Samtykke
+      options:
+        - label: Personer som er nevnt (DJ, lærere, arrangør) har godtatt å bli oppført i den offentlige kalenderen.
+          required: true

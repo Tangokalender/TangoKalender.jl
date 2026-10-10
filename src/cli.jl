@@ -10,6 +10,7 @@ Usage:
   tangokalender validate [INPUT]           validate only (also venues.json, if present)
   tangokalender geocode [INPUT]            look up coordinates for new addresses (OpenStreetMap Nominatim) into venues.json
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
+  tangokalender templates [DIR]            write the GitHub issue forms for the site into DIR/.github/ISSUE_TEMPLATE/
   tangokalender edit TERM… [KEY=VALUE…]   find upcoming events matching all TERMs; list them, or set KEY=VALUE on all
                                            of them (tangokalender edit --help)
 
@@ -130,7 +131,7 @@ function (@main)(args)
  _with_site(()->_main(args),site)
 end
 function _main(args)
- cmd=!isempty(args) && args[1] in ("build","site","validate","from-issue","geocode") ? popfirst!(args) : "build"
+ cmd=!isempty(args) && args[1] in ("build","site","validate","from-issue","geocode","templates") ? popfirst!(args) : "build"
  pos=filter(!startswith("--"),args); opts=Dict{String,String}(); novalidate=false; retry=false; venues=VENUES_FILE
  for a in filter(startswith("--"),args)
   k,v=occursin('=',a) ? split(a[3:end],'=';limit=2) : (a[3:end],"")
@@ -143,11 +144,14 @@ function _main(args)
   elseif cmd=="geocode" && k=="retry" && isempty(v); retry=true
   else println(stderr,"unknown option $a\n"); print(stderr,USAGE); return 2 end
  end
- maxpos=cmd in ("validate","from-issue","geocode") ? 1 : 2
+ maxpos=cmd in ("validate","from-issue","geocode","templates") ? 1 : 2
  length(pos)>maxpos && (println(stderr,"too many arguments\n"); print(stderr,USAGE); return 2)
  if cmd=="from-issue"
   isempty(pos) && (println(stderr,"from-issue needs an issue body file\n"); print(stderr,USAGE); return 2)
   return _from_issue(pos[1],opts)
+ end
+ if cmd=="templates"
+  files=write_templates(get(pos,1,".")); foreach(println,files); return 0
  end
  input=get(pos,1,"events")
  if cmd=="geocode"

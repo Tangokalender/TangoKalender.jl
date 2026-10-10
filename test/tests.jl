@@ -137,7 +137,7 @@ end
  @test TangoKalender._image_url("<img width=\"300\" src=\"https://x.org/a.png\">")=="https://x.org/a.png"
  @test TangoKalender._slug("Ærlig Øl & Åpen Gård!")=="aerlig-ol-apen-gard" && TangoKalender._slug("!!!")=="arrangement"
  # drift guard: every label in the issue template is a field the parser knows
- tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement.yml"),String)
+ tmpl=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","nytt-arrangement.yml"),String)
  labels=[strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl)]
  @test Set(labels)==Set(TangoKalender.FORM_FIELDS)
  # GitHub's YAML loader rejects the whole form if a scalar parses as a Date/Time ("Tried to load unspecified class: Date")
@@ -226,7 +226,7 @@ end
  h=render_events_html([e]); @test occursin("aria-label=\"Rett opp: Milonga ESA\">Rett opp ↗</a>",h) && occursin("arrangement_id=esa-2026-10-06",h)
  @test !occursin("Rett opp",render_events_html([e]; correct_url=""))
  # drift guard for the correction template
- tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
+ tmpl=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
  @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(TK.CORRECTION_FIELDS)
  ids=Set(strip(m[1]) for m in eachmatch(r"^    id: (.+)$"m,tmpl)); @test all(id in ids for (id,_) in TK.CORRECTION_IDS)
  @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
@@ -321,7 +321,7 @@ end
   @test JSON.parsefile(joinpath(site,"schema","tango-event-submission.schema.json"))["\$id"]==TK.submission_schema_url()
  end
  # the JSON issue form uses the labels the parser expects
- tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement-json.yml"),String)
+ tmpl=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","nytt-arrangement-json.yml"),String)
  @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(["JSON","Samtykke"]) && occursin("render: json",tmpl)
  @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
 end
@@ -567,7 +567,7 @@ end
  @test isempty(e3) && length(ev3)==3 && ev3[3]["status"]=="cancelled" && ev3[2]["dj"]=="DJ B"
  @test TK.parse_table(replace(csv,"\ufeff"=>""))[1]==TK.TABLE_COLUMNS
  # issue form: the label the parser keys on; CLI round trip through from-issue
- tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement-tabell.yml"),String)
+ tmpl=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","nytt-arrangement-tabell.yml"),String)
  @test Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl))==Set(["Tabell","Samtykke"]) && occursin("labels: [\"nytt-arrangement\"]",tmpl)
  @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
  mktempdir() do d
@@ -612,9 +612,9 @@ end
  @test TK._parse_field("Type","- [X] Kurs\n- [ ] Practica\n- [X] Milonga")==(["class","milonga"],nothing)
  @test TK._parse_field("Type","Milonga, Utetango")[1]==["milonga","outdoor"] && TK._parse_field("Type","Kurs og practica")[1]==["class","practica"]
  @test TK._parse_field("Type","- [ ] Milonga")==(nothing,"Velg minst én «Type».") && TK._parse_field("Type","Disco")[2]=="Ukjent «Type»: Disco."
- tm=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","nytt-arrangement.yml"),String)
+ tm=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","nytt-arrangement.yml"),String)
  @test occursin("type: checkboxes\n    id: type",tm) && all(occursin("- label: $l\n",tm) for l in values(TK._TYPES))
- tr=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
+ tr=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
  @test occursin("type: checkboxes\n    id: type",tr) && all(occursin("- label: $l\n",tr) for l in values(TK._TYPES))
  # the stored data has no combined or singular types left
  @test all(haskey(e,"types") && !haskey(e,"type") for e in load_events(TREE))
@@ -783,7 +783,7 @@ end
  ev,er=TK.events_from_json(j;today=T); @test isempty(er) && only(ev)["lang"]=="en" && only(ev)["translations"]==Dict("nb"=>Dict("title"=>"Natt"))
  @test !isempty(TK.events_from_json(replace(j,"\"nb\":"=>"\"de\":");today=T)[2])                                  # unknown language rejected by the schema
  @test !isempty(validate_event(merge(E(),Dict("translations"=>Dict("de"=>Dict("title"=>"x")))))) && !isempty(validate_event(merge(E(),Dict("lang"=>"es"))))
- tmpl=read(joinpath(ROOT,".github","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
+ tmpl=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","rett-arrangement.yml"),String)
  @test issubset(Set(["Tekstspråk","Tittel (andre språk)","Beskrivelse (andre språk)"]),Set(strip(m[1]) for m in eachmatch(r"^      label: (.+)$"m,tmpl)))
  @test issubset(Set(["tittel_annet","beskrivelse_annet"]),Set(strip(m[1]) for m in eachmatch(r"^    id: (.+)$"m,tmpl)))
  mktempdir() do root
@@ -1026,4 +1026,23 @@ end
  @test occursin("Tangokalender | Bergen",read(joinpath(out2,"index.html"),String))
  @test cd(()->redirect_stdout(()->TK.main(["site","events","_s"]),devnull),d)==0 && occursin("Bergen",read(joinpath(d,"_s","index.html"),String))
  @test redirect_stderr(()->TK.main(["site",evdir,out2,"--site=$bad"]),devnull)==2
+end
+@testset "issue form templates" begin
+ TK=TangoKalender
+ mktempdir() do d
+  bergen=TK.SiteConfig(slug="bergen",name="Tangokalender | Bergen",city="Bergen",site_url="https://tango.example.no/bergen",repo_url="https://github.com/Tangokalender/bergen")
+  files=TK._with_site(()->TK.write_templates(d),bergen)
+  @test sort(basename.(files))==sort(filter(endswith(".yml"),readdir(joinpath(TK.TEMPLATE_DIR,"ISSUE_TEMPLATE"))))
+  all_=join(read.(files,String))
+  @test !occursin("{{",all_) && occursin("https://tango.example.no/bergen/legg-til.html#ki",all_) && occursin("0155 Bergen",all_)
+  @test !occursin("tangokalender.github.io",all_) && !occursin("Oslo",all_)
+  @test redirect_stdout(()->TK.main(["templates",d]),devnull)==0     # as the Oslo site (the tests' site)
+  @test occursin("https://tangokalender.github.io/legg-til.html#tabell",read(joinpath(d,".github","ISSUE_TEMPLATE","nytt-arrangement-tabell.yml"),String))
+ end
+ # while the Oslo data lives in this repo: its forms are the rendered templates (`tangokalender templates`)
+ if isfile(joinpath(ROOT,"site.toml"))
+  for n in filter(endswith(".yml"),readdir(joinpath(TK.TEMPLATE_DIR,"ISSUE_TEMPLATE")))
+   @test read(joinpath(ROOT,".github","ISSUE_TEMPLATE",n),String)==TK.render_template(read(joinpath(TK.TEMPLATE_DIR,"ISSUE_TEMPLATE",n),String))
+  end
+ end
 end
