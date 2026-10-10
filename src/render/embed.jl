@@ -124,7 +124,7 @@ $(code("c-ifr",ifr))
 <div class="preview"><iframe id="ifr-preview" src="$EMBED_LIST" title="$(a.preview)" style="width:100%;height:420px;border:0"></iframe></div></section>
 <section class="card" id="plattform">$(a.platforms)</section>
 <section class="card" id="abonner">$(a.feeds)</section>
-</main><div class="sitefooter"><a href="./">$(_t("calendar"))</a> · <a href="$ABOUT_PAGE">$(_t("about"))</a> · <a href="$ADD_PAGE">$(_t("add"))</a></div><script>
+</main><div class="sitefooter"><a href="./">$(_t("calendar"))</a> · <a href="$ABOUT_PAGE">$(_t("about"))</a> · <a href="$ADD_PAGE">$(_t("add"))</a> · $(_built_with())</div><script>
 (function(){var CP='$(_t("embed.copy"))',OK='$(_t("embed.copied"))';document.querySelectorAll('.copybtn').forEach(function(b){b.addEventListener('click',function(){var p=document.getElementById(b.getAttribute('data-copy')),t=p.textContent;function sel(){var r=document.createRange();r.selectNodeContents(p);var g=getSelection();g.removeAllRanges();g.addRange(r)}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){b.textContent=OK;setTimeout(function(){b.textContent=CP},2500)},sel)}else sel()})});
 var lg=document.getElementById('b-lang'),ty=document.getElementById('b-type'),ar=document.getElementById('b-arr'),wh=document.getElementById('b-when'),hh=document.getElementById('b-h'),pv=document.getElementById('ifr-preview');
 function upd(){var B=lg.value,p=[];if(ty.value)p.push('type='+encodeURIComponent(ty.value));if(ar.value.trim())p.push('arr='+encodeURIComponent(ar.value.trim()));if(wh.value)p.push('when='+wh.value);var q=p.length?'?'+p.join('&'):'';

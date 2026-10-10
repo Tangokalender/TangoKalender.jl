@@ -241,7 +241,7 @@ $_CSS$_LANG_CSS.embedhead{display:flex;justify-content:space-between;align-items
  end
  """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title))</title>$headlinks$(ismap ? LEAFLET_HEAD : "")<style>
 $_CSS$_LANG_CSS$(ismap ? _MAP_CSS : "")
-</style></head><body>$_SPRITE<div class="hero"><div class="wrap"><div class="topbar"><small>$(_t("site.tagline"))</small>$langnav</div><h1>$(_esc(title))</h1><p>$(_esc(subtitle))</p>$hero_submit$tabs</div></div>$body<div class="sitefooter">$(_t("generated")) $(_esc(generated_at)) · $(_t("check"))$footer_submit$feeds</div>$(_page_script(ismap ? _map_js() : ""))</body></html>"""
+</style></head><body>$_SPRITE<div class="hero"><div class="wrap"><div class="topbar"><small>$(_t("site.tagline"))</small>$langnav</div><h1>$(_esc(title))</h1><p>$(_esc(subtitle))</p>$hero_submit$tabs</div></div>$body<div class="sitefooter">$(_t("generated")) $(_esc(generated_at)) · $(_t("check"))$footer_submit$feeds · $(_built_with())</div>$(_page_script(ismap ? _map_js() : ""))</body></html>"""
 end
 function render_events_file(input::AbstractString,output::AbstractString="index.html";kwargs...)
  html=render_events_html(load_events(input);kwargs...); mkpath(dirname(abspath(output))); write(output,html); output

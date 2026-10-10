@@ -74,5 +74,5 @@ $_PAGE_CSS$_LANG_CSS.thanks{font:500 1.25rem Georgia;color:var(--wine);margin:0}
 </style></head><body>$_SPRITE<div class="hero"><div class="wrap">$(_plain_top(ABOUT_PAGE))<h1>$(_esc(title))</h1><p>$(_esc(a.intro))</p></div></div><main>
 $(a.body)
 <p><a class="cta" href="./">$(_t("about.tocal"))</a><a class="cta secondary" href="$ADD_PAGE">$(_t("add"))</a></p></section>
-</main><div class="sitefooter"><a href="./">$(_t("calendar"))</a> · <a href="$ADD_PAGE">$(_t("add"))</a> · <a href="kalender.ics">$(_t("subscribe.short"))</a> · <a href="rss.xml">RSS</a></div></body></html>"""
+</main><div class="sitefooter"><a href="./">$(_t("calendar"))</a> · <a href="$ADD_PAGE">$(_t("add"))</a> · <a href="kalender.ics">$(_t("subscribe.short"))</a> · <a href="rss.xml">RSS</a> · $(_built_with())</div></body></html>"""
 end

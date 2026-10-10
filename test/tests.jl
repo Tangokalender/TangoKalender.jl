@@ -1071,3 +1071,28 @@ end
   @test !isfile(joinpath(d,"y","site.toml"))
  end
 end
+@testset "editors' command-line section, build version in footers" begin
+ TK=TangoKalender
+ v="v$(pkgversion(TangoKalender))"; rel="$(TK.CODE_REPO_URL)/releases/tag/$v"
+ ev=[Dict("id"=>"m-2026-10-16","title"=>"Milonga","types"=>["milonga"],"start"=>"2026-10-16T20:00:00+02:00","organizer"=>"O",
+  "venue"=>Dict("name"=>"Salen","address"=>"Gate 1","city"=>"Oslo"),"link"=>"https://example.org")]
+ mktempdir() do d
+  files=write_site(d,ev;today=Date(2026,10,10))
+  svg=read(joinpath(d,TK.EDIT_DEMO),String)
+  @test svg==read(TK.EDIT_DEMO_FILE,String) && occursin("prefers-reduced-motion",svg) && occursin("status=cancelled",svg)
+  @test occursin("<title id=\"t\">",svg) && count("@keyframes",svg)>=6
+  for (l,pre) in (("nb",""),("en","en/"),("es","es/"))
+   p=read(joinpath(d,pre,TK.ADD_PAGE),String)
+   @test occursin("<section class=\"card\" id=\"kommandolinje\">",p) && occursin("href=\"#kommandolinje\"",p)
+   @test occursin("<img src=\"$(l=="nb" ? "" : "../")$(TK.EDIT_DEMO)\"",p) && occursin("$(TK.CODE_REPO_URL)/releases/latest",p)
+   @test occursin("status=cancelled --dry-run",p) && occursin("width=\"$(TK.EDIT_DEMO_SIZE[1])\"",p)
+   # every page footer says which release built the site
+   for f in ("index.html","uke.html",TK.ADD_PAGE,TK.ABOUT_PAGE,TK.EMBED_PAGE,joinpath("arrangement","m-2026-10-16","index.html"))
+    s=read(joinpath(d,pre,f),String)
+    @test occursin("<a href=\"$rel\">TangoKalender $v</a>",s)
+   end
+  end
+  @test occursin("Bygget med <a",read(joinpath(d,"index.html"),String)) && occursin("Built with <a",read(joinpath(d,"en","index.html"),String))
+  @test !occursin(rel,read(joinpath(d,TK.EMBED_LIST),String))   # the iframe list for other sites has no footer
+ end
+end

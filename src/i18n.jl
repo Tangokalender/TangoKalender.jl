@@ -165,6 +165,7 @@ _strings!(
  "subscribe"=>("Abonner på kalenderen","Subscribe to the calendar","Suscribite al calendario"),
  "subscribe.short"=>("Abonner (.ics)","Subscribe (.ics)","Suscribirse (.ics)"),
  "generated"=>("Generert","Generated","Generado"),
+ "builtwith"=>("Bygget med {1}","Built with {1}","Hecho con {1}"),
  "check"=>("Kontroller alltid detaljer hos arrangøren.","Always check the details with the organiser.","Confirmá siempre los detalles con quien organiza."),
  "calendar"=>("Kalenderen","The calendar","El calendario"),
  "calendar.full"=>("Hele kalenderen","Full calendar","Calendario completo"),

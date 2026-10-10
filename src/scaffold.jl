@@ -19,6 +19,8 @@ const CODE_REPO_URL="https://github.com/Tangokalender/TangoKalender.jl"
 "How data repos fetch the package (`[sources]` in their Project.toml): over SSH. The reusable workflows rewrite it to
 HTTPS on GitHub's runners, which have no SSH key (the code repo is public)."
 const CODE_REPO_GIT="git@github.com:Tangokalender/TangoKalender.jl.git"
+"«Bygget med TangoKalender vX.Y.Z», linked to that release: in every page footer, so a site shows which code built it."
+_built_with()=(v="v$(pkgversion(@__MODULE__))"; _t("builtwith","<a href=\"$(_esc(CODE_REPO_URL))/releases/tag/$v\">TangoKalender $v</a>"))
 const PACKAGE_UUID="8fa2004d-d644-4dc6-9815-18e81ae74980"
 _toml_str(s)=sprint(TOML.print,Dict("x"=>s))[5:end-1]   # a TOML string literal, quoted and escaped
 """

@@ -137,7 +137,7 @@ function line_segs(e::Event; width::Int=80)
  rest=max(width-20-16-4-textwidth(e.id),50)   # title and venue share what's left; long ids may wrap
  tw=(rest*2)÷3; vw=rest-tw
  Seg[(_pad(when,20),:tangokalender_date),(_pad(_short(_types_label(e),15),16),:shadow),
-     (_pad(_short(e.title,tw),tw),_cancelled(e) ? :tangokalender_cancelled : :bold),("  ",:default),
+     (_short(e.title,tw),_cancelled(e) ? :tangokalender_cancelled : :bold),(_pad("",tw-textwidth(_short(e.title,tw)))*"  ",:default),   # pad outside the strikethrough
      (_pad(_short(_venue_name(e),vw),vw),:default),("  ",:default),(e.id,:shadow)]
 end
 """
