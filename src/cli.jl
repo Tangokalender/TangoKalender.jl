@@ -10,6 +10,8 @@ Usage:
   tangokalender validate [INPUT]           validate only (also venues.json, if present)
   tangokalender geocode [INPUT]            look up coordinates for new addresses (OpenStreetMap Nominatim) into venues.json
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
+  tangokalender init-site DIR --slug=S --city=C --site-url=URL --repo-url=URL [--name=N]
+                                           start a new city's data repo in DIR (site.toml, workflows, forms, …)
   tangokalender templates [DIR]            write the GitHub issue forms for the site into DIR/.github/ISSUE_TEMPLATE/
   tangokalender edit TERM… [KEY=VALUE…]   find upcoming events matching all TERMs; list them, or set KEY=VALUE on all
                                            of them (tangokalender edit --help)
@@ -114,6 +116,21 @@ function _from_correction(form,root,today,opts)
  code
 end
 _report(problems)=(for (f,m) in problems; println(stderr,"$f: $m"); end; isempty(problems) || println(stderr,"$(length(problems)) problem(s)"))
+"`tangokalender init-site DIR --slug=… --city=… --site-url=… --repo-url=…`: see `init_site`."
+function _init_site_cli(args)
+ opts=Dict{String,String}(); pos=String[]
+ for a in args
+  m=match(r"^--(slug|city|site-url|repo-url|name|version)=(.+)$",a)
+  isnothing(m) ? (startswith(a,"--") ? (println(stderr,"unknown option $a"); return 2) : push!(pos,a)) : (opts[m[1]]=m[2])
+ end
+ missing_=[k for k in ("slug","city","site-url","repo-url") if !haskey(opts,k)]
+ (length(pos)!=1 || !isempty(missing_)) && (println(stderr,"usage: tangokalender init-site DIR --slug=S --city=C --site-url=URL --repo-url=URL [--name=N]",
+  isempty(missing_) ? "" : "\nmissing: "*join(("--"*k for k in missing_),", ")); return 2)
+ kw=(slug=opts["slug"],city=opts["city"],site_url=opts["site-url"],repo_url=opts["repo-url"])
+ files=try init_site(pos[1];kw...,(Symbol(k)=>v for (k,v) in opts if k in ("name","version"))...)
+ catch err; err isa ArgumentError || rethrow(); println(stderr,err.msg); return 2 end
+ foreach(println,files); 0
+end
 """
     main(args) -> exit code
 
@@ -123,6 +140,7 @@ Returns 0 on success, 1 on validation errors, 2 on usage errors.
 function (@main)(args)
  args=String.(args)
  !isempty(args) && args[1]=="edit" && return edit_main(args[2:end])
+ !isempty(args) && args[1]=="init-site" && return _init_site_cli(args[2:end])
  any(in(("-h","--help")),args) && (print(USAGE); return 0)
  i=findfirst(startswith("--site="),args); file=isnothing(i) ? "" : popat!(args,i)[8:end]
  site=try _cli_site(file) catch err

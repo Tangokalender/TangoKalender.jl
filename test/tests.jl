@@ -1046,3 +1046,33 @@ end
   end
  end
 end
+@testset "init-site (a new city's data repo)" begin
+ TK=TangoKalender
+ mktempdir() do d
+  dir=joinpath(d,"bergen")
+  args=["init-site",dir,"--slug=bergen","--city=Bergen","--site-url=https://tangokalender.github.io/bergen/","--repo-url=https://github.com/Tangokalender/bergen"]
+  @test redirect_stdout(()->TK.main(args),devnull)==0
+  site=TK.load_site(joinpath(dir,"site.toml"))
+  @test site.slug=="bergen" && site.name=="Tangokalender | Bergen" && site.site_url=="https://tangokalender.github.io/bergen"
+  @test isfile(site.og_image) && isdir(joinpath(dir,"events")) && read(joinpath(dir,"venues.json"),String)=="[]\n"
+  proj=TK.TOML.parsefile(joinpath(dir,"Project.toml"))
+  @test proj["deps"]["TangoKalender"]==TK.PACKAGE_UUID && proj["sources"]["TangoKalender"]["url"]==TK.CODE_REPO_URL
+  @test proj["sources"]["TangoKalender"]["rev"]=="v$(pkgversion(TangoKalender))"
+  wf=read(joinpath(dir,".github","workflows","intake.yml"),String)
+  @test occursin("uses: Tangokalender/TangoKalender.jl/.github/workflows/site-intake.yml@v$(pkgversion(TangoKalender))",wf) && occursin("\${{ github.event.issue.number }}",wf)
+  for n in ("validate","pages"); @test isfile(joinpath(dir,".github","workflows","$n.yml")); end
+  @test occursin("https://tangokalender.github.io/bergen/legg-til.html#ki",read(joinpath(dir,".github","ISSUE_TEMPLATE","nytt-arrangement-json.yml"),String))
+  @test isempty(validate_event_tree(joinpath(dir,"events"))) && isempty(validate_venues(joinpath(dir,"venues.json")))
+  # it is a working site: a form submission and a build from inside the new repo
+  body=joinpath(@__DIR__,"fixtures","issues","weekly.md")
+  @test cd(()->redirect_stdout(()->TK.main(["from-issue",body,"--today=2026-10-01","--report=$(joinpath(d,"r.md"))"]),devnull),dir)==0
+  @test all(e["venue"]["city"]=="Bergen" for e in load_events(joinpath(dir,"events")))
+  @test cd(()->redirect_stdout(()->TK.main(["site","events","_site"]),devnull),dir)==0
+  @test occursin("<link rel=\"canonical\" href=\"https://tangokalender.github.io/bergen/\">",read(joinpath(dir,"_site","index.html"),String))
+  @test_throws ArgumentError TK.init_site(dir;slug="bergen",city="Bergen",site_url="https://x.no",repo_url="https://github.com/a/b")
+  @test redirect_stderr(()->TK.main(args),devnull)==2                                      # site.toml exists
+  @test redirect_stderr(()->TK.main(["init-site",joinpath(d,"x"),"--city=X"]),devnull)==2  # missing options
+  @test redirect_stderr(()->TK.main(["init-site",joinpath(d,"y"),"--slug=Y Y","--city=Y","--site-url=https://y.no","--repo-url=https://github.com/a/y"]),devnull)==2   # invalid slug
+  @test !isfile(joinpath(d,"y","site.toml"))
+ end
+end
