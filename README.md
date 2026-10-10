@@ -38,7 +38,21 @@ tangokalender templates                       # oppdater skjemaene i .github/ISS
 tangokalender --help
 ```
 
-`build/tangoedit/bin/tangoedit` (fra `bin/build_tangoedit.sh`) er `edit` som frittstående, trimmet program.
+### `tangoedit` for redaktører (uten Julia)
+
+`tangoedit` er `tangokalender edit` som frittstående program. Last ned for Linux, Windows eller macOS (Apple-chip)
+fra [siste utgivelse](https://github.com/Tangokalender/TangoKalender.jl/releases/latest), pakk ut og kjør
+`tangoedit/bin/tangoedit` i en klone av byens data-repo:
+
+```bash
+tangoedit/bin/tangoedit milonga --until=2026-12-31                  # hvilke arrangementer treffer?
+tangoedit/bin/tangoedit milonga type:milonga price_nok=150 --preview # slik blir de
+tangoedit/bin/tangoedit milonga type:milonga price_nok=150           # skriv; send så en pull request
+```
+
+Programmene er ikke signert: på macOS må karantenen fjernes én gang (`xattr -dr com.apple.quarantine tangoedit`),
+og Windows kan vise en SmartScreen-advarsel («Mer informasjon» → «Kjør likevel»). De bygges av
+`.github/workflows/tangoedit.yml` ved hver versjonstag (og månedlig som test); lokalt med `bin/build_tangoedit.sh`.
 
 ## Utvikling
 

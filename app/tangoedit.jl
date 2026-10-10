@@ -3,7 +3,8 @@
 # of which can be trimmed yet. The renderers, geocoding and JSONSchema are never reached and are left out.
 # `stdout`/`stderr` have no fixed type, so output goes to buffers and is copied to `Core.stdout`/`Core.stderr`.
 using TangoKalender
-_tty(fd)=ccall(:isatty,Cint,(Cint,),fd)==1
+# Colour only on a terminal. Windows has no isatty under that name; Windows Terminal (WT_SESSION) understands ANSI.
+_tty(fd)=Sys.iswindows() ? !isempty(get(ENV,"WT_SESSION","")) : ccall(:isatty,Cint,(Cint,),fd)==1
 _columns()=(c=tryparse(Int,get(ENV,"COLUMNS","")); isnothing(c) ? 100 : c)
 function @main(args::Vector{String})::Cint
  out=IOContext(IOBuffer(),:displaysize=>(24,_columns())); err=IOBuffer()

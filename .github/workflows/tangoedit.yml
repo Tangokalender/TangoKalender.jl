@@ -1,15 +1,32 @@
-# Builds the trimmed `tangoedit` executable (JuliaC --trim=safe, see app/tangoedit.jl) and runs it on the events,
-# so a change that breaks trimming shows up. A build takes minutes, so it runs monthly and on demand, not per push.
+# Builds the trimmed `tangoedit` executable (JuliaC --trim=safe, see app/tangoedit.jl) for Linux, Windows and macOS
+# and runs it on the test site, so a change that breaks trimming shows up. On a release tag (vX.Y.Z) the builds are
+# attached to the GitHub release, where moderators download them (no Julia needed). A build takes minutes, so
+# otherwise it runs monthly and on demand, not per push.
 name: tangoedit (trimmed build)
 on:
   workflow_dispatch:
   schedule:
     - cron: '41 4 3 * *'
+  push:
+    tags: ['v*.*.*']
 permissions:
   contents: read
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false   # one platform failing (e.g. a trim problem on Windows) shouldn't hide the others
+      matrix:
+        include:
+          - {os: ubuntu-latest, platform: linux-x64, exe: tangoedit}
+          - {os: macos-latest, platform: macos-arm64, exe: tangoedit}
+          - {os: windows-latest, platform: windows-x64, exe: tangoedit.exe}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      EXE: build/tangoedit/bin/${{ matrix.exe }}
+      ROOT: test/fixtures/site/events
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
@@ -20,12 +37,44 @@ jobs:
         run: bin/build_tangoedit.sh
       - name: Run
         run: |
-          build/tangoedit/bin/tangoedit milonga --all --root=test/fixtures/site/events
-          build/tangoedit/bin/tangoedit milonga --all --root=test/fixtures/site/events --preview > /dev/null
-          build/tangoedit/bin/tangoedit milonga --all --root=test/fixtures/site/events confidence=0.5 --dry-run > /dev/null
+          "$EXE" milonga --all --root="$ROOT"
+          "$EXE" edit milonga --all --root="$ROOT" --preview > /dev/null
+          "$EXE" milonga --all --root="$ROOT" confidence=0.5 --dry-run > /dev/null
           du -sh build/tangoedit
+      - name: Package
+        env:
+          REF: ${{ github.ref_name }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          case "$REF" in v*) v="$REF";; *) v=dev;; esac
+          mkdir -p dist
+          if [ "$RUNNER_OS" = Windows ]; then
+            (cd build && 7z a -tzip "../dist/tangoedit-$v-$PLATFORM.zip" tangoedit > /dev/null)
+          else
+            tar -czf "dist/tangoedit-$v-$PLATFORM.tar.gz" -C build tangoedit
+          fi
+          ls -l dist
       - uses: actions/upload-artifact@v4
         with:
-          name: tangoedit-linux-x64
-          path: build/tangoedit
+          name: tangoedit-${{ matrix.platform }}
+          path: dist/*
           retention-days: 30
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 ||
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes "TangoKalender $TAG"
+          gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
