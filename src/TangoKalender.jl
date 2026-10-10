@@ -1,6 +1,7 @@
 module TangoKalender
-using JSON, JSONSchema, Dates, Downloads, StructUtils, Accessors, StyledStrings
+using JSON, JSONSchema, Dates, Downloads, StructUtils, Accessors, StyledStrings, TOML
 include("models.jl")
+include("site.jl")
 include("labels.jl")
 include("eventstruct.jl")
 include("validate.jl")

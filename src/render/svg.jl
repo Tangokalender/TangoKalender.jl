@@ -40,12 +40,12 @@ end
 _svg_defs()="<defs><linearGradient id=\"hero\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#26151d\"/><stop offset=\"1\" stop-color=\"#8b2949\"/></linearGradient>"*
  "<symbol id=\"i-pin\" viewBox=\"0 0 24 24\">$(_ICON_PATHS["pin"])</symbol></defs>"
 _svg_header(w,h,title,sub,href)=_svg_link(href,"<rect width=\"$w\" height=\"$h\" fill=\"url(#hero)\"/>"*_svg_text(20,h÷2+2,title;size=24,fill="#ffffff",extra=" font-family=\"Georgia,serif\"")*
- _svg_text(20,h÷2+22,sub;size=13,fill="#f7dce5");label=_t("svg.open",SITE_NAME))
+ _svg_text(20,h÷2+22,sub;size=13,fill="#f7dce5");label=_t("svg.open",site_name()))
 _svg_pin(x,y)="<use href=\"#i-pin\" xlink:href=\"#i-pin\" x=\"$x\" y=\"$(y-10)\" width=\"12\" height=\"12\" fill=\"none\" stroke=\"#6e6864\" stroke-width=\"2\"/>"
 _svg_open(w,h,title,desc)="<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" viewBox=\"0 0 $w $h\" width=\"$w\" height=\"$h\" font-family=\"$SVG_FONT\" xml:lang=\"$(_lang())\" role=\"img\" aria-labelledby=\"t d\"><title id=\"t\">$(_xml(title))</title><desc id=\"d\">$(_xml(desc))</desc><rect width=\"$w\" height=\"$h\" fill=\"#f5f1eb\"/>"
 _on(e,d)=d in _days(e)
 _eventhref(e)=event_url(e)
-_footer_text(generated_at)="$(replace(SITE_URL,r"^https?://"=>"")) · $(_t("svg.updated",generated_at))"
+_footer_text(generated_at)="$(replace(site_url(),r"^https?://"=>"")) · $(_t("svg.updated",generated_at))"
 """
 Script inside the SVG: show the `<g data-date>` group for today's date **in Oslo** (or the Monday of this week when
 `mode="week"`), so an image embedded with <object>/<iframe> is right from midnight regardless of when Pages rebuilt it.
@@ -57,7 +57,7 @@ _svg_dayscript(mode)="<script><![CDATA[(function(){try{var t=new Intl.DateTimeFo
  "if(!hit&&g.length>1&&t>g[g.length-2].getAttribute('data-date'))hit=document.querySelector('g[data-date=stale]');"*
  "if(hit)for(i=0;i<g.length;i++)g[i].setAttribute('display',g[i]===hit?'inline':'none')}catch(e){}})();]]></script>"
 "Shown (by the script) when today is past the last day in the image, i.e. the nightly rebuild has stopped: never an old program."
-_svg_stale(W,H,HEAD,href)="<g data-date=\"stale\" display=\"none\">"*_svg_header(W,HEAD,SITE_NAME,_t("svg.stale"),href)*
+_svg_stale(W,H,HEAD,href)="<g data-date=\"stale\" display=\"none\">"*_svg_header(W,HEAD,site_name(),_t("svg.stale"),href)*
  _svg_link(href,_svg_text(20,HEAD+40,_t("svg.stale.link");size=14,fill="#872b49",weight=700);label=_t("svg.opencal"))*"</g>"
 "Body of one day for the today image: (svg, height)."
 function _today_day(events,d,W,HEAD)
@@ -96,10 +96,10 @@ function _today_svg(events; today::Date=Dates.today(), days::Int=8, generated_at
  out=String[]
  for (d,body,_,n) in groups
   sub=_t("svg.today",_longday(d)); home=_lang_url("")
-  push!(out,"<g data-date=\"$d\" display=\"$(d==today ? "inline" : "none")\">"*_svg_header(W,HEAD,SITE_NAME,sub,home)*body*
+  push!(out,"<g data-date=\"$d\" display=\"$(d==today ? "inline" : "none")\">"*_svg_header(W,HEAD,site_name(),sub,home)*body*
    _svg_link(home,_svg_text(20,H-12,_footer_text(generated_at);size=10.5,fill="#6e6864");label=_t("svg.opencal"))*"</g>")
  end
- _svg_open(W,H,_t("svg.today.title",SITE_NAME),_t("svg.today.desc"))*_svg_defs()*join(out,"")*_svg_stale(W,H,HEAD,_lang_url(""))*_svg_dayscript("day")*"</svg>"
+ _svg_open(W,H,_t("svg.today.title",site_name()),_t("svg.today.desc"))*_svg_defs()*join(out,"")*_svg_stale(W,H,HEAD,_lang_url(""))*_svg_dayscript("day")*"</svg>"
 end
 "Body of one week (Monday `mon`) for the week image: (svg, column height). `k` makes clip-path ids unique."
 function _week_body(events,mon,today,W,HEAD,PAD,GAP,CW,k)
@@ -148,8 +148,8 @@ function _week_svg(events; today::Date=Dates.today(), weeks::Int=2, generated_at
  for (mon,body,_) in bodies
   sun=mon+Day(6); key=_isoweek(mon)
   href=_lang_url("uke.html#uke-$(replace(key,"-W"=>"-"))")
-  push!(out,"<g data-date=\"$mon\" data-week=\"$key\" display=\"$(mon==mon0 ? "inline" : "none")\">"*_svg_header(W,HEAD,SITE_NAME,_weeklabel(mon),href)*
+  push!(out,"<g data-date=\"$mon\" data-week=\"$key\" display=\"$(mon==mon0 ? "inline" : "none")\">"*_svg_header(W,HEAD,site_name(),_weeklabel(mon),href)*
    replace(body,"COLH"=>string(ch))*_svg_link(href,_svg_text(PAD,H-12,_footer_text(generated_at);size=10.5,fill="#6e6864");label=_t("svg.openweek"))*"</g>")
  end
- _svg_open(W,H,_t("svg.week.title",SITE_NAME),_t("svg.week.desc"))*_svg_defs()*join(out,"")*_svg_stale(W,H,HEAD,_lang_url("uke.html"))*_svg_dayscript("week")*"</svg>"
+ _svg_open(W,H,_t("svg.week.title",site_name()),_t("svg.week.desc"))*_svg_defs()*join(out,"")*_svg_stale(W,H,HEAD,_lang_url("uke.html"))*_svg_dayscript("week")*"</svg>"
 end

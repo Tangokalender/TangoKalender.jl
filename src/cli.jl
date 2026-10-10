@@ -15,6 +15,9 @@ Usage:
 
 INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
 
+Options (all but edit):
+  --site=FILE          the site's settings (default: site.toml in the current directory, if there is one)
+
 Options (build, site):
   --no-validate        render even if validation fails
   --title=TEXT         page title (default: "Tangokalender | Oslo")
@@ -120,6 +123,13 @@ function (@main)(args)
  args=String.(args)
  !isempty(args) && args[1]=="edit" && return edit_main(args[2:end])
  any(in(("-h","--help")),args) && (print(USAGE); return 0)
+ i=findfirst(startswith("--site="),args); file=isnothing(i) ? "" : popat!(args,i)[8:end]
+ site=try _cli_site(file) catch err
+  err isa ArgumentError || rethrow(); println(stderr,err.msg); return 2
+ end
+ _with_site(()->_main(args),site)
+end
+function _main(args)
  cmd=!isempty(args) && args[1] in ("build","site","validate","from-issue","geocode") ? popfirst!(args) : "build"
  pos=filter(!startswith("--"),args); opts=Dict{String,String}(); novalidate=false; retry=false; venues=VENUES_FILE
  for a in filter(startswith("--"),args)

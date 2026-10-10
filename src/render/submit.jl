@@ -49,7 +49,7 @@ const _GLOSSARY=Dict(
   ("Samtykke","Consentimiento: las personas mencionadas aceptaron figurar")])
 "Per-language text of legg-til.html (a function: it interpolates URLs and the example table)."
 function _add_text()
- f=_esc(SUBMIT_URL); tf=_esc(TABLE_FORM_URL); jf=_esc(JSON_FORM_URL)
+ f=_esc(submit_form_url()); tf=_esc(table_form_url()); jf=_esc(json_form_url())
  Dict(
  "nb"=>(title="Legg til arrangement",
   intro="Alle kan legge inn arrangementer. En robot sjekker innsendingen og lager et forslag som en redaktør ser over før det publiseres – du får svar som en kommentar på GitHub.",
@@ -134,17 +134,17 @@ events. The GitHub forms are Norwegian; the English and Spanish pages explain th
 legg_til_html(; lang="nb", kwargs...)=_with_lang(()->_legg_til_html(;kwargs...),lang)
 function _legg_til_html(; title=nothing)
  a=_add_text()[_lang()]; title=something(title,a.title)
- prompt=_esc(llm_prompt()); tf=_esc(TABLE_FORM_URL); jf=_esc(JSON_FORM_URL)
+ prompt=_esc(llm_prompt()); tf=_esc(table_form_url()); jf=_esc(json_form_url())
  cols=join(("<dt>$(_esc(c))</dt><dd>$(_esc(replace(h," *"=>"")))$(endswith(h," *") ? " <b>($(a.required))</b>" : "")</dd>" for (c,h) in _COLUMN_HELP[_lang()]),"")
  gl=haskey(_GLOSSARY,_lang()) ? "<details><summary>$(a.glossary)</summary><dl class=\"cols\">"*join(("<dt>$(_esc(c))</dt><dd>$(_esc(h))</dd>" for (c,h) in _GLOSSARY[_lang()]),"")*"</dl></details>" : ""
  ex="""<table class="ex"><tr><th>Tittel</th><th>Type</th><th>Dato</th><th>Starttid</th><th>Sluttid</th><th>Sted</th><th>Adresse</th><th>Arrangør</th><th>DJ</th><th>Pris (kr)</th><th>Lenke</th><th>Status</th></tr>
-<tr class="def"><td>Fredagsmilonga</td><td>Milonga</td><td>16.10.2026</td><td>20:00</td><td>00:30</td><td>Salen</td><td>Storgata 1, Oslo</td><td>Tangoklubben</td><td>DJ A</td><td>150</td><td>https://…</td><td class="blank">–</td></tr>
+<tr class="def"><td>Fredagsmilonga</td><td>Milonga</td><td>16.10.2026</td><td>20:00</td><td>00:30</td><td>Salen</td><td>Storgata 1, $(site_city())</td><td>Tangoklubben</td><td>DJ A</td><td>150</td><td>https://…</td><td class="blank">–</td></tr>
 <tr><td class="blank"></td><td class="blank"></td><td>23.10.2026</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td>DJ B</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
 <tr><td class="blank"></td><td class="blank"></td><td>30.10.2026</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td>Avlyst</td></tr></table>"""
  toc=join(("<a href=\"#$id\">$(_esc(l))</a>" for (id,l) in zip(["skjema","tabell","ki","rette"],a.toc)),"")
  # the template and schemas are language-neutral and live at the site root
  root=_lang()=="nb" ? "" : "../"
- """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title>$(_plain_head(ADD_PAGE))$(_og_head(title="$title – $SITE_NAME",desc=_t("site.description"),url=_lang_url(ADD_PAGE)))<style>
+ """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(site_name()))</title>$(_plain_head(ADD_PAGE))$(_og_head(title="$title – $(site_name())",desc=_t("site.description"),url=_lang_url(ADD_PAGE)))<style>
 $_PAGE_CSS$_LANG_CSS
 </style></head><body>$_SPRITE<div class="hero"><div class="wrap">$(_plain_top(ADD_PAGE))<h1>$(_esc(title))</h1><p>$(a.intro)</p>
 <nav class="toc" aria-label="$(_esc(a.toc[1]))">$toc</nav></div></div><main>
@@ -165,4 +165,4 @@ $_COPY_JS
 </script></body></html>"""
 end
 "The old «Bruk KI» address: redirects to the KI section of legg-til.html."
-for_ki_redirect_html()="""<!doctype html><html lang="nb"><head><meta charset="utf-8"><title>Flyttet – $(_esc(SITE_NAME))</title><link rel="canonical" href="$SITE_URL/$ADD_PAGE#ki"><meta http-equiv="refresh" content="0; url=$ADD_PAGE#ki"><meta name="robots" content="noindex"></head><body><p>Siden er flyttet: <a href="$ADD_PAGE#ki">Legg til arrangement – med KI</a>.</p></body></html>"""
+for_ki_redirect_html()="""<!doctype html><html lang="nb"><head><meta charset="utf-8"><title>Flyttet – $(_esc(site_name()))</title><link rel="canonical" href="$(site_url())/$ADD_PAGE#ki"><meta http-equiv="refresh" content="0; url=$ADD_PAGE#ki"><meta name="robots" content="noindex"></head><body><p>Siden er flyttet: <a href="$ADD_PAGE#ki">Legg til arrangement – med KI</a>.</p></body></html>"""

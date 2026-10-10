@@ -8,12 +8,12 @@ _xml(s)=replace(replace(string(s),r"[\x00-\x08\x0B\x0C\x0E-\x1F]"=>""),'&'=>"&am
 _rfc822(d::Date)="$(_RFC822_D[dayofweek(d)]), $(lpad(day(d),2,'0')) $(_RFC822_M[month(d)]) $(year(d)) 00:00:00 $(replace(oslo_offset(d,"00:00"),":"=>""))"
 _short_label(e)=(d=Date(_iso(e)); "$(_wd3(d)) $(_dm(d))")
 """
-    rss_xml(events; today, title=SITE_NAME, lang="nb") -> String
+    rss_xml(events; today, title=site_name(), lang="nb") -> String
 
 Upcoming events (end day ≥ `today`), most recently added (`first_seen`) first, at most $RSS_MAX, in language `lang`.
 """
 rss_xml(events; lang="nb", kwargs...)=_with_lang(()->_rss_xml(events;kwargs...),lang)
-function _rss_xml(events; today::Date=Dates.today(), title=SITE_NAME)
+function _rss_xml(events; today::Date=Dates.today(), title=site_name())
  seen(e)=something(tryparse(Date,_s(get(e,"first_seen",nothing))),Date(_iso(e)))
  ev=[e for e in events if _haspage(e) && Date(_end_day(e))>=today]
  sort!(ev,by=e->(-Dates.value(seen(e)),_sortkey(e)))

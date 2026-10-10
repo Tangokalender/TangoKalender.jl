@@ -1,6 +1,5 @@
 # iCalendar (RFC 5545): one .ics per event and the subscribable kalender.ics.
 # Times are written in UTC (converted from the stored offset), so no VTIMEZONE block is needed.
-const ICS_DOMAIN="tangokalender.github.io"
 "Absolute URL of an event's page in the current language."
 event_url(e)=_lang_url("arrangement/$(e["id"])/")
 "Escape a TEXT value (backslash, semicolon, comma, newline)."
@@ -30,7 +29,7 @@ _icsdate(d::Date)=Dates.format(d,"yyyymmdd")
 "VEVENT lines for one event (without the surrounding VCALENDAR)."
 function event_ics_lines(e; today::Date=Dates.today())
  s=_s(e["start"]); en=_s(get(e,"end",nothing)); (vname,vaddr)=_venue(e)
- L=["BEGIN:VEVENT","UID:$(e["id"])@$ICS_DOMAIN"]
+ L=["BEGIN:VEVENT","UID:$(e["id"])@$(site_host())"]
  stamp=something(tryparse(Date,_s(get(e,"last_verified",nothing))),today); push!(L,"DTSTAMP:$(_icsdate(stamp))T000000Z")
  if occursin('T',s)
   push!(L,"DTSTART:$(_utc(s))")
@@ -55,13 +54,13 @@ function event_ics_lines(e; today::Date=Dates.today())
  L
 end
 """
-    calendar_ics(events; name=SITE_NAME, today, lang="nb") -> String
+    calendar_ics(events; name=site_name(), today, lang="nb") -> String
 
 A complete VCALENDAR (CRLF line endings, folded lines) with one VEVENT per event that has an id and a start.
 Text (titles, descriptions, labels) and event URLs are in language `lang`; UIDs are the same in every language.
 """
 calendar_ics(events; lang="nb", kwargs...)=_with_lang(()->_calendar_ics(events;kwargs...),lang)
-function _calendar_ics(events; name=SITE_NAME, today::Date=Dates.today())
+function _calendar_ics(events; name=site_name(), today::Date=Dates.today())
  L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tangokalender//TangoKalender.jl//NO","CALSCALE:GREGORIAN","METHOD:PUBLISH",
   "X-WR-CALNAME:"*_icstext(name),"X-WR-TIMEZONE:Europe/Oslo","X-WR-CALDESC:"*_icstext("$(_t("site.description")) – $(_lang_url(""))"),
   "REFRESH-INTERVAL;VALUE=DURATION:PT12H","X-PUBLISHED-TTL:PT12H"]

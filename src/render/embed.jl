@@ -18,7 +18,7 @@ function _embed_text()
  Dict(
  "nb"=>(title="Bygg inn kalenderen",intro="Vis tangokalenderen på klubbens eller arrangørens nettside. Alt er gratis, og innholdet oppdateres automatisk.",
   toc=["Dagens program","Ukens program","Liste med filtre","WordPress m.fl.","Abonner og data"],
-  seetoday="Se dagens tango i Oslo",seeweek="Se ukens tango i Oslo",imgalt="Dagens tango i Oslo",todayfb="Dagens tango i Oslo",weekfb="Ukens tango i Oslo",
+  seetoday="Se dagens tango i $(site_city())",seeweek="Se ukens tango i $(site_city())",imgalt="Dagens tango i $(site_city())",todayfb="Dagens tango i $(site_city())",weekfb="Ukens tango i $(site_city())",
   today="""<h2>Dagens program (bilde med lenker)</h2><p class="when">Et bilde i samme stil som kalenderen. Tittelen lenker til kalenderen, hvert arrangement til sin egen side. Bildet inneholder programmet for åtte dager og viser selv riktig dag fra midnatt (norsk tid) når det bygges inn med <code>&lt;object&gt;</code>.</p>""",
   img="""<p><b>Viktig:</b> bruk <code>&lt;object&gt;</code> som over – da virker lenkene. Med <code>&lt;img&gt;</code> vises bildet, men lenkene inni virker ikke. Tillater nettstedet bare bilder, kan du legge bildet i en lenke til kalenderen – da viser bildet dagen det sist ble oppdatert (normalt like etter midnatt):</p>""",
   week="""<h2>Ukens program</h2><p class="when">Mandag til søndag denne uken i kalenderens ukevisning. Tittelen lenker til ukevisningen.</p>""",
@@ -38,8 +38,8 @@ function _embed_text()
 <p>Lenk gjerne tilbake til <a href="./">kalenderen</a> – og hjelp oss å holde den oppdatert: <a href="$ADD_PAGE">legg inn eller rett opp arrangementer</a>.</p>"""),
  "en"=>(title="Embed the calendar",intro="Show the tango calendar on your club's or organiser's website. It is free, and the content updates automatically.",
   toc=["Today's programme","This week's programme","List with filters","WordPress etc.","Subscribe and data"],
-  seetoday="See today's tango in Oslo",seeweek="See this week's tango in Oslo",imgalt="Today's tango in Oslo",todayfb="Today's tango in Oslo",weekfb="This week's tango in Oslo",
-  today="""<h2>Today's programme (image with links)</h2><p class="when">An image in the same style as the calendar. The title links to the calendar, each event to its own page. The image holds the programme for eight days and shows the right day from midnight (Oslo time) by itself when embedded with <code>&lt;object&gt;</code>.</p>""",
+  seetoday="See today's tango in $(site_city())",seeweek="See this week's tango in $(site_city())",imgalt="Today's tango in $(site_city())",todayfb="Today's tango in $(site_city())",weekfb="This week's tango in $(site_city())",
+  today="""<h2>Today's programme (image with links)</h2><p class="when">An image in the same style as the calendar. The title links to the calendar, each event to its own page. The image holds the programme for eight days and shows the right day from midnight ($(site_city()) time) by itself when embedded with <code>&lt;object&gt;</code>.</p>""",
   img="""<p><b>Important:</b> use <code>&lt;object&gt;</code> as above – then the links work. With <code>&lt;img&gt;</code> the image is shown but the links inside it do not work. If your site only allows images, wrap the image in a link to the calendar – it then shows the day it was last updated (normally just after midnight):</p>""",
   week="""<h2>This week's programme</h2><p class="when">Monday to Sunday this week, as in the calendar's week view. The title links to the week view.</p>""",
   weeknote="The image scales to the width of the page; on narrow screens the text gets small – on mobile, today's programme or the list below may work better.",
@@ -58,8 +58,8 @@ function _embed_text()
 <p>Please link back to <a href="./">the calendar</a> – and help us keep it up to date: <a href="$ADD_PAGE">add or correct events</a>.</p>"""),
  "es"=>(title="Insertar el calendario",intro="Mostrá el calendario de tango en el sitio web de tu club u organización. Es gratis y el contenido se actualiza solo.",
   toc=["Programa de hoy","Programa de la semana","Lista con filtros","WordPress y otros","Suscripción y datos"],
-  seetoday="Ver el tango de hoy en Oslo",seeweek="Ver el tango de esta semana en Oslo",imgalt="Tango de hoy en Oslo",todayfb="Tango de hoy en Oslo",weekfb="Tango de esta semana en Oslo",
-  today="""<h2>Programa de hoy (imagen con enlaces)</h2><p class="when">Una imagen con el mismo estilo que el calendario. El título lleva al calendario y cada evento a su propia página. La imagen trae el programa de ocho días y muestra sola el día correcto desde la medianoche (hora de Oslo) cuando se inserta con <code>&lt;object&gt;</code>.</p>""",
+  seetoday="Ver el tango de hoy en $(site_city())",seeweek="Ver el tango de esta semana en $(site_city())",imgalt="Tango de hoy en $(site_city())",todayfb="Tango de hoy en $(site_city())",weekfb="Tango de esta semana en $(site_city())",
+  today="""<h2>Programa de hoy (imagen con enlaces)</h2><p class="when">Una imagen con el mismo estilo que el calendario. El título lleva al calendario y cada evento a su propia página. La imagen trae el programa de ocho días y muestra sola el día correcto desde la medianoche (hora de $(site_city())) cuando se inserta con <code>&lt;object&gt;</code>.</p>""",
   img="""<p><b>Importante:</b> usá <code>&lt;object&gt;</code> como arriba: así funcionan los enlaces. Con <code>&lt;img&gt;</code> se ve la imagen, pero los enlaces no funcionan. Si tu sitio solo permite imágenes, poné la imagen dentro de un enlace al calendario; en ese caso muestra el día de la última actualización (normalmente justo después de medianoche):</p>""",
   week="""<h2>Programa de la semana</h2><p class="when">De lunes a domingo de esta semana, como en la vista semanal del calendario. El título lleva a la vista semanal.</p>""",
   weeknote="La imagen se adapta al ancho de la página; en pantallas angostas la letra queda chica: en el celular quizá convenga el programa de hoy o la lista de abajo.",
@@ -95,14 +95,14 @@ function _bygg_inn_html(; title=nothing)
  obj_week="""<object type="image/svg+xml" data="$w" style="width:100%;max-width:980px">
   <a href="$(B)uke.html">$(a.seeweek)</a>
 </object>"""
- img_today="""<a href="$B"><img src="$t" alt="$(a.imgalt) – $(SITE_NAME)" style="width:100%;max-width:600px"></a>"""
- ifr="""<iframe src="$l" title="$(SITE_NAME)" style="width:100%;height:600px;border:0" loading="lazy"></iframe>"""
+ img_today="""<a href="$B"><img src="$t" alt="$(a.imgalt) – $(site_name())" style="width:100%;max-width:600px"></a>"""
+ ifr="""<iframe src="$l" title="$(site_name())" style="width:100%;height:600px;border:0" loading="lazy"></iframe>"""
  base=_lang_url("")
  code(id,c)=replace(replace(_codeblock(id,c),B=>base),"<code>"=>"<code data-tpl=\"$(_esc(c))\">")
  typeopts=join(("<option value=\"$t_\">$(_esc(_type_label(t_)))</option>" for t_ in TYPE_ORDER),"")
  langopts=join(("<option value=\"$(_lang_url("",x))\"$(x==_lang() ? " selected" : "")>$(LANG_CODE[x]) – $(LANG_NAME[x])</option>" for x in LANGS),"")
  toc=join(("<a href=\"#$id\">$(_esc(x))</a>" for (id,x) in zip(["idag","uke","liste","plattform","abonner"],a.toc)),"")
- """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(SITE_NAME))</title>$(_plain_head(EMBED_PAGE))$(_og_head(title="$title – $SITE_NAME",desc=_t("site.description"),url=_lang_url(EMBED_PAGE)))<style>
+ """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$(_esc(title)) – $(_esc(site_name()))</title>$(_plain_head(EMBED_PAGE))$(_og_head(title="$title – $(site_name())",desc=_t("site.description"),url=_lang_url(EMBED_PAGE)))<style>
 $_PAGE_CSS$_LANG_CSS.codebox{position:relative;margin:10px 0}.codebox pre{margin:0;padding-right:120px}.copybtn{position:absolute;top:8px;right:8px;border:0;border-radius:999px;background:var(--wine);color:white;font-weight:800;padding:6px 12px;cursor:pointer;font-size:.8rem}.preview{border:1px dashed var(--line);border-radius:12px;padding:10px;background:#fff;overflow:auto}.preview object{display:block;width:100%}.builder{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:8px 0}.builder label{display:block;font-size:.72rem;text-transform:uppercase;color:var(--muted);font-weight:800}.builder select,.builder input{padding:8px;border:1px solid var(--line);border-radius:8px}
 </style></head><body>$_SPRITE<div class="hero"><div class="wrap">$(_plain_top(EMBED_PAGE))<h1>$(_esc(title))</h1><p>$(a.intro)</p>
 <nav class="toc" aria-label="$(_esc(a.title))">$toc</nav></div></div><main>

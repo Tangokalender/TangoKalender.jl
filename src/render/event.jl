@@ -7,7 +7,7 @@ function _event_jsonld(e)
   "startDate"=>_s(e["start"]),"eventAttendanceMode"=>"https://schema.org/OfflineEventAttendanceMode",
   "eventStatus"=>"https://schema.org/"*(cancelled ? "EventCancelled" : "EventScheduled"),
   "location"=>JSON.Object{String,Any}("@type"=>"Place","name"=>vname,"address"=>JSON.Object{String,Any}("@type"=>"PostalAddress",
-   "streetAddress"=>vaddr,"addressLocality"=>something(_none(_s(get(something(get(e,"venue",nothing),Dict()),"city",nothing))),"Oslo"),"addressCountry"=>"NO")))
+   "streetAddress"=>vaddr,"addressLocality"=>something(_none(_s(get(something(get(e,"venue",nothing),Dict()),"city",nothing))),site_city()),"addressCountry"=>"NO")))
  c=venue_coords(e); isnothing(c) || (d["location"]["geo"]=JSON.Object{String,Any}("@type"=>"GeoCoordinates","latitude"=>c[1],"longitude"=>c[2]))
  en=_iso_dt(get(e,"end",nothing)); isnothing(en) || (d["endDate"]=en)
  desc=first(_text(e,"description")); isempty(desc) || (d["description"]=desc)
@@ -19,19 +19,19 @@ function _event_jsonld(e)
 end
 _dd(label,html,icon)=isempty(html) ? "" : "<dt>$(_icon(icon))$label</dt><dd>$html</dd>"
 """
-    render_event_page(e, events; today=Dates.today(), correct_url=CORRECT_URL, lang="nb") -> String
+    render_event_page(e, events; today=Dates.today(), correct_url=correct_form_url(), lang="nb") -> String
 
 Full page for one event; `events` is used to list the other upcoming dates in the same series.
 Links are relative to `arrangement/<id>/` in the language's tree.
 """
 render_event_page(e, events; lang="nb", kwargs...)=_with_lang(()->_render_event_page(e,events;kwargs...),lang)
-function _render_event_page(e, events; today::Date=Dates.today(), correct_url=CORRECT_URL, generated_at=Dates.format(now(),dateformat"yyyy-mm-dd HH:MM"))
+function _render_event_page(e, events; today::Date=Dates.today(), correct_url=correct_form_url(), generated_at=Dates.format(now(),dateformat"yyyy-mm-dd HH:MM"))
  (title,tl)=_text(e,"title"); t=_esc(title); (vname,vaddr)=_venue(e); rel="arrangement/$(e["id"])/"
  cancelled=_s(get(e,"status",nothing))=="cancelled"; past=Date(_end_day(e))<today; url=event_url(e)
  (desc,dl)=_text(e,"description"); flyer=_esc(_http(get(e,"flyer_url",nothing)))
  ogdesc=first(isempty(desc) ? "$(_date_label(e)) · $vname" : "$(_date_label(e)) · $vname. $desc",300)
  (img,imgalt)=og_image(e); ogtitle=(cancelled ? _t("cancelled.caps")*": " : "")*"$title · $(_date_label(e))"
- maplink="<a href=\"https://www.openstreetmap.org/search?query=$(_urlenc("$vaddr, $(something(_none(_s(get(something(get(e,"venue",nothing),Dict()),"city",nothing))),"Oslo"))"))\" target=\"_blank\" rel=\"noopener\">$(_t("map"))</a>"
+ maplink="<a href=\"https://www.openstreetmap.org/search?query=$(_urlenc("$vaddr, $(something(_none(_s(get(something(get(e,"venue",nothing),Dict()),"city",nothing))),site_city()))"))\" target=\"_blank\" rel=\"noopener\">$(_t("map"))</a>"
  teachers=join(something(get(e,"teachers",nothing),Any[]),", ")
  music=join((_music_label(m) for m in _music(e)),", ")
  p=_price(e)
@@ -49,12 +49,12 @@ function _render_event_page(e, events; today::Date=Dates.today(), correct_url=CO
   _dd(_t("organizer"),_esc(_s(get(e,"organizer",nothing))),"org")*_dd("DJ",_esc(_s(get(e,"dj",nothing))),"dj")*_dd(_t("teachers"),_esc(teachers),"teachers")*
   _dd(_t("price"),_esc(p),"price")*_dd(_t("music"),_esc(music),"music")
  media=(isempty(flyer) ? "" : "<img class=\"flyer\" src=\"$flyer\" alt=\"Flyer: $t\" loading=\"lazy\">")*_video(e)
- """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$t – $(_esc(_date_label(e))) – $(_esc(SITE_NAME))</title>
-$(_alternates(rel))$(_lang_js(rel;depth=2))<link rel="alternate" type="application/rss+xml" title="$(_esc(SITE_NAME))" href="../../rss.xml">
+ """<!doctype html><html lang="$(_lang())"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>$t – $(_esc(_date_label(e))) – $(_esc(site_name()))</title>
+$(_alternates(rel))$(_lang_js(rel;depth=2))<link rel="alternate" type="application/rss+xml" title="$(_esc(site_name()))" href="../../rss.xml">
 <meta name="description" content="$(_esc(ogdesc))">$(_og_head(;title=ogtitle,desc=ogdesc,url,image=img,alt=imgalt))
 <script type="application/ld+json">$(_event_jsonld(e))</script>$(isempty(mapcard) ? "" : LEAFLET_HEAD)<style>
 $_CSS$_LANG_CSS$(isempty(mapcard) ? "" : _MAP_CSS).page{max-width:820px;margin:-40px auto 0;padding:0 16px 50px}.card{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:16px;box-shadow:0 5px 18px #2919210b}.card h2{font:500 1.35rem Georgia;margin:0 0 10px}dl{display:grid;grid-template-columns:110px 1fr;gap:10px 16px;margin:0}dt{color:var(--muted);font-weight:800;font-size:.8rem;text-transform:uppercase;padding-top:2px}dd{margin:0}.desc{line-height:1.6;white-space:pre-line}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.btn{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:9px 16px;background:white;color:var(--wine);font-weight:800;text-decoration:none;font-size:.9rem;cursor:pointer}.btn.primary{background:var(--wine);border-color:var(--wine);color:white}.hero .back{color:#f7dce5;text-decoration:none;font-weight:700}.hero .when{font-size:1.15rem;color:white;font-weight:700}.notice{background:#fff4e5;border:1px solid #f0d3a8;border-radius:12px;padding:10px 14px;margin-bottom:14px}.sibs{margin:0;padding-left:1.2em}.sibs li{margin:4px 0}.cancelled-title{text-decoration:line-through}@media(max-width:560px){dl{grid-template-columns:1fr}dt{padding-top:8px}}
-</style></head><body>$_SPRITE<div class="hero"><div class="wrap"><div class="topbar"><a class="back" href="../../">← $(_esc(SITE_NAME))</a>$(_langnav(rel;depth=2))</div><h1 class="$(cancelled ? "cancelled-title" : "")"$(_langattr(tl))>$t</h1><p class="when">$(_esc(_date_label(e)))</p><p>$(_type_chips(e))$(cancelled ? " <span class=\"chip avlyst\">$(_t("cancelled"))</span>" : "")</p></div></div><main class="page">
+</style></head><body>$_SPRITE<div class="hero"><div class="wrap"><div class="topbar"><a class="back" href="../../">← $(_esc(site_name()))</a>$(_langnav(rel;depth=2))</div><h1 class="$(cancelled ? "cancelled-title" : "")"$(_langattr(tl))>$t</h1><p class="when">$(_esc(_date_label(e)))</p><p>$(_type_chips(e))$(cancelled ? " <span class=\"chip avlyst\">$(_t("cancelled"))</span>" : "")</p></div></div><main class="page">
 $(cancelled ? "<div class=\"notice\"><b>$(_t("cancelled")).</b> $(_t("ev.cancelled"))</div>" : past ? "<div class=\"notice\">$(_t("ev.past"))</div>" : "")
 <section class="card"><dl>$details</dl>$(isempty(desc) ? "" : "<p class=\"desc\"><span$(_langattr(dl))>$(_esc(desc))</span>$(_langnote(dl))</p>")$(isempty(media) ? "" : "<div class=\"media\">$media</div>")<div class="actions">$(join(links,""))</div><p class="muted" style="color:var(--muted);font-size:.8rem;margin:14px 0 0">$(_t("source")): $sourceline · $(_t("ev.checked")) $(_esc(_s(get(e,"last_verified",nothing)))) · $(_t("check"))</p></section>
 $mapcard$sibhtml</main><div class="sitefooter">$(_t("generated")) $(_esc(generated_at)) · <a href="../../">$(_t("calendar.full"))</a> · <a href="../../$ABOUT_PAGE">$(_t("about"))</a> · <a href="../../kalender.ics">$(_t("subscribe.short"))</a> · <a href="../../rss.xml">RSS</a></div><script>

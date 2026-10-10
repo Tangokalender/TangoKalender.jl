@@ -14,7 +14,7 @@ end
 "Path prefix of a language's tree: \"\" for nb, \"en/\" and \"es/\"."
 _prefix(l=_lang())=l=="nb" ? "" : "$l/"
 "Absolute URL of `rel` (relative to a language root, \"\" = the calendar) in language `l`."
-_lang_url(rel,l=_lang())=SITE_URL*"/"*_prefix(l)*rel
+_lang_url(rel,l=_lang())=site_url()*"/"*_prefix(l)*rel
 "Two-letter code shown in the language switcher (country-style, as on the flags)."
 const LANG_CODE=Dict("nb"=>"NO","en"=>"EN","es"=>"ES")
 const LANG_NAME=Dict("nb"=>"Norsk","en"=>"English","es"=>"Español")
@@ -33,10 +33,13 @@ end
 """
     _t(key, args...) -> String
 
-The UI string `key` in the current language; `{1}`, `{2}` … are replaced by `args`.
+The UI string `key` in the current language: the site's own text (`[texts]` in site.toml) if it has one, else the
+package's. `{city}`/`{CITY}` become the site's city (as is / upper case); `{1}`, `{2}` … are replaced by `args`.
 """
 function _t(key,args...)
- s=getfield(_T[key],Symbol(_lang()))
+ s=get(get(SITE[].texts,_lang(),Dict{String,String}()),key,getfield(_T[key],Symbol(_lang())))
+ occursin("{city}",s) && (s=replace(s,"{city}"=>site_city()))
+ occursin("{CITY}",s) && (s=replace(s,"{CITY}"=>uppercase(site_city())))
  for (i,a) in enumerate(args); s=replace(s,"{$i}"=>string(a)); end
  s
 end
@@ -151,9 +154,9 @@ _strings!(
  "untitled"=>("Uten tittel","Untitled","Sin título"),
  "week.label"=>("Uke {1} · {2}","Week {1} · {2}","Semana {1} · {2}"),
  # calendar views
- "site.tagline"=>("ARGENTINSK TANGO I OSLO","ARGENTINE TANGO IN OSLO","TANGO ARGENTINO EN OSLO"),
+ "site.tagline"=>("ARGENTINSK TANGO I {CITY}","ARGENTINE TANGO IN {CITY}","TANGO ARGENTINO EN {CITY}"),
  "site.subtitle"=>("Milongaer, practicaer, kurs og festivaler","Milongas, practicas, classes and festivals","Milongas, prácticas, clases y festivales"),
- "site.description"=>("Argentinsk tango i Oslo: milongaer, practicaer, kurs og festivaler","Argentine tango in Oslo: milongas, practicas, classes and festivals","Tango argentino en Oslo: milongas, prácticas, clases y festivales"),
+ "site.description"=>("Argentinsk tango i {city}: milongaer, practicaer, kurs og festivaler","Argentine tango in {city}: milongas, practicas, classes and festivals","Tango argentino en {city}: milongas, prácticas, clases y festivales"),
  "view.compact"=>("Liste","List","Lista"),"view.week"=>("Uke","Week","Semana"),"view.cards"=>("Kort","Cards","Tarjetas"),
  "nav.views"=>("Visning","View","Vista"),
  "add"=>("Legg til arrangement","Add an event","Sumá un evento"),
@@ -223,9 +226,9 @@ _strings!(
  "svg.updated"=>("oppdatert {1}","updated {1}","actualizado {1}"),
  "svg.cancelled"=>("avlyst","cancelled","cancelado"),
  "svg.today.title"=>("{1} – dagens program","{1} – today's programme","{1} – programa de hoy"),
- "svg.today.desc"=>("Tangoarrangementer i Oslo i dag.","Tango events in Oslo today.","Eventos de tango en Oslo hoy."),
+ "svg.today.desc"=>("Tangoarrangementer i {city} i dag.","Tango events in {city} today.","Eventos de tango en {city} hoy."),
  "svg.week.title"=>("{1} – ukens program","{1} – this week's programme","{1} – programa de la semana"),
- "svg.week.desc"=>("Tangoarrangementer i Oslo denne uken.","Tango events in Oslo this week.","Eventos de tango en Oslo esta semana."),
+ "svg.week.desc"=>("Tangoarrangementer i {city} denne uken.","Tango events in {city} this week.","Eventos de tango en {city} esta semana."),
  # feeds
  "cancelled.caps"=>("AVLYST","CANCELLED","CANCELADO"),
  "term.series"=>("serie","series","serie"),

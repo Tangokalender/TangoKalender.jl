@@ -137,7 +137,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  slug=_slug(title); none(s)=isempty(s) ? nothing : s
  base=JSON.Object{String,Any}("id"=>"$slug-$(Dates.format(date,"yyyy-mm-dd"))","title"=>title,"types"=>typ,"status"=>"scheduled","series"=>weekly ? slug : nothing,
   "start"=>_stamp(date,st),"end"=>isnothing(et) ? nothing : _end_stamp(date,st,et),
-  "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>"Oslo"),"organizer"=>org,"dj"=>none(get_("DJ")),
+  "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>site_city()),"organizer"=>org,"dj"=>none(get_("DJ")),
   "teachers"=>something(val("Lærere"),Any[]),
   "price_nok"=>prices["price_nok"],"student_price_nok"=>prices["student_price_nok"],"class_price_nok"=>prices["class_price_nok"],
   "description"=>none(get_("Beskrivelse")),"lang"=>lang,"translations"=>_translations(lang,f),"music_style"=>music,"flyer_url"=>flyer,"video"=>video,"link"=>link,

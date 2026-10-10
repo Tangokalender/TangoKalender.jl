@@ -106,7 +106,7 @@ end
 "Template for the table route: semicolon CSV with a UTF-8 BOM, so Excel in Norwegian locale opens it with æøå intact."
 function table_template_csv()
  rows=[TABLE_COLUMNS,
-  ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 Oslo","Tangoklubben","DJ A","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.","","Norsk","","Milonga every Friday."],
+  ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 $(site_city())","Tangoklubben","DJ A","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.","","Norsk","","Milonga every Friday."],
   ["","","2027-01-15","","","","","","DJ B","","","","","","","","","","","","",""],
   ["","","2027-01-22","","","","","","","","","","","","","","","","Avlyst","","",""]]
  q(c)=occursin(r"[;\"\n]",c) ? "\""*replace(c,"\""=>"\"\"")*"\"" : c

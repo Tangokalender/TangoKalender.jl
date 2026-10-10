@@ -1,6 +1,6 @@
 # JSON submissions (e.g. extracted by an LLM, see llms.jl) via .github/ISSUE_TEMPLATE/nytt-arrangement-json.yml.
 # The submission schema is derived from the stored schema: bot-managed fields removed, times relaxed to Oslo local time.
-const SUBMISSION_SCHEMA_URL=SITE_URL*"/schema/tango-event-submission.schema.json"
+submission_schema_url()=site_url()*"/schema/tango-event-submission.schema.json"
 const BOT_FIELDS=["id","series","source","source_url","published_date","first_seen","last_verified","crawl_timestamp","confidence","video"]
 const MAX_SUBMISSION=60
 "Required keys for submitted events (everything else may be null or left out)."
@@ -16,8 +16,8 @@ const _DESCRIPTIONS=Dict(
  "title"=>"Event name as written by the organiser.",
  "types"=>"A list with one or more of the following (e.g. [\"class\", \"milonga\"] for a class followed by a milonga): " ,   # completed in submission_schema()
  "status"=>"\"cancelled\" only if the source says the event is cancelled; otherwise omit.",
- "start"=>"Oslo local start time, \"YYYY-MM-DDTHH:MM\" (no time zone), or \"YYYY-MM-DD\" if no time is given.",
- "end"=>"Oslo local end time in the same format. If it ends after midnight, use the next day's date. null if not stated.",
+ "start"=>"{city} local start time, \"YYYY-MM-DDTHH:MM\" (no time zone), or \"YYYY-MM-DD\" if no time is given.",
+ "end"=>"{city} local end time in the same format. If it ends after midnight, use the next day's date. null if not stated.",
  "venue"=>"Where the event takes place.",
  "organizer"=>"Required. The organising group or person named in the source; if none is named, the page or profile that published the event (e.g. the Facebook event host).",
  "dj"=>"DJ name(s) exactly as written in the source, or null.",
@@ -36,7 +36,7 @@ const _DESCRIPTIONS=Dict(
     submission_schema() -> JSON.Object
 
 JSON Schema (draft-07) for submitted events: a single event or an array of up to $MAX_SUBMISSION.
-Derived from `schema/tango-event.schema.json`; published at `SUBMISSION_SCHEMA_URL`.
+Derived from `schema/tango-event.schema.json`; published at `submission_schema_url()`.
 """
 function submission_schema()
  s=JSON.parsefile(SCHEMA_FILE); defs=s["definitions"]; props=s["properties"]
@@ -47,15 +47,15 @@ function submission_schema()
  props["video_url"]=JSON.Object{String,Any}("\$ref"=>"#/definitions/url")
  props["venue"]["type"]="object"; props["venue"]["required"]=["name","address"]
  for (k,d) in _DESCRIPTIONS
-  d=k=="types" ? d*_typelist()*"." : k=="music_style" ? d*_musiclist()*"." : d
+  d=k=="types" ? d*_typelist()*"." : k=="music_style" ? d*_musiclist()*"." : replace(d,"{city}"=>site_city())
   p=props[k]; haskey(p,"\$ref") ? (props[k]=JSON.Object{String,Any}("description"=>d,"allOf"=>[p])) : (p["description"]=d)
  end
  event=JSON.Object{String,Any}("type"=>"object","required"=>SUBMISSION_REQUIRED,
   "additionalProperties"=>false,"properties"=>props)
  defs["event"]=event
- JSON.Object{String,Any}("\$schema"=>"http://json-schema.org/draft-07/schema#","\$id"=>SUBMISSION_SCHEMA_URL,
+ JSON.Object{String,Any}("\$schema"=>"http://json-schema.org/draft-07/schema#","\$id"=>submission_schema_url(),
   "title"=>"Tangokalender event submission",
-  "description"=>"One event, or an array with one object per date (up to $MAX_SUBMISSION). Times are Oslo local time. Use null for anything not stated in the source.",
+  "description"=>"One event, or an array with one object per date (up to $MAX_SUBMISSION). Times are $(site_city()) local time. Use null for anything not stated in the source.",
   "definitions"=>defs,
   "oneOf"=>[JSON.Object{String,Any}("\$ref"=>"#/definitions/event"),
    JSON.Object{String,Any}("type"=>"array","minItems"=>1,"maxItems"=>MAX_SUBMISSION,"items"=>JSON.Object{String,Any}("\$ref"=>"#/definitions/event"))])
@@ -79,7 +79,7 @@ function _submission_message(i,x,issue)
  at="«"*join(filter(!isempty,[isnothing(i) ? "" : "[$i]",p]),".")*"»"; at=="«»" && (at="«(arrangementet)»")
  v=JSON.json(issue.x); r=issue.reason
  r=="additionalProperties" && x isa AbstractDict && isempty(issue.path) &&
-  return "$at: ukjente felt: $(join(sort([k for k in keys(x) if !haskey(_submission_event_schema()[1]["properties"],k)]),", ")). Se $SUBMISSION_SCHEMA_URL"
+  return "$at: ukjente felt: $(join(sort([k for k in keys(x) if !haskey(_submission_event_schema()[1]["properties"],k)]),", ")). Se $(submission_schema_url())"
  r=="required" && return "$at mangler påkrevd felt: $(join([k for k in issue.val if !(issue.x isa AbstractDict && haskey(issue.x,k))],", "))."
  r=="enum" && return "$at: $v er ikke en gyldig verdi. Lovlige verdier: $(join(filter(!isnothing,issue.val),", "))."
  r=="type" && return "$at: forventet $(issue.val isa AbstractVector ? join(issue.val," eller ") : issue.val), fikk $v."
@@ -149,7 +149,7 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   !isnothing(vurl) && isnothing(video) && err("$(at)«video_url» må være en lenke til YouTube eller Vimeo.")
   e=JSON.Object{String,Any}("id"=>id,"title"=>strip(_s(x["title"])),"types"=>sort!(unique(string.(x["types"])),by=t->something(findfirst(==(t),TYPE_ORDER),99)),"status"=>something(_none(get(x,"status",nothing)),"scheduled"),
    "series"=>counts[slugs[k]]>1 ? slugs[k] : nothing,"start"=>_stamp(d,t),"end"=>stamp_end,
-   "venue"=>JSON.Object{String,Any}("name"=>_none(get(v,"name",nothing)),"address"=>_none(get(v,"address",nothing)),"city"=>something(_none(get(v,"city",nothing)),"Oslo")),
+   "venue"=>JSON.Object{String,Any}("name"=>_none(get(v,"name",nothing)),"address"=>_none(get(v,"address",nothing)),"city"=>something(_none(get(v,"city",nothing)),site_city())),
    "organizer"=>_none(get(x,"organizer",nothing)),"dj"=>_none(get(x,"dj",nothing)),"teachers"=>collect(something(get(x,"teachers",nothing),Any[])),
    "price_nok"=>get(x,"price_nok",nothing),"student_price_nok"=>get(x,"student_price_nok",nothing),"class_price_nok"=>get(x,"class_price_nok",nothing),
    "description"=>_none(get(x,"description",nothing)),"lang"=>lang,"translations"=>_clean_translations(get(x,"translations",nothing),lang),"music_style"=>collect(something(get(x,"music_style",nothing),Any[])),

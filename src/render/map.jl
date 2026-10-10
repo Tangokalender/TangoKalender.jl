@@ -12,13 +12,15 @@ Script for the «Kart» view, appended to the page script: `mapMarkers(rows)` gr
 marker per venue, popup with day, time and linked title); `_JS` calls `window.onfiltered(visibleRows)` after every
 filter change. Without Leaflet (blocked CDN, tests) the marker data is still computed (`window.__markers`).
 """
-const _MAP_JS=_MAP_BASE*raw"""(function(){var el=document.getElementById('map');if(!el)return;var M=null,layer=null,nomap=document.getElementById('nomap'),ESC=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const _MAP_JS_RAW=_MAP_BASE*raw"""(function(){var el=document.getElementById('map');if(!el)return;var M=null,layer=null,nomap=document.getElementById('nomap'),ESC=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function mapMarkers(rows){var by={},order=[],no=new Set();rows.forEach(r=>{var d=r.dataset;if(!d.lat){no.add(d.eid);return}var k=d.lat+','+d.lon;if(!by[k]){by[k]={lat:+d.lat,lon:+d.lon,venue:d.venue,items:[]};order.push(k)}var h=r.querySelector('h3'),a=r.querySelector('h3 a'),t=r.querySelector('.time');by[k].items.push({eid:d.eid,date:d.date,day:d.dl,time:t?t.textContent:'',title:h?h.textContent:'',href:a&&a.getAttribute?a.getAttribute('href')||'':''})});return {markers:order.map(k=>by[k]),without:no.size}}
 function draw(v){var r=mapMarkers(v);window.__markers=r;if(nomap)nomap.textContent=r.without?T.nomap.replace('{1}',r.without):'';if(typeof L==='undefined')return;
 if(!M){M=L.map(el,{scrollWheelZoom:false});L.tileLayer(TILES,{maxZoom:19,attribution:ATTR}).addTo(M)}if(layer)layer.remove();layer=L.layerGroup().addTo(M);
 var pts=r.markers.map(m=>{L.circleMarker([m.lat,m.lon],PIN).bindPopup('<b>'+ESC(m.venue)+'</b><ul class="mp">'+m.items.map(i=>'<li>'+ESC(i.day)+' · '+ESC(i.time)+'<br>'+(i.href?'<a href="'+ESC(i.href)+'">'+ESC(i.title)+'</a>':ESC(i.title))+'</li>').join('')+'</ul>',{maxWidth:280}).addTo(layer);return [m.lat,m.lon]});
-if(pts.length)M.fitBounds(pts,{padding:[36,36],maxZoom:15});else M.setView([59.9139,10.7522],12)}
+if(pts.length)M.fitBounds(pts,{padding:[36,36],maxZoom:15});else M.setView(__MAPVIEW__)}
 window.mapMarkers=mapMarkers;window.onfiltered=draw;draw([...document.querySelectorAll('.ev')].filter(r=>!r.classList.contains('hidden')))})();"""
+"The «Kart» view script with the site's default map view (`map_center`, `map_zoom` in site.toml)."
+_map_js()=(c=SITE[].map_center; replace(_MAP_JS_RAW,"__MAPVIEW__"=>"[$(c[1]),$(c[2])],$(SITE[].map_zoom)"))
 "Map card for an event page, or \"\" when the venue has no precise position."
 function _event_map(e)
  c=venue_coords(e); isnothing(c) && return ""

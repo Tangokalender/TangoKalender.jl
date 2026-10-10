@@ -1,5 +1,3 @@
-"Site name shown in titles, the hero, feeds and calendar names."
-const SITE_NAME="Tangokalender | Oslo"
 # Display labels for the English slugs used in event data. `_TYPES`/`_MUSIC` are the Norwegian ones, shared by the
 # renderer and the (Norwegian) issue-form parser; English and Spanish are in src/i18n.jl.
 "Event types (tags) in display order; an event has one or more. `outdoor` (Utetango) combines with the others."

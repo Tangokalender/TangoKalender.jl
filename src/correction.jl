@@ -54,8 +54,8 @@ end
 «Rett opp» link: the correction form with only `arrangement_id` and the read-only «Nåværende opplysninger» prefilled.
 GitHub resets URL-prefilled fields when they are edited, so the editable fields are left blank (blank = unchanged).
 """
-correction_url(e; base=CORRECT_URL)=_with_lang(()->_correction_url(e;base),"nb")   # the forms are Norwegian
-function _correction_url(e; base=CORRECT_URL)
+correction_url(e; base=correct_form_url())=_with_lang(()->_correction_url(e;base),"nb")   # the forms are Norwegian
+function _correction_url(e; base=correct_form_url())
  f=correction_fields(e); d=Date(first(_s(e["start"]),10))
  url(desc)=base*join(("&$(k)=$(_urlenc(v))" for (k,v) in ["title"=>"Rettelse: $(f["tittel"]) ($(_dm(d)))",
   "arrangement_id"=>f["arrangement_id"],"navaerende"=>current_summary(e;description=desc)]))
@@ -134,7 +134,7 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
   for (label,k) in OTHER_TEXT_FIELDS; haskey(ch,label) && _set_translation!(x,_other_lang(_textlang(x)),k,ch[label]); end
   for (k,field) in PRICE_FIELDS; apply!(field,k); end
   if haskey(ch,"Sted") || haskey(ch,"Adresse")
-   v=get(x,"venue",nothing); v isa AbstractDict || (v=JSON.Object{String,Any}("name"=>nothing,"address"=>nothing,"city"=>"Oslo"))
+   v=get(x,"venue",nothing); v isa AbstractDict || (v=JSON.Object{String,Any}("name"=>nothing,"address"=>nothing,"city"=>site_city()))
    haskey(ch,"Sted") && (v["name"]=ch["Sted"]); haskey(ch,"Adresse") && (v["address"]=ch["Adresse"]); x["venue"]=v
   end
   if haskey(ch,"Dato") || haskey(ch,"Starttid") || haskey(ch,"Sluttid")

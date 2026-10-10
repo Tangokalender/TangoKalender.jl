@@ -6,22 +6,25 @@ using Base.ScopedValues: ScopedValue
 const VENUES_FILE="venues.json"
 const VENUES_SCHEMA_FILE=joinpath(@__DIR__,"..","schema","venues.schema.json")
 const NOMINATIM_URL="https://nominatim.openstreetmap.org/search"
-const GEO_USER_AGENT="Tangokalender/1 (+$REPO_URL)"
+geo_user_agent()="Tangokalender/1 (+$(repo_url()))"
 "The venue cache used while rendering (set by `write_site`/`_with_venues`): normalised address => entry."
 const VENUES=ScopedValue(Dict{String,Any}())
-"Normalised address key: lower case, no postcode, no «Oslo», «gt.» → «gate», single spaces."
+"Normalised address key: lower case, no postcode, no city name (the site's), «gt.» → «gate», single spaces."
 function _addrkey(addr)
  s=lowercase(strip(string(something(addr,""))))
- s=replace(s,r"\b\d{4}\b"=>" ",r"\boslo\b"=>" ",r"\bgt\b\.?"=>"gate",r"[\s,]+"=>" ")
+ city=Regex("\\b"*_regex_escape(lowercase(site_city()))*"\\b")
+ s=replace(s,r"\b\d{4}\b"=>" ",city=>" ",r"\bgt\b\.?"=>"gate",r"[\s,]+"=>" ")
  strip(s)
 end
 "The address an event is geocoded by (`venue.address`, with the city added when missing), or \"\"."
 function _geo_address(e)
  v=get(e,"venue",nothing); v isa AbstractDict || return ""
  a=strip(_s(get(v,"address",nothing))); isempty(a) && return ""
- c=strip(_s(get(v,"city",nothing))); c=isempty(c) ? "Oslo" : c
+ c=strip(_s(get(v,"city",nothing))); c=isempty(c) ? site_city() : c
  occursin(lowercase(c),lowercase(a)) ? a : "$a, $c"
 end
+"`s` with regex special characters escaped."
+_regex_escape(s)=replace(s,r"([\\^$.|?*+()\[\]{}])"=>s"\\\1")
 "Read `venues.json` into a lookup dict (empty if the file is missing)."
 load_venues(file::AbstractString=VENUES_FILE)=isfile(file) ? Dict{String,Any}(_addrkey(x["address"])=>x for x in JSON.parsefile(file)) : Dict{String,Any}()
 "Write the cache sorted by address (stable diffs)."
@@ -42,8 +45,8 @@ end
 _precise(r)=haskey(something(get(r,"address",nothing),Dict()),"house_number") || get(r,"category","") in ("building","amenity") || get(r,"addresstype","") in ("building","amenity")
 "Query Nominatim for `q`; the first result as a dict, `nothing` when nothing was found. Throws on network errors."
 function _nominatim(q)
- url=NOMINATIM_URL*"?q="*_urlenc(q)*"&countrycodes=no&format=jsonv2&addressdetails=1&limit=1"
- io=IOBuffer(); Downloads.request(url;output=io,headers=["User-Agent"=>GEO_USER_AGENT],throw=true)
+ url=NOMINATIM_URL*"?q="*_urlenc(q)*"&countrycodes="*SITE[].countrycodes*(isnothing(SITE[].viewbox) ? "" : "&viewbox="*SITE[].viewbox)*"&format=jsonv2&addressdetails=1&limit=1"
+ io=IOBuffer(); Downloads.request(url;output=io,headers=["User-Agent"=>geo_user_agent()],throw=true)
  r=JSON.parse(String(take!(io))); isempty(r) ? nothing : r[1]
 end
 """
