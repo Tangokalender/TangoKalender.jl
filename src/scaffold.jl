@@ -16,13 +16,16 @@ function write_templates(dir::AbstractString=".")
 end
 "The code repo (the package, the reusable workflows and the issue-form templates)."
 const CODE_REPO_URL="https://github.com/Tangokalender/TangoKalender.jl"
+"How data repos fetch the package (`[sources]` in their Project.toml): over SSH. The reusable workflows rewrite it to
+HTTPS on GitHub's runners, which have no SSH key (the code repo is public)."
+const CODE_REPO_GIT="git@github.com:Tangokalender/TangoKalender.jl.git"
 const PACKAGE_UUID="8fa2004d-d644-4dc6-9815-18e81ae74980"
 _toml_str(s)=sprint(TOML.print,Dict("x"=>s))[5:end-1]   # a TOML string literal, quoted and escaped
 """
     init_site(dir; slug, city, site_url, repo_url, name="Tangokalender | <city>", version=package version) -> files
 
 Start a new city's data repo in `dir`: `site.toml`, an empty `events/` and `venues.json`, a `Project.toml` that pins
-TangoKalender `version` from `CODE_REPO_URL`, workflows that call the package's reusable ones, Dependabot, the issue
+TangoKalender `version` from `CODE_REPO_GIT` (SSH), workflows that call the package's reusable ones, Dependabot, the issue
 forms, a placeholder link-preview image, `.gitignore` and a README with the one-time GitHub setup.
 Refuses to overwrite an existing `site.toml`.
 """
@@ -59,7 +62,7 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
  TangoKalender = "$PACKAGE_UUID"
 
  [sources]
- TangoKalender = {url = "$CODE_REPO_URL", rev = "$ref"}
+ TangoKalender = {url = "$CODE_REPO_GIT", rev = "$ref"}
  """)
  wf(file,body)=w(joinpath(".github","workflows",file),body)
  wf("validate.yml","""

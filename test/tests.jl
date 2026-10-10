@@ -1051,7 +1051,7 @@ end
   @test site.slug=="bergen" && site.name=="Tangokalender | Bergen" && site.site_url=="https://tangokalender.github.io/bergen"
   @test isfile(site.og_image) && isdir(joinpath(dir,"events")) && read(joinpath(dir,"venues.json"),String)=="[]\n"
   proj=TK.TOML.parsefile(joinpath(dir,"Project.toml"))
-  @test proj["deps"]["TangoKalender"]==TK.PACKAGE_UUID && proj["sources"]["TangoKalender"]["url"]==TK.CODE_REPO_URL
+  @test proj["deps"]["TangoKalender"]==TK.PACKAGE_UUID && proj["sources"]["TangoKalender"]["url"]=="git@github.com:Tangokalender/TangoKalender.jl.git"
   @test proj["sources"]["TangoKalender"]["rev"]=="v$(pkgversion(TangoKalender))"
   wf=read(joinpath(dir,".github","workflows","intake.yml"),String)
   @test occursin("uses: Tangokalender/TangoKalender.jl/.github/workflows/site-intake.yml@v$(pkgversion(TangoKalender))",wf) && occursin("\${{ github.event.issue.number }}",wf)

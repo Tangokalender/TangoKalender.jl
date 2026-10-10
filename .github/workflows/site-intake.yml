@@ -36,7 +36,11 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v3
+      - name: Fetch git@github.com URLs over HTTPS   # Project.toml uses SSH; runners have no SSH key
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
       - name: Instantiate
+        env:
+          JULIA_PKG_USE_CLI_GIT: 'true'   # the git CLI applies insteadOf
         run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
       - name: Save issue body
         env:

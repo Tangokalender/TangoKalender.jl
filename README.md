@@ -14,7 +14,7 @@ oppdatere versjonen i data-repoets `Project.toml`.
 ## Ny by
 
 ```bash
-julia -e 'using Pkg; Pkg.Apps.add(url="https://github.com/Tangokalender/TangoKalender.jl")'   # appen `tangokalender`
+julia -e 'using Pkg; Pkg.Apps.add(url="git@github.com:Tangokalender/TangoKalender.jl.git")'   # appen `tangokalender`
 tangokalender init-site bergen --slug=bergen --city=Bergen \
   --site-url=https://tangokalender.github.io/bergen --repo-url=https://github.com/Tangokalender/bergen
 ```
