@@ -4,6 +4,7 @@
 using Documenter, TangoKalender
 const TK=TangoKalender
 # the animated terminal from the «Legg til» page, shown on the bulk-edit page
+mkpath(joinpath(@__DIR__,"src","assets"))   # not in git: the copied file is ignored, and git keeps no empty directories
 cp(TK.EDIT_DEMO_FILE,joinpath(@__DIR__,"src","assets","tangoedit-demo.svg");force=true)
 DocMeta.setdocmeta!(TangoKalender,:DocTestSetup,:(using TangoKalender);recursive=true)
 makedocs(
