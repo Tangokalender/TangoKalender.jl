@@ -1,0 +1,36 @@
+{
+    "id": "esa-tandas-2026-11-24",
+    "title": "Tandas de tango, vals & milonga (ESA, viderekommende)",
+    "types": [
+        "class"
+    ],
+    "status": "scheduled",
+    "series": "esa-tandas",
+    "start": "2026-11-24T19:00:00+01:00",
+    "end": "2026-11-24T20:00:00+01:00",
+    "venue": {
+        "name": "Nasjonalgalleriet",
+        "address": "Universitetsgata 13, 0164 Oslo",
+        "city": "Oslo"
+    },
+    "organizer": "Patrycja Jablonska",
+    "dj": null,
+    "teachers": [
+        "Patrycja Jablonska"
+    ],
+    "price_nok": null,
+    "student_price_nok": null,
+    "class_price_nok": 250,
+    "description": "Kurs for viderekommende. Tema denne kvelden: Milonga. Begge kursene samme kveld: 350 kr.",
+    "source": "Tango Traveller",
+    "source_url": "https://www.tangotraveller.co/tango-events-in-oslo",
+    "published_date": null,
+    "first_seen": "2026-10-10",
+    "last_verified": "2026-10-10",
+    "crawl_timestamp": "2026-10-10T12:00:00+02:00",
+    "confidence": 0.8,
+    "music_style": [],
+    "flyer_url": null,
+    "video": null,
+    "link": "https://www.tangotraveller.co/tango-events-in-oslo"
+}

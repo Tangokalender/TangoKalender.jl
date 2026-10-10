@@ -1,0 +1,14 @@
+# The test site: Oslo as of 2026-10-10. A frozen copy of the Oslo data (events/, venues.json), so the tests don't
+# change when the real calendar does. The tests run as this site (test/runtests.jl).
+slug = "oslo"
+name = "Tangokalender | Oslo"
+city = "Oslo"
+site_url = "https://tangokalender.github.io"
+repo_url = "https://github.com/Tangokalender/tangokalender.github.io"
+
+[map]
+center = [59.9139, 10.7522]
+zoom = 12
+
+[geocode]
+countrycodes = "no"

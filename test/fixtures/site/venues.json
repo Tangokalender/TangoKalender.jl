@@ -1,0 +1,173 @@
+[
+  {
+    "address": "Oslo",
+    "lat": 59.91333,
+    "lon": 10.73897,
+    "precision": "street",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "relation/406091"
+  },
+  {
+    "address": "Ballplassveien 2, Oslo",
+    "lat": 59.897673,
+    "lon": 10.78215,
+    "precision": "house",
+    "source": "manual",
+    "checked": "2026-10-05",
+    "note": "Nominatim: house number 2 (Sletta)"
+  },
+  {
+    "address": "Ebbells gate 1, 0183 Oslo",
+    "lat": 59.915309,
+    "lon": 10.754279,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-10",
+    "osm": "node/2785549622"
+  },
+  {
+    "address": "Josefines gate 32, 0351 Oslo",
+    "lat": 59.921923,
+    "lon": 10.724072,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2788287632"
+  },
+  {
+    "address": "Karl Johans gt 1, Oslo",
+    "lat": 59.911377,
+    "lon": 10.749404,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/8741102161"
+  },
+  {
+    "address": "Kirkeveien 64A, 0364 Oslo",
+    "lat": 59.929256,
+    "lon": 10.71547,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2788528470"
+  },
+  {
+    "address": "Kristiansandsgata 2, Oslo",
+    "lat": 59.938268,
+    "lon": 10.752807,
+    "precision": "house",
+    "source": "manual",
+    "checked": "2026-10-05",
+    "note": "Nominatim: «Kristiansands gate 2» (Sagene samfunnshus)"
+  },
+  {
+    "address": "Mariboes gate 13, 0183 Oslo",
+    "lat": 59.917188,
+    "lon": 10.751772,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2785550139"
+  },
+  {
+    "address": "Nordahl Bruns gate 22, 0165 Oslo",
+    "lat": 59.91854,
+    "lon": 10.738243,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2785847520"
+  },
+  {
+    "address": "Prinsens gate 26, Oslo",
+    "lat": 59.912244,
+    "lon": 10.739559,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2785920569"
+  },
+  {
+    "address": "Thorvald Meyers gate 89, Oslo",
+    "lat": 59.9188,
+    "lon": 10.759222,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2790203301"
+  },
+  {
+    "address": "Thulstrups gate 3, Oslo",
+    "lat": 59.934267,
+    "lon": 10.738153,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-10",
+    "osm": "node/2789321793"
+  },
+  {
+    "address": "Ullevålsveien 76, bygg 16, 0454 Oslo",
+    "lat": 59.932219,
+    "lon": 10.735451,
+    "precision": "house",
+    "source": "manual",
+    "checked": "2026-10-05",
+    "note": "Nominatim: «Ullevålsveien 76»"
+  },
+  {
+    "address": "Universitetsgata 13, 0164 Oslo",
+    "lat": 59.916148,
+    "lon": 10.737742,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-10",
+    "osm": "node/3138851842"
+  },
+  {
+    "address": "Uranienborgveien 28, Oslo",
+    "lat": 59.923241,
+    "lon": 10.719435,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2785414569"
+  },
+  {
+    "address": "Uranienborgveien 28 og Konghellegata 3, Oslo",
+    "lat": 59.923241,
+    "lon": 10.719435,
+    "precision": "house",
+    "source": "manual",
+    "checked": "2026-10-05",
+    "note": "Same as Uranienborgveien 28"
+  },
+  {
+    "address": "Vulkan 5, 0178 Oslo",
+    "lat": 59.922253,
+    "lon": 10.751749,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2785636192"
+  },
+  {
+    "address": "Waldemar Thranes gate 3C, 0171 Oslo",
+    "lat": 59.923643,
+    "lon": 10.740582,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/7520856297"
+  },
+  {
+    "address": "Øvre Slottsgate 3, 0157 Oslo",
+    "lat": 59.911002,
+    "lon": 10.74017,
+    "precision": "house",
+    "source": "nominatim",
+    "checked": "2026-10-05",
+    "osm": "node/2785920732"
+  }
+]

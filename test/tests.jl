@@ -1,6 +1,7 @@
 using Test, Dates, JSON, TangoKalender
 const ROOT=joinpath(@__DIR__,"..")
-const TREE=joinpath(ROOT,"events")
+const FIXTURE_SITE=joinpath(@__DIR__,"fixtures","site")   # frozen copy of the Oslo data (see its site.toml)
+const TREE=joinpath(FIXTURE_SITE,"events")
 const MEDIA=joinpath(@__DIR__,"fixtures","media")
 @testset "renderer" begin
  h=render_events_html(load_events(TREE)); @test occursin("<!doctype html>",h); @test occursin("Milonga ESA",h); @test !occursin("nothing",h)
@@ -517,21 +518,15 @@ end
 end
 @testset "site URL drift" begin
  TK=TangoKalender
- @test TK.site_url()=="https://tangokalender.github.io" && TK.repo_url()=="https://github.com/Tangokalender/tangokalender.github.io"
- @test JSON.parsefile(TK.SCHEMA_FILE)["\$id"]==TK.site_url()*"/schema/tango-event.schema.json"
- # every absolute link to the site or the repo in source, schema, issue forms and docs uses the current site_url()/repo_url()
- host=replace(TK.site_url(),r"^https://"=>""); repo=replace(TK.repo_url(),r"^https://"=>"")
+ @test TK.site_url()=="https://tangokalender.github.io" && TK.repo_url()=="https://github.com/Tangokalender/tangokalender.github.io"   # the Oslo test site
+ @test JSON.parsefile(TK.SCHEMA_FILE)["\$id"]==TK.site_url()*"/schema/tango-event.schema.json"   # canonical copy, served by the Oslo site
+ # the code is site-agnostic: no site's URL is written into the package (only as a doc example in site.jl);
+ # every link comes from site_url()/repo_url(), and the forms from templates/ with {{site_url}}
  bad=String[]
- for dir in ("src","schema",".github","events"), (r,_,fs) in walkdir(joinpath(ROOT,dir)), f in fs
-  p=joinpath(r,f); t=read(p,String)
+ for dir in ("src","templates"), (r,_,fs) in walkdir(joinpath(ROOT,dir)), f in fs
+  p=joinpath(r,f); f=="site.jl" && continue; t=read(p,String)
   occursin("github.io/TangoKalender.jl",t) && push!(bad,"$p: old project-site path")
-  for m in eachmatch(r"(?:https?|webcal)://([a-z0-9.-]*github\.(?:io|com)/[A-Za-z0-9._-]*)",t)
-   u=m[1]; (startswith(u,host) || startswith(u,repo)) && continue
-   occursin(r"^(github\.com/(orgs|julia-actions|actions|peter-evans|stefanbuck)|[a-z0-9-]+\.github\.io/?$|user-attachments)",u) && continue
-   occursin(r"^github\.com/[A-Za-z0-9-]+/?$",u) && continue
-   startswith(u,"github.com/Tangokalender") && push!(bad,"$p: $u")
-   startswith(u,"tangokalender.github.io/") && push!(bad,"$p: $u")
-  end
+  for u in ("tangokalender.github.io","github.com/Tangokalender/tangokalender.github.io"); occursin(u,t) && push!(bad,"$p: $u"); end
  end
  for f in ("README.md","CLAUDE.md","TODO.md"); occursin("github.io/TangoKalender.jl/",read(joinpath(ROOT,f),String)) && push!(bad,f); end
  @test isempty(bad)
@@ -822,7 +817,7 @@ end
   write(f,"[{\"address\":\"X\",\"lat\":1,\"lon\":2,\"precision\":\"exact\",\"source\":\"nominatim\"}]"); @test !isempty(validate_venues(f))
   @test isempty(validate_venues(joinpath(d,"none.json")))
  end
- @test isempty(validate_venues(joinpath(ROOT,"venues.json")))                                                                  # the committed cache
+ @test isempty(validate_venues(joinpath(FIXTURE_SITE,"venues.json")))                                                                  # the committed cache
  # event page: map card and JSON-LD geo only with a precise position
  p=TK._with_venues(()->TK.render_event_page(evs[1],evs;today=T),v)
  @test occursin("id=\"evmap\"",p) && occursin("data-lat=\"59.91\"",p) && occursin("leaflet.js\" integrity=\"sha512-",p) && occursin("\"geo\":{\"@type\":\"GeoCoordinates\"",p)

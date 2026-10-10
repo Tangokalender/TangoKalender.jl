@@ -20,9 +20,9 @@ jobs:
         run: bin/build_tangoedit.sh
       - name: Run
         run: |
-          build/tangoedit/bin/tangoedit milonga --all --root=events
-          build/tangoedit/bin/tangoedit milonga --all --root=events --preview > /dev/null
-          build/tangoedit/bin/tangoedit milonga --all --root=events confidence=0.5 --dry-run > /dev/null
+          build/tangoedit/bin/tangoedit milonga --all --root=test/fixtures/site/events
+          build/tangoedit/bin/tangoedit milonga --all --root=test/fixtures/site/events --preview > /dev/null
+          build/tangoedit/bin/tangoedit milonga --all --root=test/fixtures/site/events confidence=0.5 --dry-run > /dev/null
           du -sh build/tangoedit
       - uses: actions/upload-artifact@v4
         with:

@@ -33,7 +33,7 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 
 `bin/build_site.jl` and `bin/validate_events.jl` are thin wrappers around `TangoKalender.main`. `bin/make_og_image.jl [out.png] [--site=site.toml]` draws a site's link-preview image (city and address from `site.toml`; without one, the package's generic `assets/og-image-generic.png`).
 
-`test/runtests.jl` holds plain `@testset`s; it does not use TestItems. `test/fixtures/media/` is a small valid tree that exercises flyer, video and music style. The `julia` MCP server is set up in `/workspace/.mcp.json`. Prefer a persistent session (`julia_create_session` + `julia_eval_code`, with Revise) over repeated `julia` invocations, which recompile every time. `/workspace/dev-oslotango/` is a dev environment that `[sources]`-links this package by path.
+`test/runtests.jl` runs `test/tests.jl` (plain `@testset`s, no TestItems) as the Oslo **test site** `test/fixtures/site/` (`site.toml` plus a frozen copy of the Oslo `events/` and `venues.json` from 2026-10-10), so the tests never depend on the live data; `TREE` and `FIXTURE_SITE` point there. `test/fixtures/media/` is a small valid tree that exercises flyer, video and music style. The `julia` MCP server is set up in `/workspace/.mcp.json`. Prefer a persistent session (`julia_create_session` + `julia_eval_code`, with Revise) over repeated `julia` invocations, which recompile every time. `/workspace/dev-oslotango/` is a dev environment that `[sources]`-links this package by path.
 
 ## Architecture
 
