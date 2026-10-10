@@ -56,8 +56,9 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
  mkpath(joinpath(dir,"events")); w(joinpath("events",".gitkeep"),"")
  w(VENUES_FILE,"[]\n")
  w("Project.toml","""
- # The calendar code, pinned to a release. Upgrade by changing `rev`, then run
- #   julia --project=. -e 'using Pkg; Pkg.update()'   and commit Manifest.toml.
+ # The calendar code, pinned to a release. Upgrade (Pkg rewrites this file, without comments) with
+ #   julia --project=. -e 'using Pkg; Pkg.add(url="$CODE_REPO_GIT", rev="vX.Y.Z")'
+ # then set @vX.Y.Z in .github/workflows, run `julia --project=. -m TangoKalender templates`, commit.
  [deps]
  TangoKalender = "$PACKAGE_UUID"
 
