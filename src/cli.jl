@@ -10,6 +10,8 @@ Usage:
   tangokalender validate [INPUT]           validate only (also venues.json, if present)
   tangokalender geocode [INPUT]            look up coordinates for new addresses (OpenStreetMap Nominatim) into venues.json
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
+  tangokalender edit TERM… [KEY=VALUE…]   find upcoming events matching all TERMs; list them, or set KEY=VALUE on all
+                                           of them (tangokalender edit --help)
 
 INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
 
@@ -93,23 +95,10 @@ function _correction_report(updates,files,changed,errs,comment)
 end
 function _from_correction(form,root,today,opts)
  updates,errs,changed=apply_correction(form,root;today)
- backup=Dict(f=>read(f) for (f,_) in updates); written=String[]
+ written=String[]
  if isempty(errs)
-  for (old,x) in updates
-   new=event_path(x;root)
-   normpath(new)!=normpath(old) && isfile(new) && (push!(errs,"Det finnes allerede et arrangement på $(relpath(new,root))."); break)
-  end
- end
- if isempty(errs)
-  for (old,x) in updates
-   new=event_path(x;root); normpath(new)==normpath(old) || rm(old)
-   push!(written,save_events(x,new))
-  end
-  for (f,m) in validate_event_tree(root); push!(errs,"$f: $m"); end
-  if !isempty(errs)   # roll back
-   foreach(f->isfile(f) && rm(f),written); for (f,b) in backup; mkpath(dirname(f)); write(f,b); end
-   written=String[]
-  end
+  files=[(old,event_path(x;root),sprint(io->(JSON.print(io,x,4); write(io,'\n')))) for (old,x) in updates]
+  written,errs=_write_files!(files,root; taken=p->"Det finnes allerede et arrangement på $p.")
  end
  isempty(errs) || (updates=empty(updates))
  code=_finish(opts,_correction_report(updates,written,changed,errs,get(form,"Kommentar","")),errs)
@@ -129,6 +118,7 @@ Returns 0 on success, 1 on validation errors, 2 on usage errors.
 """
 function (@main)(args)
  args=String.(args)
+ !isempty(args) && args[1]=="edit" && return edit_main(args[2:end])
  any(in(("-h","--help")),args) && (print(USAGE); return 0)
  cmd=!isempty(args) && args[1] in ("build","site","validate","from-issue","geocode") ? popfirst!(args) : "build"
  pos=filter(!startswith("--"),args); opts=Dict{String,String}(); novalidate=false; retry=false; venues=VENUES_FILE

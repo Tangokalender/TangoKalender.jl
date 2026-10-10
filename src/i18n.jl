@@ -228,4 +228,5 @@ _strings!(
  "svg.week.desc"=>("Tangoarrangementer i Oslo denne uken.","Tango events in Oslo this week.","Eventos de tango en Oslo esta semana."),
  # feeds
  "cancelled.caps"=>("AVLYST","CANCELLED","CANCELADO"),
+ "term.series"=>("serie","series","serie"),
 )

@@ -3,11 +3,14 @@ _val(e,k,d="")=(v=get(e,k,d); isnothing(v) ? d : v)
 _iso(e)=(s=string(_val(e,"start","")); isempty(s) ? "" : first(split(s,'T')))
 _sortkey(e)=string(_val(e,"start",""))
 "`(DateTime, has_time)` for an ISO `start`/`end` string (offset ignored), or `nothing`."
+# Parsed and formatted by hand rather than with Dates' format strings, which `juliac --trim` can't compile.
 function _parse_dt(raw)
- isempty(raw) && return nothing
- try (DateTime(replace(first(split(raw,['+','Z'])),'T'=>' '),dateformat"yyyy-mm-dd HH:MM:SS"),occursin('T',raw)) catch; nothing end
+ m=match(r"^([0-9]{4})-([0-9]{2})-([0-9]{2})(?:T([0-9]{2}):([0-9]{2})(?::([0-9]{2}))?)?(?:Z|[+-][0-9]{2}:[0-9]{2})?$",raw)
+ isnothing(m) && return nothing
+ n=[isnothing(c) ? 0 : parse(Int,c) for c in m.captures]
+ try (DateTime(n[1],n[2],n[3],n[4],n[5],n[6]),occursin('T',raw)) catch; nothing end
 end
-_hm(dt)=Dates.format(dt,"HH:MM")
+_hm(dt)=_two(hour(dt))*":"*_two(minute(dt))
 "Last day of an event: an end at or before 06:00 the next day still belongs to the evening that started it."
 _evening_end(dt,edt,etimed)=etimed && Date(edt)>Date(dt) && Time(edt)<=Time(6) ? Date(edt)-Day(1) : Date(edt)
 "`data-end` for the page's date filters: the last day the event runs (start day if no usable end)."
@@ -17,13 +20,13 @@ function _end_day(e)
  (isnothing(p) || isnothing(q)) && return iso
  string(max(_evening_end(p[1],q[1],q[2]),Date(p[1])))
 end
-function _date_label(e)
- raw=string(_val(e,"start",""))
+_date_label(e)=_date_label(string(_val(e,"start","")),string(_val(e,"end","")))
+function _date_label(raw::AbstractString,rawend::AbstractString)
  if !isempty(raw)
   p=_parse_dt(raw)
-  isnothing(p) && return (try Dates.format(Date(raw),"dd.mm.yyyy") catch; raw end)
+  d=_ymd(raw); isnothing(p) && return isnothing(d) ? String(raw) : "$(_two(day(d))).$(_two(month(d))).$(year(d))"
   dt,timed=p; startl=timed ? "$(_day(dt)) · $(_hm(dt))" : _day(dt)
-  q=_parse_dt(string(_val(e,"end",""))); isnothing(q) && return startl
+  q=_parse_dt(rawend); isnothing(q) && return startl
   edt,etimed=q
   eday=_evening_end(dt,edt,etimed)
   eday<Date(dt) && return startl

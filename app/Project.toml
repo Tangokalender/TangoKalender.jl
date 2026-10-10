@@ -1,0 +1,7 @@
+# Build environment for the trimmed `tangoedit` executable (bin/build_tangoedit.sh).
+[deps]
+JuliaC = "acedd4c2-ced6-4a15-accc-2607eb759ba2"
+TangoKalender = "8fa2004d-d644-4dc6-9815-18e81ae74980"
+
+[sources]
+TangoKalender = {path = ".."}

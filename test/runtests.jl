@@ -893,3 +893,93 @@ end
  end
  mktempdir() do d; TK.write_site(d,[ev()];today=T); @test read(joinpath(d,"og-image.png"))==read(TK.OG_IMAGE_FILE) && !isfile(joinpath(d,"en","og-image.png")); end
 end
+@testset "bulk edit (Event struct, tangokalender edit)" begin
+ TK=TangoKalender
+ schema=JSON.parsefile(joinpath(ROOT,"schema","tango-event.schema.json"))
+ @test TK.jsonkeys(Event)==collect(keys(schema["properties"]))             # the struct follows the schema, in order
+ @test TK.jsonkeys(TK.Venue)==collect(keys(schema["properties"]["venue"]["properties"]))
+ for f in TK.event_files(TREE)                                               # unchanged events are written back byte for byte
+  e,ks=read_event(f); @test TK.event_text(e,ks)==read(f,String); @test isempty(TK.check(e))
+ end
+ obj(ps...)=JSON.Object{String,Any}(ps...)
+ ev(id,start;kw...)=obj("id"=>id,"title"=>"Kurs $id","types"=>["class"],"status"=>"scheduled","series"=>"kurs","start"=>start,
+  "venue"=>obj("name"=>"Sal A","address"=>"Gate 1, Oslo","city"=>"Oslo"),"organizer"=>"Org","teachers"=>["T"],"class_price_nok"=>200,
+  "link"=>"https://facebook.com",(string(k)=>v for (k,v) in kw)...)
+ today=Date(2026,10,10)
+ tree(d)=save_event_tree([ev("kurs-2026-10-01","2026-10-01T19:00:00+02:00"),ev("kurs-2026-10-15","2026-10-15T19:00:00+02:00"),
+  ev("kurs-2026-10-22","2026-10-22T19:00:00+02:00"),ev("milonga-2026-10-16","2026-10-16T20:00:00+02:00";types=["milonga"],series=nothing,venue=nothing,title="Milonga")],d)
+ mktempdir() do d
+  tree(d); snap()=Dict(f=>read(f,String) for f in TK.event_files(d))
+  ids(r)=[x[2].id for x in r]
+  @test ids(find_events(["kurs"];root=d,from=today))==["kurs-2026-10-15","kurs-2026-10-22"]   # upcoming only
+  @test ids(find_events(["kurs"];root=d,from=nothing))==["kurs-2026-10-01","kurs-2026-10-15","kurs-2026-10-22"]
+  @test ids(find_events(["kurs","10-22"];root=d,from=today))==["kurs-2026-10-22"]                # terms narrow (AND)
+  @test ids(find_events(["type:milonga"];root=d,from=today))==["milonga-2026-10-16"]
+  @test ids(find_events(["series:kurs","sal a"];root=d,from=today,until=Date(2026,10,20)))==["kurs-2026-10-15"]
+  @test isempty(find_events(["series:milonga"];root=d,from=today))                               # key-scoped: not the title
+  @test ids(find_events(["19:00"];root=d,from=today))==["kurs-2026-10-15","kurs-2026-10-22"]     # not a key: plain text
+  before=snap()
+  r,w,errs=edit_events(["kurs"],["link=https://www.instagram.com/x/"];root=d,from=today,dry_run=true)
+  @test length(r)==2 && isempty(w) && isempty(errs) && snap()==before
+  r,w,errs=edit_events(["kurs"],["link=https://www.instagram.com/x/"];root=d,from=today)
+  @test isempty(errs) && length(w)==2 && r[1].changes==[("link","\"https://facebook.com\"","\"https://www.instagram.com/x/\"")]
+  after=snap(); f=r[1].file
+  @test after[f]==replace(before[f],"\"https://facebook.com\""=>"\"https://www.instagram.com/x/\"")   # only that line
+  @test after[r[1].file]!=before[r[1].file] && count(k->after[k]!=before[k],collect(keys(before)))==2
+  @test first(edit_events(["kurs"],["link=https://www.instagram.com/x/"];root=d,from=today))==[]     # already set: no change
+  r,w,errs=edit_events(["milonga"],["venue.name=Ny sal","price_nok=150","teachers=[\"A\",\"B\"]","status=null","translations.en.title=Milonga (en)"];root=d,from=today)
+  @test isempty(errs)
+  x=JSON.parsefile(only(w))
+  @test x["venue"]==Dict("name"=>"Ny sal","address"=>nothing,"city"=>nothing) && x["price_nok"]===150 && x["teachers"]==["A","B"]
+  @test isnothing(x["status"]) && x["translations"]==Dict("en"=>Dict("title"=>"Milonga (en)")) && isempty(validate_event_tree(d))
+  before=snap()
+  for bad in (["status=foo"],["class_price_nok=abc"],["class_price_nok=-5"],["types=[\"dance\"]"],["link=ftp://x"])
+   r,w,errs=try edit_events(["kurs"],bad;root=d,from=today) catch err; (nothing,String[],[sprint(showerror,err)]) end
+   @test !isempty(errs) && isempty(w) && snap()==before
+  end
+  @test_throws ArgumentError edit_events(["kurs"],["nope=1"];root=d,from=today)
+  @test_throws ArgumentError edit_events(["kurs"],["title.x=1"];root=d,from=today)
+  r,w,errs=edit_events(["kurs-2026-10-22"],["start=2026-10-23T19:00:00+02:00"];root=d,from=today)   # a new date moves the file
+  @test isempty(errs) && w==[joinpath(d,"2026","10-october","2026-10-23-kurs-2026-10-22.json")] && !isfile(r[1].file)
+  # CLI
+  out=IOBuffer(); @test TK.edit_main(["kurs","--root=$d","--all"];io=out,err=devnull)==0
+  s=String(take!(out)); @test occursin("3 events",s) && occursin("kurs-2026-10-01",s)
+  before=snap()
+  @test TK.edit_main(["kurs","class_price_nok=260","--root=$d","--from=2026-10-10","--preview"];io=out,err=devnull)==0
+  s=String(take!(out)); @test occursin("260 kr",s) && occursin("200 kr",s) && occursin("dry run",s) && snap()==before
+  @test TK.edit_main(["kurs","class_price_nok=260","--root=$d","--from=2026-10-10","--dry-run"];io=out,err=devnull)==0
+  s=String(take!(out)); @test occursin("class_price_nok: 200 → 260",s) && snap()==before
+  @test TK.edit_main(["kurs","status=foo","--root=$d","--from=2026-10-10"];io=out,err=devnull)==1
+  @test TK.edit_main(["kurs","nope=1","--root=$d"];io=out,err=devnull)==2
+  @test TK.edit_main(["--root=$d"];io=out,err=devnull)==2
+  @test TK.edit_main(["kurs","--from=10.10.2026","--root=$d"];io=out,err=devnull)==2
+  @test snap()==before
+ end
+ # terminal display
+ e=Event(id="x-1",title="Milonga X",types=["milonga","class"],start="2026-10-16T20:00:00+02:00",end_="2026-10-17T01:00:00+02:00",
+  price_nok=150,series="x",dj="DJ Y",description="Lang tekst "^30)
+ s=sprint(print,event_card(e;width=80))
+ @test occursin("fredag 16. okt · 20:00–01:00",s) && occursin("Kurs",s) && occursin("Milonga",s) && occursin("150 kr",s)
+ @test occursin("Sted ikke oppgitt",s) && occursin("x-1",s) && occursin("DJ Y",s) && !occursin("\e[",s)   # no colour in a buffer
+ @test all(l->textwidth(l)<=80,split(s,'\n')) && count(contains("Lang tekst"),split(s,'\n'))==2           # description: 2 lines
+ c=TK.set_path(TK.set_path(e,["status"],"cancelled"),["price_nok"],"200")
+ s=sprint(print,event_card(c;before=e,width=80);context=:color=>true)
+ @test occursin("\e[",s) && occursin("AVLYST",s) && occursin("200 kr",s) && occursin("150 kr",s)
+ s=sprint(print,event_card(TK.set_path(e,["confidence"],"0.5");before=e))
+ @test occursin("✎ confidence: null → 0.5",s)
+ @test !occursin('\n',sprint(print,event_line(e))) && occursin("x-1",sprint(print,event_line(e)))
+ @test occursin("Milonga X",sprint(show,MIME("text/plain"),e))
+ lines=TK.card_lines(c;before=e,width=80)                                     # the ANSI renderer of the trimmed app
+ @test TK.ansi_text(lines;color=false)==sprint(print,TK.styled_text(lines))  # same text as StyledStrings
+ @test occursin("\e[1;33m",TK.ansi_text(lines)) && !occursin("\e[",TK.ansi_text(lines;color=false))
+ # the trimmed app's configuration: struct checks instead of JSONSchema, ANSI output
+ @test isempty(TK.check_event_tree(TREE))
+ mktempdir() do d
+  tree(d); out=IOBuffer()
+  @test TK.edit_main(["kurs","link=https://x.no/","--root=$d","--from=2026-10-10"];io=out,err=devnull,
+   tree_check=TK.check_event_tree,render=l->TK.ansi_text(l;color=false))==0
+  @test occursin("2 events changed",String(take!(out))) && isempty(validate_event_tree(d))
+  f=first(TK.event_files(d)); write(f,replace(read(f,String),"\"kurs-"=>"\"Kurs-"))
+  @test !isempty(TK.check_event_tree(d))
+ end
+end

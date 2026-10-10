@@ -1,0 +1,31 @@
+# Builds the trimmed `tangoedit` executable (JuliaC --trim=safe, see app/tangoedit.jl) and runs it on the events,
+# so a change that breaks trimming shows up. A build takes minutes, so it runs monthly and on demand, not per push.
+name: tangoedit (trimmed build)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 4 3 * *'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Build
+        run: bin/build_tangoedit.sh
+      - name: Run
+        run: |
+          build/tangoedit/bin/tangoedit milonga --all --root=events
+          build/tangoedit/bin/tangoedit milonga --all --root=events --preview > /dev/null
+          build/tangoedit/bin/tangoedit milonga --all --root=events confidence=0.5 --dry-run > /dev/null
+          du -sh build/tangoedit
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tangoedit-linux-x64
+          path: build/tangoedit
+          retention-days: 30

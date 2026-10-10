@@ -1,2 +1,4 @@
 public/
 _site/
+build/
+app/Manifest.toml
