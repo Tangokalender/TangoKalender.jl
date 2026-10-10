@@ -16,6 +16,8 @@ function write_templates(dir::AbstractString=".")
 end
 "The code repo (the package, the reusable workflows and the issue-form templates)."
 const CODE_REPO_URL="https://github.com/Tangokalender/TangoKalender.jl"
+"The package documentation (Documenter, from docs/; deployed by .github/workflows/docs.yml)."
+const DOCS_URL="https://tangokalender.github.io/TangoKalender.jl/stable/"
 "How data repos fetch the package (`[sources]` in their Project.toml): over SSH. The reusable workflows rewrite it to
 HTTPS on GitHub's runners, which have no SSH key (the code repo is public)."
 const CODE_REPO_GIT="git@github.com:Tangokalender/TangoKalender.jl.git"
@@ -37,7 +39,7 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
  ref="v$version"; files=String[]
  w(rel,text)=(f=joinpath(dir,rel); mkpath(dirname(f)); write(f,text); push!(files,f))
  w(SITE_FILE,"""
- # $(name): settings for this city's calendar site. See $(CODE_REPO_URL)/blob/main/schema/site.schema.json
+ # $(name): settings for this city's calendar site. See $(DOCS_URL)maintainers/site-config/
  slug = $(_toml_str(slug))
  name = $(_toml_str(name))
  city = $(_toml_str(city))
@@ -132,7 +134,8 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
  # $(name)
 
  Event data for $(site.site_url)/: one JSON file per event under `events/`, map positions in `venues.json`, site
- settings in `site.toml`. The site is built by [TangoKalender]($CODE_REPO_URL) ($ref, see `Project.toml`).
+ settings in `site.toml`. The site is built by [TangoKalender]($CODE_REPO_URL) ($ref, see `Project.toml`);
+ documentation: $(DOCS_URL)
 
  ## Adding and fixing events
  - Through the issue forms: [new event]($(site.repo_url)/issues/new?template=nytt-arrangement.yml) or «Rett opp» on an event.

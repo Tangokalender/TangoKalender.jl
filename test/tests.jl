@@ -524,11 +524,11 @@ end
  # every link comes from site_url()/repo_url(), and the forms from templates/ with {{site_url}}
  bad=String[]
  for dir in ("src","templates"), (r,_,fs) in walkdir(joinpath(ROOT,dir)), f in fs
-  p=joinpath(r,f); f=="site.jl" && continue; t=read(p,String)
+  p=joinpath(r,f); f=="site.jl" && continue; t=replace(read(p,String),TK.DOCS_URL=>"")   # the docs are the one exception
   occursin("github.io/TangoKalender.jl",t) && push!(bad,"$p: old project-site path")
   for u in ("tangokalender.github.io","github.com/Tangokalender/tangokalender.github.io"); occursin(u,t) && push!(bad,"$p: $u"); end
  end
- for f in ("README.md","CLAUDE.md","TODO.md"); occursin("github.io/TangoKalender.jl/",read(joinpath(ROOT,f),String)) && push!(bad,f); end
+ for f in ("README.md","CLAUDE.md","TODO.md"); occursin(r"github\.io/TangoKalender\.jl/(?!stable/|dev/)",read(joinpath(ROOT,f),String)) && push!(bad,f); end
  @test isempty(bad)
 end
 @testset "table input (pasted spreadsheet cells)" begin

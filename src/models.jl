@@ -1,3 +1,10 @@
+"""
+    create_event(; title, types=["other"], kwargs...) -> Dict
+
+A new event as a `Dict` with `title`, `types` and any other keys given as keyword arguments
+(`create_event(title="Milonga", types=["milonga"], start="2026-10-16T20:00:00+02:00")`). Nothing is checked;
+see [`validate_event`](@ref).
+"""
 function create_event(; title, types=["other"], kwargs...)
  d=Dict{String,Any}("title"=>title,"types"=>collect(types))
  for (k,v) in kwargs; d[string(k)]=v; end
@@ -12,12 +19,20 @@ function event_path(e; root::AbstractString="events")
  joinpath(root,string(year(d)),"$(lpad(month(d),2,'0'))-$(MONTHS[month(d)])","$(Dates.format(d,"yyyy-mm-dd"))-$id.json")
 end
 event_files(dir::AbstractString)=sort!([joinpath(r,f) for (r,_,fs) in walkdir(dir) for f in fs if endswith(f,".json")])
+"All events under `dir` (every `*.json` file, sorted by path), each as a `JSON.Object` that keeps the file's key order."
 load_event_tree(dir::AbstractString)=[JSON.parsefile(f) for f in event_files(dir)]
 "Events from a directory tree (`events/`) or from a single JSON file holding an array of events."
 load_events(path::AbstractString="events")=isdir(path) ? load_event_tree(path) : JSON.parsefile(path)
+"""
+    save_events(events, file="events.json") -> file
+
+Write one event, or an array of events, to `file` as JSON with 4-space indentation and a trailing newline
+(the format of the files under `events/`).
+"""
 function save_events(events,file::AbstractString="events.json")
  mkpath(dirname(abspath(file))); open(file,"w") do io; JSON.print(io,events,4); write(io,'\n'); end; file
 end
+"Write each event to its canonical file under `dir` (see [`event_path`](@ref)); returns the file names."
 save_event_tree(events,dir::AbstractString="events")=[save_events(e,event_path(e;root=dir)) for e in events]
 const WEEKDAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 _last_sunday(y,m)=(d=lastdayofmonth(Date(y,m)); d-Day(mod(dayofweek(d),7)))

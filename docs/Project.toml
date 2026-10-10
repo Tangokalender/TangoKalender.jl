@@ -1,0 +1,11 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
+TangoKalender = "8fa2004d-d644-4dc6-9815-18e81ae74980"
+
+[sources]
+TangoKalender = {path = ".."}
+
+[compat]
+Documenter = "1"

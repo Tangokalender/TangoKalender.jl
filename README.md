@@ -1,5 +1,8 @@
 # TangoKalender
 
+[![Dokumentasjon](https://img.shields.io/badge/docs-stable-blue.svg)](https://tangokalender.github.io/TangoKalender.jl/stable/)
+[![Docs](https://github.com/Tangokalender/TangoKalender.jl/actions/workflows/docs.yml/badge.svg)](https://github.com/Tangokalender/TangoKalender.jl/actions/workflows/docs.yml)
+
 Julia-pakken som bygger tangokalendere: statiske, filtrerbare nettsider for argentinsk tango – milongaer, practicaer,
 kurs og festivaler – én side per by. Hver by har sitt eget **data-repo** med arrangementene (`events/`),
 kartposisjoner (`venues.json`), innstillinger (`site.toml`) og innsendingsskjemaene; dette repoet har koden.
@@ -7,6 +10,8 @@ kartposisjoner (`venues.json`), innstillinger (`site.toml`) og innsendingsskjema
 | By | Nettside | Data |
 |---|---|---|
 | Oslo | https://tangokalender.github.io/ | https://github.com/Tangokalender/tangokalender.github.io |
+
+**Dokumentasjon** (engelsk) for byer, redaktører og utviklere: https://tangokalender.github.io/TangoKalender.jl/stable/
 
 Redaktører trenger bare skrivetilgang til sin bys data-repo. Koden endres her og tas i bruk av hver by ved å
 oppdatere versjonen i data-repoets `Project.toml`.

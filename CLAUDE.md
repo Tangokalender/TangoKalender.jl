@@ -136,6 +136,10 @@ julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 - JSONSchema.jl reports only the first issue per event. `_issue_message` in `src/validate.jl` turns it into a short message, and lists the key names for unknown-key errors.
 - Video ids are re-checked with regexes in `_video` and URLs must be `http(s)` (`_http`) before they are embedded, independently of the schema. Keep both checks.
 
+## Documentation
+
+`docs/` is a Documenter site (English) for city maintainers, editors and developers, published by `.github/workflows/docs.yml` to the `gh-pages` branch: https://tangokalender.github.io/TangoKalender.jl/stable/ (tags) and `/dev/` (main). Build locally with `julia --project=docs -e 'using Pkg; Pkg.instantiate()'` and `julia --project=docs docs/make.jl` (→ `docs/build/`). The `site.toml` and event-field tables are generated from `schema/*.json` and the command reference from `USAGE`/`EDIT_USAGE`, so they follow the code; `checkdocs=:exports` fails the build on an undocumented export, and every `@ref` must resolve (prefix unexported names, e.g. `[`f`](@ref TangoKalender.f)`). `DOCS_URL` (scaffold.jl) is the only allowed `github.io/TangoKalender.jl` address in the code. When behaviour that the docs describe changes (commands, workflows, upgrade steps, the GitHub setup), update `docs/src/` in the same commit.
+
 ## Repos and GitHub workflows
 
 This is the code repo, `github.com/Tangokalender/TangoKalender.jl` (package `TangoKalender`; registered nowhere, installed by URL). The data lives in one repo per city: Oslo is `Tangokalender/tangokalender.github.io`, the organisation's root Pages site at https://tangokalender.github.io/. A data repo has `site.toml`, `events/`, `venues.json`, `assets/og-image.png`, the rendered issue forms and a `Project.toml` pinning this package (`[sources]` url + rev); start one with `tangokalender init-site`. Releases: bump `version` in `Project.toml`, tag `vX.Y.Z`, and move the `v1` tag that data repos' workflows may follow. No site URL may be hard-coded here (the «site URL drift» test).
