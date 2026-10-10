@@ -10,7 +10,7 @@ opt=Dict(split(a[3:end],'=';limit=2) for a in ARGS if startswith(a,"--") && occu
 pos=filter(!startswith("--"),ARGS)
 sitefile=get(opt,"site","site.toml"); site=isfile(sitefile) ? TOML.parsefile(sitefile) : Dict{String,Any}()
 city=get(site,"city",""); host=replace(get(site,"site_url",""),r"^https?://"=>"")
-out=get(pos,1,isempty(site) ? joinpath(@__DIR__,"..","assets","og-image.png") : joinpath("assets","og-image.png"))
+out=get(pos,1,isempty(site) ? joinpath(@__DIR__,"..","assets","og-image-generic.png") : joinpath("assets","og-image.png"))
 rgb(h)=(parse(Int,h[2:3];base=16)/255,parse(Int,h[4:5];base=16)/255,parse(Int,h[6:7];base=16)/255)
 s=CairoRGBSurface(W,H); c=CairoContext(s)
 g=pattern_create_linear(0,0,W,H)                       # the hero gradient of the site
