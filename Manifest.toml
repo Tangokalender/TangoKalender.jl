@@ -2,7 +2,7 @@
 
 julia_version = "1.13.1"
 manifest_format = "2.1"
-project_hash = "aa9acc41b1c74d1ef6d0884f1fef2d8fee996f5d"
+project_hash = "5ebc4968782c771efd422f3424b4004df11ee231"
 
 [[deps.Accessors]]
 deps = ["CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "MacroTools"]
@@ -228,7 +228,7 @@ uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
 
 [[deps.TangoKalender]]
-deps = ["Accessors", "Dates", "Downloads", "JSON", "JSONSchema", "StructUtils", "StyledStrings"]
+deps = ["Accessors", "Dates", "Downloads", "JSON", "JSONSchema", "PrecompileTools", "StructUtils", "StyledStrings"]
 path = "."
 uuid = "8fa2004d-d644-4dc6-9815-18e81ae74980"
 version = "0.4.0"

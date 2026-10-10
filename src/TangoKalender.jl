@@ -25,6 +25,7 @@ include("edit.jl")
 include("llms.jl")
 include("cli.jl")
 __init__()=_register_term_faces()
+include("precompile.jl")
 export create_event, load_events, save_events, render_events_html, render_events_file
 export today_svg, week_svg, events_json, render_event_page, calendar_ics, event_ics, rss_xml, write_site
 export load_venues, save_venues, venue_coords, geocode!, validate_venues

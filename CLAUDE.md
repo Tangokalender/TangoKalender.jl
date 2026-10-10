@@ -27,7 +27,7 @@ bin/build_tangoedit.sh && build/tangoedit/bin/tangoedit esa-tandas --root=events
 julia -e 'using Pkg; Pkg.Apps.develop(path=".")'
 ```
 
-The CLI compiles on every run (no precompile workload), so `julia -m TangoKalender …` takes about 30 s; the trimmed `tangoedit` does not.
+`src/precompile.jl` is a PrecompileTools workload that runs the CLI commands (from-issue, validate, edit, site, build; not geocode) on a temporary tree, so a CLI run takes about 2 s instead of about 30 s, at the cost of about 1.5 min more precompilation. When you add a command or a code path that is slow on first use, add it there. The trimmed `tangoedit` starts in about 0.03 s.
 
 `bin/build_site.jl` and `bin/validate_events.jl` are thin wrappers around `TangoKalender.main`. `bin/make_og_image.jl` redraws `assets/og-image.png`.
 
