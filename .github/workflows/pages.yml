@@ -4,11 +4,15 @@ on:
     branches: [main]
     paths:
       - 'events/**'
+      - 'venues.json'
+      - 'site.toml'
+      - 'assets/**'
       - 'src/**'
       - 'schema/**'
       - 'Project.toml'
       - 'Manifest.toml'
       - '.github/workflows/pages.yml'
+      - '.github/workflows/site-pages.yml'
   workflow_dispatch:
   schedule:
     # Just after midnight Oslo time (22:17 UTC in summer, 23:17 UTC in winter; the other run is harmless). Odd minutes
@@ -24,31 +28,5 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: '1'
-      - uses: julia-actions/cache@v3
-      - name: Instantiate
-        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
-      - name: Build site (validates first)
-        env:
-          TZ: Europe/Oslo   # the "Generert" timestamp uses local time; runners default to UTC
-        # index.html, for-ki.html, llms.txt, schema/*.json and .nojekyll
-        run: julia --project=. -m TangoKalender site events _site
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: _site
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+  pages:
+    uses: ./.github/workflows/site-pages.yml   # a data repo uses Tangokalender/TangoKalender.jl/…@v1

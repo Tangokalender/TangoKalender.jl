@@ -1,0 +1,108 @@
+# Reusable: issue forms (nytt-arrangement, rettelse) → event files → pull request for review, in a city's data repo.
+# The caller holds the `issues` trigger and grants the permissions:
+#   on: {issues: {types: [opened, edited]}}
+#   permissions: {contents: write, pull-requests: write, issues: write}
+#   concurrency: {group: 'intake-${{ github.event.issue.number }}', cancel-in-progress: true}
+#   jobs:
+#     intake:
+#       uses: Tangokalender/TangoKalender.jl/.github/workflows/site-intake.yml@v1
+# SECURITY: the issue body/title are untrusted. Pass them only through `env:` or action inputs,
+# never via ${{ }} inside `run:` scripts. The Julia parser treats the body as data.
+name: Intake (reusable)
+on:
+  workflow_call:
+    inputs:
+      new-label:
+        description: Label of the new-event forms
+        type: string
+        default: nytt-arrangement
+      fix-label:
+        description: Label of the correction form
+        type: string
+        default: rettelse
+      needs-fix-label:
+        description: Label added when a submission can't be read
+        type: string
+        default: trenger-retting
+jobs:
+  from-issue:
+    if: >-
+      github.event.issue.state == 'open' &&
+      (contains(github.event.issue.labels.*.name, inputs.new-label) || contains(github.event.issue.labels.*.name, inputs.fix-label))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+      - name: Save issue body
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: printf '%s' "$BODY" > "$RUNNER_TEMP/issue.md"
+      - name: Convert form to events
+        id: convert
+        continue-on-error: true
+        env:
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: >-
+          julia --project=. -m TangoKalender from-issue "$RUNNER_TEMP/issue.md"
+          --issue-url="$ISSUE_URL" --report="$RUNNER_TEMP/report.md" --outputs="$GITHUB_OUTPUT"
+      - name: Look up map positions for new addresses
+        if: steps.convert.outcome == 'success'
+        continue-on-error: true   # a map position is nice to have; never block the submission
+        run: julia --project=. -m TangoKalender geocode events
+      - name: PR body
+        if: steps.convert.outcome == 'success'
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          { cat "$RUNNER_TEMP/report.md"; printf '\nCloses #%s\n' "$NUMBER"; } > "$RUNNER_TEMP/pr-body.md"
+      # main may have moved since checkout (e.g. a merged Dependabot PR). A PR branch built on the old
+      # main would carry outdated workflow files, and GitHub refuses that push from GITHUB_TOKEN.
+      - name: Move changes onto the latest main
+        if: steps.convert.outcome == 'success'
+        run: |
+          [ -n "$(git status --porcelain -- events venues.json)" ] || exit 0
+          git stash push --include-untracked -- events venues.json
+          git fetch --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+          git reset --hard origin/main
+          git stash pop
+      - name: Open or update pull request
+        id: pr
+        if: steps.convert.outcome == 'success'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: arrangement/issue-${{ github.event.issue.number }}
+          add-paths: |   # events is a directory, so moved/removed event files are committed too
+            events
+            venues.json
+          commit-message: '${{ steps.convert.outputs.pr_title }} (#${{ github.event.issue.number }})'
+          title: ${{ steps.convert.outputs.pr_title }}
+          body-path: ${{ runner.temp }}/pr-body.md
+          labels: ${{ contains(github.event.issue.labels.*.name, inputs.fix-label) && inputs.fix-label || inputs.new-label }}
+          delete-branch: true
+      - name: Comment on issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          OUTCOME: ${{ steps.convert.outcome }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          TITLE: ${{ steps.convert.outputs.issue_title }}
+          NEEDS_FIX: ${{ inputs.needs-fix-label }}
+        run: |
+          report="$RUNNER_TEMP/report.md"
+          [ -f "$report" ] || echo "⚠️ Noe gikk galt under behandlingen av skjemaet. En redaktør ser på det." > "$report"
+          if [ "$OUTCOME" = success ] && [ -n "$PR_URL" ]; then
+            printf '\nForslag til endring: %s\n' "$PR_URL" >> "$report"
+          fi
+          gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$report"
+          if [ "$OUTCOME" = success ]; then
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --title "$TITLE"
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$NEEDS_FIX" || true
+          else
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$NEEDS_FIX"
+          fi

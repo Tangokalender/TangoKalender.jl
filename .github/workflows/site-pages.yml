@@ -1,0 +1,37 @@
+# Reusable: build a city's site from its data repo (site.toml, events/, venues.json) and deploy it to GitHub Pages.
+# The caller grants the Pages permissions:
+#   permissions: {contents: read, pages: write, id-token: write}
+#   jobs:
+#     pages:
+#       uses: Tangokalender/TangoKalender.jl/.github/workflows/site-pages.yml@v1
+name: Pages (reusable)
+on:
+  workflow_call:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+      - name: Build site (validates first)
+        env:
+          TZ: Europe/Oslo   # Norway: the "Generert" timestamp uses local time; runners default to UTC
+        run: julia --project=. -m TangoKalender site events _site
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

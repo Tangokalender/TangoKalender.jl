@@ -25,14 +25,4 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
   validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: '1'
-      - uses: julia-actions/cache@v3
-      - name: Instantiate
-        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
-      - name: Validate events
-        run: julia --project=. -m TangoKalender validate events
+    uses: ./.github/workflows/site-validate.yml   # the same check the data repos run

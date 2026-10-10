@@ -1,0 +1,23 @@
+# Reusable: validate a city's events and venues.json. Called from the data repo (pull requests, pushes to main):
+#   jobs:
+#     validate:
+#       uses: Tangokalender/TangoKalender.jl/.github/workflows/site-validate.yml@v1
+# The data repo's Project.toml pins TangoKalender ([sources] url + rev); this runs that version.
+name: Validate events (reusable)
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+      - name: Validate events
+        run: julia --project=. -m TangoKalender validate events
