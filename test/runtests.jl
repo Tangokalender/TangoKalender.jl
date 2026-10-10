@@ -951,6 +951,7 @@ end
   s=String(take!(out)); @test occursin("class_price_nok: 200 → 260",s) && snap()==before
   @test TK.edit_main(["kurs","status=foo","--root=$d","--from=2026-10-10"];io=out,err=devnull)==1
   @test TK.edit_main(["kurs","nope=1","--root=$d"];io=out,err=devnull)==2
+  @test TK.edit_main(["edit","kurs","--root=$d","--all"];io=out)==0 && occursin("3 events",String(take!(out)))   # `tangoedit edit …`
   @test TK.edit_main(["--root=$d"];io=out,err=devnull)==2
   @test TK.edit_main(["kurs","--from=10.10.2026","--root=$d"];io=out,err=devnull)==2
   @test snap()==before

@@ -127,6 +127,7 @@ TERM     matches events containing it in id, title, series, organizer, venue, te
 KEY=VALUE sets a key on every match. VALUE is read as JSON (250, null, ["A","B"], "text"), else as plain text.
          Nested keys use dots: venue.name=…, translations.en.title=….
 Without KEY=VALUE, the matches are only listed.
+A leading `edit` is ignored, so `tangoedit edit TERM…` and `tangoedit TERM…` are the same.
 
 Options:
   --preview         show each event as a card (after the edits, changes highlighted); writes nothing
@@ -147,7 +148,10 @@ function edit_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err::I
                    render::R=styled_text) where {C,R}   # type parameters: specialise on the functions (needed for trimming)
  usage(msg::String)=(println(err,msg,"\n"); print(err,EDIT_USAGE); 2)
  terms=String[]; edits=String[]; root="events"; from=Dates.today(); until=nothing; dry=false; preview=false; past=false
- for a in args
+ # a leading `edit` is the subcommand name, not a search term (`tangoedit edit …` like `tangokalender edit …`);
+ # as a term it would only match titles with «Edition». Search for the word itself with title:edit.
+ for (i,a) in enumerate(args)
+  i==1 && a=="edit" && continue
   if a in ("-h","--help"); print(io,EDIT_USAGE); return 0
   elseif startswith(a,"--")
    kv=split(a[3:end],'=';limit=2); k=kv[1]; v=length(kv)==2 ? String(kv[2]) : ""
