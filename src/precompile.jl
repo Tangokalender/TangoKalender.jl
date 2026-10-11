@@ -21,6 +21,7 @@ using PrecompileTools: @setup_workload, @compile_workload
     main(["edit","øvingskveld","--root=$root","--all"])
     main(["edit","øvingskveld","type:class","--root=$root","--all","--preview","class_price_nok=250","venue.name=Ny sal"])
     main(["edit","øvingskveld","--root=$root","--all","--dry-run","status=cancelled"])
+    main(["edit","øvingskveld","--root=$root","--all","--json","dj=Y"])
     main(["edit","øvingskveld","--root=$root","--from=2026-11-01","teachers=[\"A\",\"B\"]"])
     main(["repeat","øvingskveld","--root=$root","--every=month","--on=last-tuesday","--count=3","--preview"])
     main(["repeat","øvingskveld","--root=$root","--every=2weeks","--until=2027-01-31","--except=2026-12-21..2027-01-03","dj=X"])

@@ -30,7 +30,14 @@ tangoedit series:onsdagsmilonga --from=2026-11-01 --until=2026-11-30
 ## 2. Look before you change
 
 `--dry-run` prints each change as `key: old → new`; `--preview` prints each event as a card, with the changes
-highlighted and the old value struck through. Neither writes anything.
+highlighted and the old value struck through. `--json` prints each event's file name and its JSON exactly as it is
+(or, with changes, as it would be written), so you can read the full text without opening the file:
+
+```bash
+tangoedit milonga-social-2026-11-13 --json
+```
+
+None of them writes anything.
 
 ## 3. Change
 
@@ -77,8 +84,8 @@ tangoedit repeat milonga-x-2026-11-20 --on=2026-12-27 'title=Juledagsmilonga'   
   gets the id `<series>-YYYY-MM-DD`, status scheduled and `first_seen` today. `KEY=VALUE` changes every copy,
   as in step 3.
 - Dates that already have the event, or another event of the same series, are skipped, so running the same command
-  again is safe, and a date that was added before the series was set isn't added twice. `--dry-run` and
-  `--preview` show the new events without writing anything.
+  again is safe, and a date that was added before the series was set isn't added twice. `--dry-run`,
+  `--preview` and `--json` show the new events without writing anything.
 
 ## 5. Publish
 

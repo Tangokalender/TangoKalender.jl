@@ -250,6 +250,7 @@ Options:
   --start=DATE      first possible date (default: the day after the template); the rhythm stays the template's
   --except=DATES    skip dates: 2026-12-24 or a range 2026-12-21..2027-01-03, comma-separated; may be repeated
   --preview         show each new event as a card; writes nothing
+  --json            print each new event as JSON, exactly as it would be written; writes nothing
   --dry-run         list the new events; writes nothing
   --root=DIR        the events directory (default: events)
 """
@@ -264,7 +265,7 @@ function repeat_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err:
  usage(msg::String)=(println(err,msg,"\n"); print(err,REPEAT_USAGE); 2)
  fail(msg::String)=(println(err,msg); 2)
  terms=String[]; edits=String[]; root="events"; every=""; on=""; count=0; until=_NO_DATE; start=_NO_DATE
- except=Tuple{Date,Date}[]; dry=false; preview=false; ondates=Date[]
+ except=Tuple{Date,Date}[]; dry=false; preview=false; json=false; ondates=Date[]
  for a in args
   if a in ("-h","--help"); print(io,REPEAT_USAGE); return 0
   elseif startswith(a,"--")
@@ -285,11 +286,13 @@ function repeat_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err:
     try append!(except,parse_except(v)) catch ex; ex isa ArgumentError || rethrow(); return usage(ex.msg isa String ? ex.msg : "bad --except") end
    elseif k=="dry-run" && length(kv)==1; dry=true
    elseif k=="preview" && length(kv)==1; preview=true
+   elseif k=="json" && length(kv)==1; json=true
    else return usage("unknown option $a") end
   elseif occursin('=',a); push!(edits,a)
   else push!(terms,a) end
  end
  isempty(terms) && return usage("repeat needs a search term for the template event")
+ json && preview && return usage("use either --json or --preview, not both")
  if !isempty(ondates)
   (!isempty(every) || !isempty(on) || count>0 || until!=_NO_DATE || start!=_NO_DATE) &&
    return usage("--on=DATE gives the dates itself; leave out --every, --on=WEEKDAY, --count, --until and --start")
@@ -305,12 +308,14 @@ function repeat_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err:
  catch ex; ex isa ArgumentError || rethrow(); return usage(ex.msg isa String ? ex.msg : "bad rule") end : Recurrence(:week,1,0,0)
  es=try Tuple{Vector{String},String}[parse_edit(x) for x in edits]
  catch ex; ex isa ArgumentError || rethrow(); return usage(ex.msg isa String ? ex.msg : "invalid edit") end
- res=try _repeat_events(terms,rule,ondates,root,count,until,start,except,es,today,dry || preview,tree_check)
+ res=try _repeat_events(terms,rule,ondates,root,count,until,start,except,es,today,dry || preview || json,tree_check)
  catch ex; ex isa ArgumentError || rethrow(); return fail(ex.msg isa String ? ex.msg : "invalid repeat") end
  w=displaysize(io)[2]
  show_(lines::Vector{Vector{Seg}})=println(io,render(lines))
  show_(Vector{Seg}[Seg[("Template:",:shadow)],line_segs(res.template;width=w)]); println(io)
- for (_,e) in res.events; preview ? (show_(card_lines(e;width=w)); println(io)) : show_([line_segs(e;width=w)]); end
+ for (f,e) in res.events
+  json ? show_json(io,f,e,res.keys,root,render) : preview ? (show_(card_lines(e;width=w)); println(io)) : show_([line_segs(e;width=w)])
+ end
  skipped=sort!(vcat([(d,"already there") for d in res.exists],[(d,"--except") for d in res.excepted]))
  isempty(skipped) || show_([Seg[("  $(_ymd_str(d)): skipped ($why)",:shadow)] for (d,why) in skipped])
  for (a,b) in except

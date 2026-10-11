@@ -115,6 +115,10 @@ function edit_events(terms, edits; root::AbstractString="events", from::Union{No
  written,errs=_write_files!(files,root; check=tree_check)
  (out,written,errs)
 end
+"`--json`: the event's file name (relative to `root`, dimmed) and its JSON text as `write_event` writes it."
+function show_json(io::IO, f::AbstractString, e::Event, ks::Vector{String}, root::AbstractString, render::R) where {R}
+ println(io,render([Seg[(_rel(f,root),:shadow)]])); print(io,event_text(e,ks)); println(io)
+end
 const EDIT_USAGE="""
 tangokalender edit - find events and change them in bulk
 
@@ -133,6 +137,8 @@ A leading `edit` is ignored, so `tangoedit edit TERM…` and `tangoedit TERM…`
 Options:
   --preview         show each event as a card (after the edits, changes highlighted); writes nothing
   --dry-run         list the changes; writes nothing
+  --json            print each event's file as JSON (after the edits), exactly as it is or would be written;
+                    writes nothing
   --from=DATE       only events that end on or after DATE (default: today)
   --until=DATE      only events that start on or before DATE
   --all             include past events
@@ -150,7 +156,7 @@ function edit_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err::I
                    render::R=styled_text) where {C,R}   # type parameters: specialise on the functions (needed for trimming)
  !isempty(args) && args[1]=="repeat" && return repeat_main(args[2:end];io,err,tree_check,render)
  usage(msg::String)=(println(err,msg,"\n"); print(err,EDIT_USAGE); 2)
- terms=String[]; edits=String[]; root="events"; from=Dates.today(); until=nothing; dry=false; preview=false; past=false
+ terms=String[]; edits=String[]; root="events"; from=Dates.today(); until=nothing; dry=false; preview=false; json=false; past=false
  # a leading `edit` is the subcommand name, not a search term (`tangoedit edit …` like `tangokalender edit …`);
  # as a term it would only match titles with «Edition». Search for the word itself with title:edit.
  for (i,a) in enumerate(args)
@@ -165,26 +171,31 @@ function edit_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err::I
    elseif k=="all" && length(kv)==1; past=true
    elseif k=="dry-run" && length(kv)==1; dry=true
    elseif k=="preview" && length(kv)==1; preview=true
+   elseif k=="json" && length(kv)==1; json=true
    else return usage("unknown option $a") end
   elseif occursin('=',a); push!(edits,a)
   else push!(terms,a) end
  end
  isempty(terms) && return usage("edit needs at least one search term")
+ json && preview && return usage("use either --json or --preview, not both")
  isdir(root) || return usage("no events directory \"$root\" (use --root=DIR)")
  past && (from=nothing)
  w=displaysize(io)[2]
  show_(lines::Vector{Vector{Seg}})=println(io,render(lines))
  if isempty(edits)
   found=find_events(terms;root,from,until)
-  for (_,e,_) in found; preview ? (show_(card_lines(e;width=w)); println(io)) : show_([line_segs(e;width=w)]); end
+  for (f,e,ks) in found
+   json ? show_json(io,f,e,ks,root,render) : preview ? (show_(card_lines(e;width=w)); println(io)) : show_([line_segs(e;width=w)])
+  end
   n=length(found)
   println(io,n==0 ? "No events match $(join(terms," "))$(past ? "" : " (upcoming only; --all includes past events)")." : "$n event$(n==1 ? "" : "s")")
   return 0
  end
- res,written,errs=try edit_events(terms,edits;root,from,until,dry_run=dry || preview,tree_check)
+ res,written,errs=try edit_events(terms,edits;root,from,until,dry_run=dry || preview || json,tree_check)
  catch ex; ex isa ArgumentError || rethrow(); return usage(ex.msg isa String ? ex.msg : "invalid edit") end
  for x in res
-  if preview; show_(card_lines(x.after;before=x.before,width=w)); println(io)
+  if json; show_json(io,x.new_file,x.after,x.keys,root,render)
+  elseif preview; show_(card_lines(x.after;before=x.before,width=w)); println(io)
   else
    lines=[line_segs(x.after;width=w)]
    for (k,old,new) in x.changes; push!(lines,Seg[("    $k: ",:default),(old,:shadow),(" → ",:default),(new,:bold)]); end

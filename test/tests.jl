@@ -1013,6 +1013,13 @@ end
   s=String(take!(out)); @test occursin("260 kr",s) && occursin("200 kr",s) && occursin("dry run",s) && snap()==before
   @test TK.edit_main(["kurs","class_price_nok=260","--root=$d","--from=2026-10-10","--dry-run"];io=out,err=devnull)==0
   s=String(take!(out)); @test occursin("class_price_nok: 200 → 260",s) && snap()==before
+  # --json: the file text itself, under its path; with edits, as it would be written
+  @test TK.edit_main(["kurs-2026-10-01","--root=$d","--all","--json"];io=out,err=devnull)==0
+  s=String(take!(out)); f=only(filter(contains("kurs-2026-10-01"),TK.event_files(d)))
+  @test startswith(s,relpath(f,d)*"\n"*read(f,String)) && occursin("1 event",s)
+  @test TK.edit_main(["kurs","class_price_nok=260","--root=$d","--from=2026-10-10","--json"];io=out,err=devnull)==0
+  s=String(take!(out)); @test occursin("\"class_price_nok\": 260",s) && !occursin("\"class_price_nok\": 200",s) && occursin("dry run",s) && snap()==before
+  @test TK.edit_main(["kurs","--root=$d","--json","--preview"];io=out,err=devnull)==2
   @test TK.edit_main(["kurs","status=foo","--root=$d","--from=2026-10-10"];io=out,err=devnull)==1
   @test TK.edit_main(["kurs","nope=1","--root=$d"];io=out,err=devnull)==2
   @test TK.edit_main(["edit","kurs","--root=$d","--all"];io=out)==0 && occursin("3 events",String(take!(out)))   # `tangoedit edit …`
@@ -1129,7 +1136,10 @@ end
   s=String(take!(out)); @test occursin("2026-12-03: skipped (already there)",s) && occursin("2 events created",s)
   @test JSON.parsefile(joinpath(d,"2026","12-december","2026-12-20-kurs-2026-12-20.json"))["dj"]=="Y" && isempty(validate_event_tree(d))
   before=snap()
-  for bad in (["kurs-2026-11-05","--root=$d","--on=2026-12-06","--every=week"],["kurs-2026-11-05","--root=$d","--on=6.12.2026"],
+  @test TK.repeat_main(["kurs-2026-11-05","--root=$d","--on=2027-01-07","--json"];io=out,err=devnull,today)==0
+  s=String(take!(out)); @test occursin(joinpath("2027","01-january","2027-01-07-kurs-2027-01-07.json")*"\n{\n",s) && occursin("\"start\": \"2027-01-07T19:00:00+01:00\"",s)
+  @test occursin("1 event would be created",s) && JSON.parse(s[findfirst('{',s):findfirst("\n}\n",s)[2]])["id"]=="kurs-2027-01-07"
+  for bad in (["kurs-2026-11-05","--root=$d","--on=2026-12-06","--every=week"],["kurs-2026-11-05","--root=$d","--on=2026-12-06","--json","--preview"],["kurs-2026-11-05","--root=$d","--on=6.12.2026"],
               ["kurs-2026-11-05","--root=$d","--on=2026-12-06","--count=2"],["kurs-2026-11-05","--root=$d","--on=2026-12-06,2026-13-01"])
    @test TK.repeat_main(bad;io=out,err=devnull)==2
   end

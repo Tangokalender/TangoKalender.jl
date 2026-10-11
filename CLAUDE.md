@@ -19,7 +19,7 @@ julia --project=. -m TangoKalender site [events] [_site]   # whole site: index.h
 julia --project=. -m TangoKalender from-issue BODY.md [--root=events] [--issue-url=URL] [--report=r.md] [--today=YYYY-MM-DD]
 julia --project=. -m TangoKalender templates [DIR]        # render templates/ISSUE_TEMPLATE for the site into DIR/.github/ISSUE_TEMPLATE
 julia --project=. -m TangoKalender init-site DIR --slug=bergen --city=Bergen --site-url=… --repo-url=…   # new city data repo
-julia --project=. -m TangoKalender edit TERM… [KEY=VALUE…] [--preview|--dry-run] [--from=… --until=… --all --root=events]
+julia --project=. -m TangoKalender edit TERM… [KEY=VALUE…] [--preview|--json|--dry-run] [--from=… --until=… --all --root=events]
                                            # bulk edit; without KEY=VALUE it only lists the matches (edit --help)
 julia --project=. -m TangoKalender repeat TERM… --every=2weeks|month [--on=last-friday] [--count=N|--until=DATE] [--except=…] [KEY=VALUE…]
 julia --project=. -m TangoKalender repeat TERM… --on=2026-12-27[,DATE…] [KEY=VALUE…]   # given dates, any weekday
