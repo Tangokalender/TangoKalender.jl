@@ -154,3 +154,30 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  for e in events, m in validate_event(e); err("$(e["id"]): $m"); end
  isempty(errs) ? (events,errs) : (JSON.Object{String,Any}[],errs)
 end
+_lc(x)=isnothing(x) ? "" : lowercase(strip(string(x)))
+_venue_name(e)=(v=get(e,"venue",nothing); v isa AbstractDict ? _lc(get(v,"name",nothing)) : "")
+"Same organiser or same venue name (both given): what makes two events with the same title the same series."
+_same_host(a,b)=(o=_lc(get(a,"organizer",nothing)); !isempty(o) && o==_lc(get(b,"organizer",nothing))) ||
+ (v=_venue_name(a); !isempty(v) && v==_venue_name(b))
+"""
+    join_existing_series!(events, root) -> [series ids joined]
+
+Put newly submitted `events` into a series that is already under `root`, so a single new date of a regular milonga
+or practica joins its series. The events are grouped by their own series (or their id without the date). A group
+joins the series of the latest existing event that has the same series id or the same title (by `_slug`) **and** the
+same organiser or venue name. Joined events get that `series` and the id `<series>-YYYY-MM-DD`.
+"""
+function join_existing_series!(events, root::AbstractString)
+ joined=String[]
+ (isempty(events) || !isdir(root)) && return joined
+ existing=sort!([e for e in load_event_tree(root) if !isnothing(get(e,"series",nothing))],by=e->string(e["start"]))
+ key(e)=something(get(e,"series",nothing),replace(string(e["id"]),r"-[0-9]{4}-[0-9]{2}-[0-9]{2}$"=>""))
+ for k in unique(key.(events))
+  group=[e for e in events if key(e)==k]; x=group[1]
+  i=findlast(e->(e["series"]==k || _slug(_s(e["title"]))==_slug(_s(x["title"]))) && _same_host(e,x),existing)
+  isnothing(i) && continue
+  s=string(existing[i]["series"]); push!(joined,s)
+  for e in group; e["series"]=s; e["id"]="$s-$(first(string(e["start"]),10))"; end
+ end
+ joined
+end

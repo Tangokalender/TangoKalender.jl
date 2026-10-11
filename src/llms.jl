@@ -1,6 +1,10 @@
 # Instructions for LLM assistants: /llms.txt (for the model); the human-facing part lives on legg-til.html#ki (src/render/submit.jl).
 # The rules are written once (llm_rules) and reused in both; the worked example is checked by the tests.
 llms_url()=site_url()*"/llms.txt"
+"Upcoming events in the stored format (`events_json`): templates for new dates, and the spellings already in use."
+events_feed_url()=site_url()*"/events.json"
+"Every event file, past ones too, in the site's data repo."
+events_repo_url()=repo_url()*"/tree/main/events"
 const AI_PAGE="for-ki.html"   # old address, now a redirect to legg-til.html#ki
 const EXAMPLE_INPUT="""Milonga del Fiordo 🎶 Fredag 12. mars kl. 21–01.30 på Kulturhuset Fjord, Storgata 9, Oslo.
 DJ: Gjeste-DJ. Inngang 150 kr, studenter 100 kr. Tradisjonell tango hele kvelden.
@@ -25,7 +29,13 @@ const EXAMPLE_OUTPUT="""{
   "link": "https://www.facebook.com/events/000000000000000"
 }"""
 "The extraction rules, shared by llms.txt and the copy-ready prompt."
-llm_rules()="""- Output ONLY a JSON value that conforms to this JSON Schema, with no explanation around it: $(submission_schema_url())
+llm_rules()="""Pages to use (open them if you can browse; if you cannot, work from what the user gives you):
+- $(submission_schema_url()): the submission JSON Schema, with every field and the allowed values. Follow it exactly.
+- $(events_feed_url()): the upcoming events, as stored. Check it before you answer: whether the event is already listed, which events belong to the same series, and how venues, addresses, organisers and teachers are already spelt.
+- $(events_repo_url()): every event as one JSON file, past dates too (events/YYYY/MM-month/YYYY-MM-DD-<id>.json). Use it when the series has no upcoming dates left, e.g. a new term of a course.
+
+Rules:
+- Output ONLY a JSON value that conforms to this JSON Schema, with no explanation around it: $(submission_schema_url())
 - Required in every object: "title", "types", "start", "venue" (with "name" and "address"), "organizer" and "link". Everything else may be null or left out.
 - "organizer" is the group or person the source names as organiser. If none is named, use the page or profile that published the event (on Facebook: the event host). Ask the user if you cannot tell.
 - One JSON object per date. If the event repeats (e.g. "every Wednesday until 9 December"), output an array with one object per date and leave out dates the source says are cancelled. If no end date is given, include the next 4 dates.
@@ -39,7 +49,15 @@ llm_rules()="""- Output ONLY a JSON value that conforms to this JSON Schema, wit
 - "lang" is the language of "title" and "description": "nb" (Norwegian) or "en" (English).
 - "translations" only if the source itself has the text in both languages: {"en": {"title": …, "description": …}} for a Norwegian event (or {"nb": …} for an English one). Never translate yourself.
 - Use null (or [] for lists) for anything the source does not state. Never guess names, prices, times or addresses.
-- Write people's names (DJ, teachers, organiser) only as they appear in the public event."""
+- Write people's names (DJ, teachers, organiser) only as they appear in the public event.
+- If a date is already in the calendar (same title or organiser, venue and date), do not output it again. Tell the user that it is already listed and that corrections go through the «Rett opp» link on the event page.
+
+Existing events as templates:
+- When the event continues a series that is already in the calendar (a weekly milonga, a course, a monthly practica), or the user gives you an existing event as JSON, use the latest event of that series as a template. Find it in the pages above, by the same title, or by the same organiser and venue.
+- Copy "title" exactly: a new date with the same title and the same organiser or venue is added to the existing series. Also copy "types", "venue", "organizer", "teachers", "music_style", the prices, "description", "lang" and "translations", unless the source says something different. The source always wins over the template.
+- Take "start", "end", "dj", "flyer_url" and "video_url" from the source only. These change from date to date. "link" is the source's event page; use the template's only when the source has none.
+- Even for a new event, if the venue or the organiser is already in the calendar, write the name and address exactly as they are there.
+- Stored events are not submissions. Convert them: leave out "\$schema", "id", "series", "status", "source", "source_url", "published_date", "first_seen", "last_verified", "crawl_timestamp" and "confidence". Shorten "start" and "end" to "YYYY-MM-DDTHH:MM" (no seconds, no "+01:00"/"+02:00"). Turn "video" {"platform", "id"} into "video_url" (https://www.youtube.com/watch?v=<id> or https://vimeo.com/<id>)."""
 "Copy-ready prompt for a chat assistant; the person pastes the event text or screenshot after it."
 llm_prompt()="""You are helping to submit an event to Tangokalender, a community calendar for Argentine tango in $(site_city()).
 Read the event information I give you below (text, screenshot or link contents) and convert it as follows.
@@ -87,7 +105,8 @@ $EXAMPLE_OUTPUT
 - [Submission JSON Schema]($(submission_schema_url())): what to output
 - [Stored event schema]($(site_url())/schema/tango-event.schema.json): how events are stored after review (ids, series and metadata are set by the bot)
 - [JSON submission form]($(json_form_url()))
-- [Upcoming events as JSON]($(site_url())/events.json): the stored format, for reading the calendar programmatically
+- [Upcoming events as JSON]($(events_feed_url())): the stored format; templates for new dates in a series, and the spellings of venues and organisers
+- [All event files]($(events_repo_url())): one JSON file per event, past dates included
 - [Instructions for people]($(site_url())/en/$ADD_PAGE#ki) (also in [Norwegian]($(site_url())/$ADD_PAGE#ki) and [Spanish]($(site_url())/es/$ADD_PAGE#ki))
 """
 """

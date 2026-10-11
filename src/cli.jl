@@ -45,12 +45,13 @@ Options (from-issue):
   -h, --help           show this help
 """
 _md(s)=replace(string(s),'|'=>"\\|",'\n'=>' ','@'=>"@\u200b")
-function _issue_report(events,files,errs)
+function _issue_report(events,files,errs;joined=String[])
  isempty(errs) || return "❌ Skjemaet har feil som må rettes før arrangementet kan legges til:\n\n"*join(("- "*_md(e) for e in errs),"\n")*
   "\n\nRediger saken (··· → Edit) og lagre, så prøver vi igjen automatisk."
  rows=join(("| $(_md(_date_label(e))) | $(_md(e["title"])) | $(_md(_venue(e)[1])) |" for e in events),"\n")
  "✅ Takk! Skjemaet ble lest uten feil. $(length(events)==1 ? "Dette arrangementet" : "Disse $(length(events)) arrangementene") blir foreslått lagt til:\n\n"*
-  "| Dato | Tittel | Sted |\n|---|---|---|\n$rows\n\n<details><summary>Filer</summary>\n\n"*join(("- `$f`" for f in files),"\n")*
+  "| Dato | Tittel | Sted |\n|---|---|---|\n$rows\n\n"*
+  (isempty(joined) ? "" : "Legges til i den eksisterende $(length(joined)==1 ? "serien" : "seriene") $(join(("`$s`" for s in joined),", ")).\n\n")*"<details><summary>Filer</summary>\n\n"*join(("- `$f`" for f in files),"\n")*
   "\n</details>\n\nEn redaktør ser over forslaget før det publiseres."
 end
 "Short date for titles: «2. okt»."
@@ -81,13 +82,14 @@ function _from_issue(body_file,opts)
  else
   events_from_form(form; issue_url=get(opts,"issue-url",nothing), today)
  end
+ joined=isempty(errs) ? join_existing_series!(events,root) : String[]
  paths=[event_path(e;root) for e in events]
  for p in paths; isfile(p) && push!(errs,"Arrangementet finnes allerede ($(relpath(p,root))). Bruk «Rett opp»-lenken på arrangementet for å endre det."); end
  files=isempty(errs) ? save_event_tree(events,root) : String[]
  isempty(errs) || (events=empty(events))
  for (f,m) in (isempty(files) ? Tuple{String,String}[] : validate_event_tree(root)); push!(errs,"$f: $m"); end
  isempty(errs) || (foreach(rm,files); events=empty(events); files=String[])
- code=_finish(opts,_issue_report(events,files,errs),errs)
+ code=_finish(opts,_issue_report(events,files,errs;joined),errs)
  code==0 && (t=_summary_title(events); _write_outputs(opts,"Nytt arrangement: $t","Arrangement: $t"); foreach(println,files))
  code
 end

@@ -297,6 +297,28 @@ end
  noorg=ev1("2026-10-24","16:00","18:00"); delete!(noorg,"organizer")
  @test only(msg(JSON.json([noorg])))=="«[0]» mangler påkrevd felt: organizer."
  @test occursin("\"organizer\" is the group or person",TK.llm_rules()) && occursin("\"organizer\" and \"link\"",TK.llm_rules())
+ # key pages and existing events as templates, in the rules and so in both llms.txt and the copy-ready prompt
+ for u in (TK.submission_schema_url(),TK.events_feed_url(),TK.events_repo_url())
+  @test occursin(u,TK.llm_rules()) && occursin(u,TK.llms_txt()) && occursin(u,TK.llm_prompt())
+ end
+ @test TK.events_feed_url()==TK.site_url()*"/events.json" && startswith(TK.events_repo_url(),TK.repo_url())
+ @test occursin("as a template",TK.llm_rules()) && occursin("Copy \"title\" exactly",TK.llm_rules()) && occursin("already listed",TK.llm_rules())
+ # the conversion the rules describe turns every stored event into a valid submission
+ dropped=["\$schema","id","series","status","source","source_url","published_date","first_seen","last_verified","crawl_timestamp","confidence"]
+ @test all(k->occursin("\"$k\"",TK.llm_rules()),dropped)
+ for f in TK.event_files(TREE)
+  x=JSON.parsefile(f); foreach(k->delete!(x,k),dropped)
+  for k in ("start","end"); v=get(x,k,nothing); v isa String && length(v)>10 && (x[k]=first(v,16)); end
+  v=get(x,"video",nothing); delete!(x,"video")
+  isnothing(v) || (x["video_url"]=v["platform"]=="youtube" ? "https://www.youtube.com/watch?v=$(v["id"])" : "https://vimeo.com/$(v["id"])")
+  isnothing(get(x,"link",nothing)) && (x["link"]="https://example.org/")   # required in submissions, optional when stored
+  for k in ("organizer",); isnothing(get(x,k,nothing)) && (x[k]="Org"); end
+  isnothing(get(x,"venue",nothing)) && (x["venue"]=Dict{String,Any}())
+  v=x["venue"]; for k in ("name","address"); isnothing(get(v,k,nothing)) && (v[k]="X"); end
+  evs,errs=TK.events_from_json(JSON.json(x);today=Date(2026,1,1))
+  @test isempty(errs) && evs[1]["start"]==JSON.parsefile(f)["start"]
+ end
+ for l in ("nb","en","es"); @test occursin("<a href=\"$(TK.events_feed_url())\">events.json</a>",TK.legg_til_html(lang=l)); end
  @test occursin("har allerede vært",only(msg(JSON.json(ev1("2026-09-01","19:00","22:00")))))
  @test occursin("to ganger",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-21","19:00","22:00")]))))
  @test occursin("Høyst 60",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00") for _ in 1:61]))))
@@ -310,6 +332,23 @@ end
   write(bf,"### JSON\n\n```json\n$(JSON.json(ev1("2026-11-04","19:00","22:00")))\n```\n\n### Samtykke\n\n- [ ] Ja")
   @test redirect_stdout(()->redirect_stderr(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--today=2026-10-01"]),devnull),devnull)==1
   @test occursin("«Samtykke» må krysses av",read(rep,String)) && length(load_events(root))==2
+  # a single new date joins the existing series (same title and organiser/venue); the bot report says so
+  sub1(x)=(write(bf,"### JSON\n\n```json\n$(JSON.json(x))\n```\n\n### Samtykke\n\n- [X] Ja");
+   redirect_stdout(()->redirect_stderr(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--today=2026-10-01"]),devnull),devnull))
+  @test sub1(ev1("2026-11-04","19:00","22:00"))==0 && occursin("eksisterende serien `practica-pa-lokka`",read(rep,String))
+  x=JSON.parsefile(joinpath(root,"2026","11-november","2026-11-04-practica-pa-lokka-2026-11-04.json"))
+  @test x["series"]=="practica-pa-lokka" && isempty(validate_event_tree(root))
+  @test sub1(ev1("2026-11-04","19:00","22:00"))==1 && occursin("finnes allerede",read(rep,String))   # the same date again
+  other=ev1("2026-11-05","19:00","22:00";organizer="Annen klubb",venue=Dict("name"=>"Annet sted","address"=>"Gata 2"))
+  @test sub1(other)==0 && !occursin("eksisterende serien",read(rep,String))                          # same title, other host: separate
+  @test isnothing(JSON.parsefile(joinpath(root,"2026","11-november","2026-11-05-practica-pa-lokka-2026-11-05.json"))["series"])
+  # joining by title when the series id differs from the title's slug: the id follows the series
+  evs=[JSON.Object{String,Any}("id"=>"sondagspraktika-2026-11-08","title"=>"Søndagspraktika","series"=>nothing,"start"=>"2026-11-08T18:00:00+01:00","organizer"=>"X",
+   "venue"=>Dict("name"=>"Sal")),JSON.Object{String,Any}("id"=>"ukjent-2026-11-08","title"=>"Ukjent","series"=>nothing,"start"=>"2026-11-08T18:00:00+01:00","organizer"=>"X")]
+  save_event_tree([JSON.Object{String,Any}("id"=>"sp-2026-11-01","title"=>"Søndagspraktika","types"=>["practica"],"series"=>"sp","start"=>"2026-11-01T18:00:00+01:00",
+   "organizer"=>"Y","venue"=>Dict("name"=>"SAL ","address"=>"A","city"=>"Oslo"))],root)
+  @test TK.join_existing_series!(evs,root)==["sp"] && evs[1]["series"]=="sp" && evs[1]["id"]=="sp-2026-11-08" && isnothing(evs[2]["series"])
+  @test TK.join_existing_series!(evs,joinpath(d,"nope"))==String[]
   # site: all files, links between them
   site=joinpath(d,"site"); @test redirect_stdout(()->TK.main(["site",MEDIA,site]),devnull)==0
   @test all(isfile(joinpath(site,f)) for f in ("index.html","legg-til.html","for-ki.html","llms.txt",".nojekyll",joinpath("mal","arrangementer-mal.csv"),joinpath("schema","tango-event.schema.json"),joinpath("schema","tango-event-submission.schema.json")))
