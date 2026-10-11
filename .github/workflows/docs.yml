@@ -9,9 +9,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: write   # deploydocs pushes to gh-pages with GITHUB_TOKEN
+# Pushes to main and release tags both deploy to gh-pages, so they share one queue: run side by side (a release
+# pushes both at once), one push was rejected and /vX.Y.Z/ was missing (v1.3.4). Pull requests only build.
 concurrency:
-  group: docs-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.event_name == 'pull_request' && format('docs-pr-{0}', github.ref) || 'docs-deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   docs:
     runs-on: ubuntu-latest
