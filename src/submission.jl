@@ -67,6 +67,13 @@ function _submission_event_schema()
  s=submission_schema(); ev=JSON.Object{String,Any}("definitions"=>s["definitions"]); merge!(ev,s["definitions"]["event"])
  _SUBMISSION_EVENT[]=(ev,JSONSchema.Schema(ev))
 end
+"""
+Field names an assistant may guess instead of the schema's (issue #15: `price`, `flyer`). `events_from_json` renames
+them when the right name is absent; otherwise the schema reports them as unknown.
+"""
+const FIELD_ALIASES=["price"=>"price_nok","student_price"=>"student_price_nok","class_price"=>"class_price_nok",
+ "flyer"=>"flyer_url","image"=>"flyer_url","image_url"=>"flyer_url","url"=>"link","start_time"=>"start","end_time"=>"end",
+ "organiser"=>"organizer"]
 "The JSON value inside `text`: code fences and surrounding prose are ignored."
 function _extract_json(text)
  t=strip(text); m=match(r"```[a-zA-Z]*\s*(.*?)```"s,t); isnothing(m) || (t=strip(m[1]))
@@ -79,7 +86,8 @@ function _submission_message(i,x,issue)
  at="«"*join(filter(!isempty,[isnothing(i) ? "" : "[$i]",p]),".")*"»"; at=="«»" && (at="«(arrangementet)»")
  v=JSON.json(issue.x); r=issue.reason
  r=="additionalProperties" && x isa AbstractDict && isempty(issue.path) &&
-  return "$at: ukjente felt: $(join(sort([k for k in keys(x) if !haskey(_submission_event_schema()[1]["properties"],k)]),", ")). Se $(submission_schema_url())"
+  return "$at: ukjente felt: $(join(sort([k for k in keys(x) if !haskey(_submission_event_schema()[1]["properties"],k)]),", ")). "*
+   "Tillatte felt: $(join(sort([k for k in keys(_submission_event_schema()[1]["properties"]) if !startswith(k,"\$")]),", ")). Se $(submission_schema_url())"
  r=="required" && return "$at mangler påkrevd felt: $(join([k for k in issue.val if !(issue.x isa AbstractDict && haskey(issue.x,k))],", "))."
  r=="enum" && return "$at: $v er ikke en gyldig verdi. Lovlige verdier: $(join(filter(!isnothing,issue.val),", "))."
  r=="type" && return "$at: forventet $(issue.val isa AbstractVector ? join(issue.val," eller ") : issue.val), fikk $v."
@@ -117,6 +125,9 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
  items=data isa AbstractVector ? collect(data) : [data]; multi=data isa AbstractVector
  for x in items
   x isa AbstractDict || continue
+  for (a,k) in FIELD_ALIASES
+   haskey(x,a) && !haskey(x,k) && (x[k]=x[a]; delete!(x,a))
+  end
   foreach(k->delete!(x,k),BOT_FIELDS)   # the bot sets these itself
   if haskey(x,"type") && !haskey(x,"types")   # tolerate the singular form an assistant may still produce
    t=x["type"]; ts=t isa AbstractVector ? collect(t) : t=="class_and_social" ? ["class","milonga"] : t=="class_and_practica" ? ["class","practica"] : [t]

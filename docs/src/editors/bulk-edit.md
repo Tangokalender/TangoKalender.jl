@@ -59,12 +59,15 @@ tangoedit repeat milonga-x-2026-11-20 --every=week --count=8                    
 tangoedit repeat series:onsdagsmilonga --every=2weeks --until=2027-06-30            # continues the series
 tangoedit repeat series:practica --every=month --on=last-friday                     # last Friday of each month
 tangoedit repeat series:nybegynnerkurs --every=week --count=10 --except=2026-12-21..2027-01-03 dj=null
+tangoedit repeat milonga-x-2026-11-20 --on=2026-12-27 'title=Juledagsmilonga'        # one date, on any weekday
 ```
 
 - The search terms must find one event, or events of one series; then the latest one is copied.
 - `--every=week`, `2weeks`, `month`, `3months`, … Weekly rules keep the template's weekday. Monthly rules keep its
   day of the month and skip months that don't have it (the 31st). With `--on=` they use a weekday instead:
   `1st-monday`, `2nd-thursday`, `last-friday`, `2nd-last-sunday`.
+- `--on=DATE` (or several: `--on=2026-12-27,2027-01-03`) gives the dates directly instead of a rule, on any weekday.
+  Use it for one extra date, such as a Sunday special of a Friday milonga.
 - `--count=N` makes N new events. `--until=DATE` stops at a date. Without either, the dates run 6 months from today.
   `--start=DATE` sets the first possible date (the default is the day after the template).
 - `--except=` skips dates, such as a holiday break: `2026-12-24`, or `2026-12-21..2027-01-03` for a range. You can
@@ -73,7 +76,8 @@ tangoedit repeat series:nybegynnerkurs --every=week --count=10 --except=2026-12-
 - Each copy keeps the template's times. Summer and winter time are handled, so 20:00 stays 20:00. The copy also
   gets the id `<series>-YYYY-MM-DD`, status scheduled and `first_seen` today. `KEY=VALUE` changes every copy,
   as in step 3.
-- Dates that already have the event are skipped, so running the same command again is safe. `--dry-run` and
+- Dates that already have the event, or another event of the same series, are skipped, so running the same command
+  again is safe, and a date that was added before the series was set isn't added twice. `--dry-run` and
   `--preview` show the new events without writing anything.
 
 ## 5. Publish

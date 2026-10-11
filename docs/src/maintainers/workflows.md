@@ -5,7 +5,7 @@ it is pinned to, and runs the TangoKalender version that `Project.toml` pins:
 
 | Data repo workflow | Calls | When | What it does |
 |:--|:--|:--|:--|
-| `validate.yml` | `site-validate.yml` | pull requests, pushes to `main` | `tangokalender validate events`: schema, unique ids, file locations. |
+| `validate.yml` | `site-validate.yml` | pull requests, pushes to `main` | `tangokalender validate events`: schema, unique ids, file locations; warns (without failing) about two events of one series with the same start. |
 | `pages.yml` | `site-pages.yml` | pushes to `main`, nightly, by hand | Builds the site and deploys it to GitHub Pages. |
 | `intake.yml` | `site-intake.yml` | an issue with label `nytt-arrangement` or `rettelse` is opened or edited | Turns the form into event files and opens a pull request (see [Submissions and review](@ref)). |
 

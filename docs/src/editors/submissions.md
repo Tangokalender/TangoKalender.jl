@@ -20,15 +20,17 @@ When an issue with the label `nytt-arrangement` or `rettelse` is opened or edite
 3. opens a pull request on the branch `arrangement/issue-<number>` with a summary, and comments on the issue.
 
 If the form can't be read, the bot explains what's wrong in a comment and adds the label `trenger-retting`. When the
-submitter edits the issue, the bot tries again.
+submitter edits the issue, the bot tries again. The AI form accepts a few field names that assistants tend to guess
+(`price`, `flyer`, `image`, `url`, …) and renames them (`price_nok`, `flyer_url`, `link`); any other unknown field
+is refused, and the comment lists the allowed ones.
 
 ## New dates of an existing series
 
 A submitted event joins a series that is already in the calendar when it has the same title (or the same series id)
 **and** the same organiser or venue name. It then gets that `series` and the id `<series>-YYYY-MM-DD`, so a single
 new date of a regular milonga or practica shows up with its other dates. The bot's comment names the series
-(«Legges til i den eksisterende serien …»). If a submitted date is already in the series, the bot refuses it and
-points to «Rett opp». Same title but a different organiser and venue stays a separate event.
+(«Legges til i den eksisterende serien …»). If a submitted date is already in the series, also under another id
+with the same start time, the bot refuses it and points to «Rett opp». Same title but a different organiser and venue stays a separate event.
 
 ## Reviewing a bot pull request
 

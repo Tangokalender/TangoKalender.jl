@@ -85,6 +85,15 @@ function _from_issue(body_file,opts)
  joined=isempty(errs) ? join_existing_series!(events,root) : String[]
  paths=[event_path(e;root) for e in events]
  for p in paths; isfile(p) && push!(errs,"Arrangementet finnes allerede ($(relpath(p,root))). Bruk «Rett opp»-lenken på arrangementet for å endre det."); end
+ if isempty(errs)   # the same start of a series under another id (e.g. added before the series was set)
+  starts=series_starts(root)
+  for (e,p) in zip(events,paths)
+   s=get(e,"series",nothing); s isa AbstractString || continue
+   for (f,_) in get(starts,(s,_start_key(string(e["start"]))),Tuple{String,String}[])
+    normpath(f)==normpath(p) || push!(errs,"Arrangementet finnes allerede på samme tid ($(relpath(f,root))). Bruk «Rett opp»-lenken på arrangementet for å endre det.")
+   end
+  end
+ end
  files=isempty(errs) ? save_event_tree(events,root) : String[]
  isempty(errs) || (events=empty(events))
  for (f,m) in (isempty(files) ? Tuple{String,String}[] : validate_event_tree(root)); push!(errs,"$f: $m"); end
@@ -120,6 +129,7 @@ function _from_correction(form,root,today,opts)
  code
 end
 _report(problems)=(for (f,m) in problems; println(stderr,"$f: $m"); end; isempty(problems) || println(stderr,"$(length(problems)) problem(s)"))
+_warn(warnings)=foreach(((f,m),)->println(stderr,"Warning: $f: $m"),warnings)
 "`tangokalender init-site DIR --slug=… --city=… --site-url=… --repo-url=…`: see `init_site`."
 function _init_site_cli(args)
  opts=Dict{String,String}(); pos=String[]
@@ -185,6 +195,7 @@ function _main(args)
   println("$(length(added)) new, $(length(failed)) failed → $venues"); return 0   # never fail the caller (e.g. intake) on a network problem
  end
  problems=[validate_event_tree(input);validate_venues(venues)]
+ _warn(series_start_warnings(input))
  if cmd=="validate"
   _report(problems); isempty(problems) && println("OK: $input"); return isempty(problems) ? 0 : 1
  end

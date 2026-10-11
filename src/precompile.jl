@@ -24,6 +24,7 @@ using PrecompileTools: @setup_workload, @compile_workload
     main(["edit","øvingskveld","--root=$root","--from=2026-11-01","teachers=[\"A\",\"B\"]"])
     main(["repeat","øvingskveld","--root=$root","--every=month","--on=last-tuesday","--count=3","--preview"])
     main(["repeat","øvingskveld","--root=$root","--every=2weeks","--until=2027-01-31","--except=2026-12-21..2027-01-03","dj=X"])
+    main(["repeat","øvingskveld","--root=$root","--on=2027-02-05,2027-02-07","--dry-run"])
     main(["site",root,joinpath(d,"_site"),"--venues=$v"])
     main(["build",root,joinpath(d,"index.html"),"--venues=$v"])
    end end

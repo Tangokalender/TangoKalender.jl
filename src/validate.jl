@@ -34,3 +34,33 @@ function validate_event_tree(dir::AbstractString)
  end
  problems
 end
+"`(series, start to the minute) => [(file, id)…]` for the events under `dir` that have a series."
+function series_starts(dir::AbstractString)
+ out=Dict{Tuple{String,String},Vector{Tuple{String,String}}}()
+ isdir(dir) || return out
+ for f in event_files(dir)
+  e=try JSON.parsefile(f) catch; continue end
+  e isa AbstractDict || continue
+  s=get(e,"series",nothing); st=get(e,"start",nothing)
+  (s isa AbstractString && st isa AbstractString) || continue
+  push!(get!(()->Tuple{String,String}[],out,(s,_start_key(st))),(f,string(get(e,"id",""))))
+ end
+ out
+end
+"`2026-10-16T20:00` (or the bare date): what two events of one series must not share."
+_start_key(st::AbstractString)=first(st,16)
+"""
+    series_start_warnings(dir) -> [(file, message)]
+
+Events of one series with the same start, usually one date entered twice under different ids. Only a warning, as
+an organiser may run two things at once; events of a series on the same day at different times (a festival's
+afternoon and evening milongas) are fine.
+"""
+function series_start_warnings(dir::AbstractString)
+ out=Tuple{String,String}[]
+ for ((s,st),xs) in series_starts(dir)
+  length(xs)>1 || continue
+  push!(out,(first(xs)[1],"series \"$s\" has $(length(xs)) events starting $(replace(st,'T'=>' ')): $(join(sort([x[2] for x in xs]),", "))"))
+ end
+ sort!(out)
+end

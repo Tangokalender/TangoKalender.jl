@@ -291,6 +291,11 @@ end
  # an assistant may still answer with the old singular field (or a combined value): converted, not rejected
  old=ev1("2026-10-21","19:00","22:00"); delete!(old,"types"); old["type"]="class_and_social"
  r=TK.events_from_json(JSON.json(old);today=T); @test isempty(r[2]) && r[1][1]["types"]==["class","milonga"]
+ # field names an assistant guesses (issue #15) are renamed; other unknown fields get the list of allowed ones
+ al=ev1("2026-10-21","19:00","22:00";price=160,flyer="https://example.org/f.jpg")
+ r=TK.events_from_json(JSON.json(al);today=T); @test isempty(r[2]) && r[1][1]["price_nok"]==160 && r[1][1]["flyer_url"]=="https://example.org/f.jpg"
+ @test occursin("ukjente felt: pris. Tillatte felt: class_price_nok,",only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";pris=160)))))
+ @test occursin("ukjente felt: price",only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";price=1,price_nok=2)))))   # both: not guessed
  @test occursin("«[1].venue.name»",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-28","19:00","22:00";venue=Dict("name"=>3,"address"=>"b"))]))))
  @test occursin("mangler påkrevd felt: types, start, venue, organizer, link",only(msg("{\"title\":\"X\"}")))
  # organizer is mandatory, and the rules tell the model where to find it
@@ -339,6 +344,8 @@ end
   x=JSON.parsefile(joinpath(root,"2026","11-november","2026-11-04-practica-pa-lokka-2026-11-04.json"))
   @test x["series"]=="practica-pa-lokka" && isempty(validate_event_tree(root))
   @test sub1(ev1("2026-11-04","19:00","22:00"))==1 && occursin("finnes allerede",read(rep,String))   # the same date again
+  x["id"]="lokka-ekstra"; x["start"]="2026-11-11T19:00:00+01:00"; x["end"]="2026-11-11T22:00:00+01:00"; save_event_tree([x],root)
+  @test sub1(ev1("2026-11-11","19:00","22:00"))==1 && occursin("finnes allerede på samme tid (2026/11-november/2026-11-11-lokka-ekstra.json)",read(rep,String))  # same start, other id
   other=ev1("2026-11-05","19:00","22:00";organizer="Annen klubb",venue=Dict("name"=>"Annet sted","address"=>"Gata 2"))
   @test sub1(other)==0 && !occursin("eksisterende serien",read(rep,String))                          # same title, other host: separate
   @test isnothing(JSON.parsefile(joinpath(root,"2026","11-november","2026-11-05-practica-pa-lokka-2026-11-05.json"))["series"])
@@ -1113,6 +1120,27 @@ end
   end
   @test snap()==before
   @test TK.edit_main(["repeat","--help"];io=out)==0 && occursin("--every=week",String(take!(out)))
+  # --on=DATE: given dates on any weekday; a day that has another event of the series is skipped
+  save_event_tree([ev("kurs-ekstra","2026-12-03T18:00:00+01:00")],d)
+  r=repeat_events(["kurs-2026-11-05"],[Date(2026,12,6),Date(2026,12,3)];root=d,today,dry_run=true)
+  @test r.exists==[Date(2026,12,3)] && [e.id for (_,e) in r.events]==["kurs-2026-12-06"] && r.events[1][2].start=="2026-12-06T19:00:00+01:00"
+  @test isempty(TK.series_start_warnings(d))
+  @test TK.repeat_main(["kurs-2026-11-05","--root=$d","--on=2026-12-06","--on=2026-12-20,2026-12-03","dj=Y"];io=out,err=devnull,today)==0
+  s=String(take!(out)); @test occursin("2026-12-03: skipped (already there)",s) && occursin("2 events created",s)
+  @test JSON.parsefile(joinpath(d,"2026","12-december","2026-12-20-kurs-2026-12-20.json"))["dj"]=="Y" && isempty(validate_event_tree(d))
+  before=snap()
+  for bad in (["kurs-2026-11-05","--root=$d","--on=2026-12-06","--every=week"],["kurs-2026-11-05","--root=$d","--on=6.12.2026"],
+              ["kurs-2026-11-05","--root=$d","--on=2026-12-06","--count=2"],["kurs-2026-11-05","--root=$d","--on=2026-12-06,2026-13-01"])
+   @test TK.repeat_main(bad;io=out,err=devnull)==2
+  end
+  @test snap()==before
+  # two events of a series with the same start: a warning from validate, not an error (another time that day is fine)
+  @test isempty(TK.series_start_warnings(d))     # kurs-ekstra at 18:00, kurs-2026-12-03 skipped
+  save_event_tree([ev("kurs-dobbel","2026-12-06T19:00:00+01:00"),ev("kurs-sen","2026-12-06T21:00:00+01:00")],d)
+  @test isempty(validate_event_tree(d)) && TK.series_start_warnings(d)==[(joinpath(d,"2026","12-december","2026-12-06-kurs-2026-12-06.json"),
+   "series \"kurs\" has 2 events starting 2026-12-06 19:00: kurs-2026-12-06, kurs-dobbel")]
+  c,w=mktemp() do p,io; c=redirect_stdout(()->redirect_stderr(()->TK.main(["validate",d,"--venues=$(joinpath(d,"nope.json"))"]),io),devnull); close(io); (c,read(p,String)) end
+  @test c==0 && occursin(r"Warning: .*series \"kurs\" has 2 events starting 2026-12-06 19:00",w)
  end
 end
 @testset "site config (one site per city)" begin

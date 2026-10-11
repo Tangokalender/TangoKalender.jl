@@ -165,35 +165,53 @@ end
 
 Copy the template (`repeat_template(terms)`) to the dates of `rule` (`recurrence_dates`): after the template's date,
 or from `start`, until `until`, or `count` new events; without either, until 6 months after `today`. `edits`
-(`"key=value"`, see `set_path`) apply to every copy. Dates that already have the event (same id or file) are skipped.
+(`"key=value"`, see `set_path`) apply to every copy. Dates that already have the event (same id or file, or any event
+of the series that day) are skipped.
 Every copy must pass `check`; then the files are written unless `dry_run`, and `tree_check(root)` runs (rolling back
 on problems). Returns `(template, keys, events, exists, excepted, written, errors)`, `events` as `(file, event)`.
+
+    repeat_events(terms, dates::Vector{Date}; root="events", except=[], edits=[], today=today(), dry_run=false, …)
+
+The same, on the given `dates` (any weekday) instead of a rule.
 """
 function repeat_events(terms, rule::Recurrence; root::AbstractString="events", count::Union{Nothing,Int}=nothing,
                        until::Union{Nothing,Date}=nothing, start::Union{Nothing,Date}=nothing, except::Vector{Tuple{Date,Date}}=Tuple{Date,Date}[],
                        edits=String[], today::Date=Dates.today(), dry_run::Bool=false, tree_check::C=validate_event_tree) where {C}
  es=Tuple{Vector{String},String}[x isa AbstractString ? parse_edit(x) : (String.(collect(x[1])),String(x[2])) for x in edits]
- _repeat_events(terms,rule,String(root),something(count,0),something(until,_NO_DATE),something(start,_NO_DATE),except,es,today,dry_run,tree_check)
+ _repeat_events(terms,rule,Date[],String(root),something(count,0),something(until,_NO_DATE),something(start,_NO_DATE),except,es,today,dry_run,tree_check)
+end
+function repeat_events(terms, dates::Vector{Date}; root::AbstractString="events", except::Vector{Tuple{Date,Date}}=Tuple{Date,Date}[],
+                       edits=String[], today::Date=Dates.today(), dry_run::Bool=false, tree_check::C=validate_event_tree) where {C}
+ isempty(dates) && throw(ArgumentError("repeat_events needs at least one date"))
+ es=Tuple{Vector{String},String}[x isa AbstractString ? parse_edit(x) : (String.(collect(x[1])),String(x[2])) for x in edits]
+ _repeat_events(terms,Recurrence(:week,1,0,0),dates,String(root),0,_NO_DATE,_NO_DATE,except,es,today,dry_run,tree_check)
 end
 "Stands for «not given» in `_repeat_events`, whose arguments are concrete (unions in keyword calls don't trim)."
 const _NO_DATE=Date(0)
-function _repeat_events(terms, rule::Recurrence, root::String, count::Int, until::Date, start::Date, except::Vector{Tuple{Date,Date}},
+function _repeat_events(terms, rule::Recurrence, ondates::Vector{Date}, root::String, count::Int, until::Date, start::Date, except::Vector{Tuple{Date,Date}},
                         es::Vector{Tuple{Vector{String},String}}, today::Date, dry_run::Bool, tree_check::C) where {C}
  _,t,ks=repeat_template(terms;root)
  anchor=something(_ymd(t.start),today)
  count==0 && until==_NO_DATE && (until=today+Month(6))
  from=start==_NO_DATE ? anchor+Day(1) : start
- dates,excepted=recurrence_dates(rule,anchor;from,until=until==_NO_DATE ? Date(9999,12,31) : until,count=count==0 ? typemax(Int) : count,except)
- taken=Set{String}(); files=Set{String}()
- for (f,e,_) in find_events(String[];root,from=nothing); push!(taken,e.id); push!(files,normpath(f)); end
- keys_=ks; for k in ("status","series","first_seen"); keys_=_with_key(keys_,k); end
+ dates,excepted=if isempty(ondates)
+  recurrence_dates(rule,anchor;from,until=until==_NO_DATE ? Date(9999,12,31) : until,count=count==0 ? typemax(Int) : count,except)
+ else
+  ds=sort!(unique(ondates)); (filter(d->!_in_ranges(d,except),ds),filter(d->_in_ranges(d,except),ds))
+ end
  series=_repeat_series(t)
+ taken=Set{String}(); files=Set{String}(); days=Set{Date}()   # days: dates that already have an event of the series
+ for (f,e,_) in find_events(String[];root,from=nothing)
+  push!(taken,e.id); push!(files,normpath(f))
+  e.series==series && (d=_ymd(e.start); isnothing(d) || push!(days,d))
+ end
+ keys_=ks; for k in ("status","series","first_seen"); keys_=_with_key(keys_,k); end
  out=Tuple{String,Event}[]; exists=Date[]; errs=String[]
  for d in dates
   e=repeat_event(t,d;series,today)
   for (p,v) in es; e=set_path(e,p,v)::Event; end
   f=event_path(e;root); id=e.id
-  if id in taken || normpath(f) in files; push!(exists,d); continue; end
+  if id in taken || normpath(f) in files || d in days; push!(exists,d); continue; end
   for m in check(e); push!(errs,"$id: $m"); end
   push!(out,(f,e))
  end
@@ -209,11 +227,13 @@ tangokalender repeat - copy an event to new dates
 
 Usage:
   tangokalender repeat TERM… --every=RULE [--on=WHICH-WEEKDAY] [--count=N | --until=DATE] [KEY=VALUE…] [options]
+  tangokalender repeat TERM… --on=DATE[,DATE…] [KEY=VALUE…] [options]
 
 TERM     finds the template, as in edit (past events included): it must match one event, or events of one series,
          of which the latest is copied (series:esa-tandas continues that series; an exact series name wins).
 The copies get the template's times (summer/winter time recomputed), id <series>-YYYY-MM-DD, status scheduled and
-first_seen today. Dates that already have the event are skipped, so running the same command again is safe.
+first_seen today. Dates that already have the event, or any event of its series, are skipped, so running the same
+command again is safe.
 KEY=VALUE sets a key on every copy, as in edit (dj=null, price_nok=150).
 
 Rules:
@@ -222,6 +242,7 @@ Rules:
                             e.g. the 31st, are skipped)
   --on=WHICH-WEEKDAY        with month rules: the Nth or Nth-last weekday instead: 1st-monday, 2nd-thursday,
                             last-friday, 2nd-last-sunday (months without a 5th … are skipped)
+  --on=DATE[,DATE…]         instead of a rule: just these dates, on any weekday (2026-12-27); may be repeated
 
 Options:
   --count=N         create N events (dates in --except don't count)
@@ -243,13 +264,17 @@ function repeat_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err:
  usage(msg::String)=(println(err,msg,"\n"); print(err,REPEAT_USAGE); 2)
  fail(msg::String)=(println(err,msg); 2)
  terms=String[]; edits=String[]; root="events"; every=""; on=""; count=0; until=_NO_DATE; start=_NO_DATE
- except=Tuple{Date,Date}[]; dry=false; preview=false
+ except=Tuple{Date,Date}[]; dry=false; preview=false; ondates=Date[]
  for a in args
   if a in ("-h","--help"); print(io,REPEAT_USAGE); return 0
   elseif startswith(a,"--")
    kv=split(a[3:end],'=';limit=2); k=kv[1]; v=length(kv)==2 ? String(kv[2]) : ""
    if k=="root" && !isempty(v); root=v
    elseif k=="every" && !isempty(v); every=v
+   elseif k=="on" && occursin(r"^[0-9]{4}-",v)
+    for x in split(v,','; keepempty=false)
+     d=_ymd(x); (isnothing(d) || length(x)!=10) && return usage("--on needs dates YYYY-MM-DD, got \"$x\""); push!(ondates,d)
+    end
    elseif k=="on" && !isempty(v); on=v
    elseif k=="count" && !isempty(v)
     n=tryparse(Int,v); (isnothing(n) || n<1) && return usage("--count needs a whole number of at least 1, got \"$v\""); count=n
@@ -265,17 +290,22 @@ function repeat_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err:
   else push!(terms,a) end
  end
  isempty(terms) && return usage("repeat needs a search term for the template event")
- isempty(every) && return usage("repeat needs --every=week, Nweeks, month or Nmonths")
+ if !isempty(ondates)
+  (!isempty(every) || !isempty(on) || count>0 || until!=_NO_DATE || start!=_NO_DATE) &&
+   return usage("--on=DATE gives the dates itself; leave out --every, --on=WEEKDAY, --count, --until and --start")
+ else
+  isempty(every) && return usage("repeat needs --every=week, Nweeks, month or Nmonths, or --on=DATE")
+ end
  count>0 && until!=_NO_DATE && return usage("use either --count or --until, not both")
  isdir(root) || return usage("no events directory \"$root\" (use --root=DIR)")
- rule=try
+ rule=isempty(ondates) ? try
   unit,n=parse_every(every); nth,wd=isempty(on) ? (0,0) : parse_on(on)
   unit===:week && nth!=0 && throw(ArgumentError("--on goes with --every=month or Nmonths"))
   Recurrence(unit,n,nth,wd)
- catch ex; ex isa ArgumentError || rethrow(); return usage(ex.msg isa String ? ex.msg : "bad rule") end
+ catch ex; ex isa ArgumentError || rethrow(); return usage(ex.msg isa String ? ex.msg : "bad rule") end : Recurrence(:week,1,0,0)
  es=try Tuple{Vector{String},String}[parse_edit(x) for x in edits]
  catch ex; ex isa ArgumentError || rethrow(); return usage(ex.msg isa String ? ex.msg : "invalid edit") end
- res=try _repeat_events(terms,rule,root,count,until,start,except,es,today,dry || preview,tree_check)
+ res=try _repeat_events(terms,rule,ondates,root,count,until,start,except,es,today,dry || preview,tree_check)
  catch ex; ex isa ArgumentError || rethrow(); return fail(ex.msg isa String ? ex.msg : "invalid repeat") end
  w=displaysize(io)[2]
  show_(lines::Vector{Vector{Seg}})=println(io,render(lines))
