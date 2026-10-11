@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Command line · TangoKalender.jl</title><meta name="title" content="Command line · TangoKalender.jl"/><meta property="og:title" content="Command line · TangoKalender.jl"/><meta property="twitter:title" content="Command line · TangoKalender.jl"/><meta name="description" content="Documentation for TangoKalender.jl."/><meta property="og:description" content="Documentation for TangoKalender.jl."/><meta property="twitter:description" content="Documentation for TangoKalender.jl."/><meta property="og:url" content="https://tangokalender.github.io/TangoKalender.jl/stable/dev/cli/"/><meta property="twitter:url" content="https://tangokalender.github.io/TangoKalender.jl/stable/dev/cli/"/><link rel="canonical" href="https://tangokalender.github.io/TangoKalender.jl/stable/dev/cli/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">TangoKalender.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">City maintainers</span><ul><li><a class="tocitem" href="../../maintainers/new-city/">Start a new city</a></li><li><a class="tocitem" href="../../maintainers/site-config/">site.toml</a></li><li><a class="tocitem" href="../../maintainers/workflows/">Workflows and upgrades</a></li></ul></li><li><span class="tocitem">Editors</span><ul><li><a class="tocitem" href="../../editors/events/">Events</a></li><li><a class="tocitem" href="../../editors/submissions/">Submissions and review</a></li><li><a class="tocitem" href="../../editors/bulk-edit/">Bulk edits with tangoedit</a></li><li><a class="tocitem" href="../../editors/venues/">Venues and maps</a></li></ul></li><li><span class="tocitem">Developers</span><ul><li><a class="tocitem" href="../architecture/">Architecture</a></li><li class="is-active"><a class="tocitem" href>Command line</a><ul class="internal"><li><a class="tocitem" href="#edit"><span><code>edit</code></span></a></li><li><a class="tocitem" href="#repeat"><span><code>repeat</code></span></a></li></ul></li><li><a class="tocitem" href="../api/">API reference</a></li><li><a class="tocitem" href="../development/">Development and releases</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Developers</a></li><li class="is-active"><a href>Command line</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Command line</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/Tangokalender/TangoKalender.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/Tangokalender/TangoKalender.jl/blob/main/docs/src/dev/cli.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Command-line"><a class="docs-heading-anchor" href="#Command-line">Command line</a><a id="Command-line-1"></a><a class="docs-heading-anchor-permalink" href="#Command-line" title="Permalink"></a></h1><p><code>julia --project=. -m TangoKalender …</code> in a data repository, or the installed app <code>tangokalender …</code>. Paths are relative to the current directory; <code>site.toml</code> there gives the site (or <code>--site=FILE</code>). Exit codes: 0 ok, 1 validation failed, 2 usage error.</p><pre><code class="language-julia hljs">using TangoKalender
+print(TangoKalender.USAGE)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">tangokalender - build the tango calendar as one static HTML page
+
+Usage:
+  tangokalender [build] [INPUT] [OUTPUT]   validate, then render (default: events public/index.html)
+  tangokalender site [INPUT] [DIR]         validate, then write the whole site to DIR (default: events _site):
+                                           index.html (list), uke.html, kort.html, arrangement/&lt;id&gt;/ pages and .ics,
+                                           kalender.ics, rss.xml, … – in Norwegian, and again under en/ and es/ –
+                                           plus events.json, for-ki.html, llms.txt, schema/*.json
+  tangokalender validate [INPUT]           validate only (also venues.json, if present)
+  tangokalender geocode [INPUT]            look up coordinates for new addresses (OpenStreetMap Nominatim) into venues.json
+  tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
+  tangokalender init-site DIR --slug=S --city=C --site-url=URL --repo-url=URL [--name=N]
+                                           start a new city&#39;s data repo in DIR (site.toml, workflows, forms, …)
+  tangokalender templates [DIR]            write the GitHub issue forms for the site into DIR/.github/ISSUE_TEMPLATE/
+  tangokalender edit TERM… [KEY=VALUE…]   find upcoming events matching all TERMs; list them, or set KEY=VALUE on all
+                                           of them (tangokalender edit --help)
+  tangokalender repeat TERM… --every=RULE  copy an event to new dates: weekly, every N weeks/months, or on the Nth
+                                           (last) weekday of the month (tangokalender repeat --help)
+
+INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
+
+Options (all but edit and repeat):
+  --site=FILE          the site&#39;s settings (default: site.toml in the current directory, if there is one)
+
+Options (build, site):
+  --no-validate        render even if validation fails
+  --title=TEXT         page title (default: &quot;Tangokalender | Oslo&quot;)
+  --subtitle=TEXT      page subtitle
+  --submit-url=URL     target of the «Legg til arrangement» link (default: the repo&#39;s issue form; empty hides it)
+  --correct-url=URL    base of each card&#39;s «Rett opp» link (default: the repo&#39;s correction form; empty hides it)
+  --venues=FILE        coordinates for maps (default: venues.json if it exists)
+
+Options (geocode):
+  --venues=FILE        the coordinate cache to update (default: venues.json)
+  --retry              also retry addresses stored as not found
+
+Options (from-issue):
+  --root=DIR           events directory to write into (default: events)
+  --issue-url=URL      recorded as the events&#39; source_url
+  --report=FILE        write a Norwegian markdown report (for the issue comment)
+  --today=YYYY-MM-DD   reference date for &quot;date has passed&quot; checks (default: today)
+  --outputs=FILE       append `pr_title=…` and `issue_title=…` (e.g. $GITHUB_OUTPUT) on success
+
+  -h, --help           show this help</code></pre><h2 id="edit"><a class="docs-heading-anchor" href="#edit"><code>edit</code></a><a id="edit-1"></a><a class="docs-heading-anchor-permalink" href="#edit" title="Permalink"></a></h2><pre><code class="language-julia hljs">using TangoKalender
+print(TangoKalender.EDIT_USAGE)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">tangokalender edit - find events and change them in bulk
+
+Usage:
+  tangokalender edit TERM… [KEY=VALUE…] [options]
+
+TERM     matches events containing it in id, title, series, organizer, venue, teachers, dj or start (ignoring case);
+         KEY:TEXT matches one key only (series:esa-tandas, type:class, venue:Lindern, status:cancelled).
+         Several terms must all match.
+KEY=VALUE sets a key on every match. VALUE is read as JSON (250, null, [&quot;A&quot;,&quot;B&quot;], &quot;text&quot;), else as plain text.
+         Nested keys use dots: venue.name=…, translations.en.title=….
+Without KEY=VALUE, the matches are only listed.
+A leading `edit` is ignored, so `tangoedit edit TERM…` and `tangoedit TERM…` are the same.
+`tangoedit repeat TERM… --every=…` copies an event to new dates instead (tangoedit repeat --help).
+
+Options:
+  --preview         show each event as a card (after the edits, changes highlighted); writes nothing
+  --dry-run         list the changes; writes nothing
+  --from=DATE       only events that end on or after DATE (default: today)
+  --until=DATE      only events that start on or before DATE
+  --all             include past events
+  --root=DIR        the events directory (default: events)</code></pre><p>The stand-alone <code>tangoedit</code> is the same command; see <a href="../../editors/bulk-edit/#Bulk-edits-with-tangoedit">Bulk edits with tangoedit</a>.</p><h2 id="repeat"><a class="docs-heading-anchor" href="#repeat"><code>repeat</code></a><a id="repeat-1"></a><a class="docs-heading-anchor-permalink" href="#repeat" title="Permalink"></a></h2><pre><code class="language-julia hljs">using TangoKalender
+print(TangoKalender.REPEAT_USAGE)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">tangokalender repeat - copy an event to new dates
+
+Usage:
+  tangokalender repeat TERM… --every=RULE [--on=WHICH-WEEKDAY] [--count=N | --until=DATE] [KEY=VALUE…] [options]
+
+TERM     finds the template, as in edit (past events included): it must match one event, or events of one series,
+         of which the latest is copied (series:esa-tandas continues that series; an exact series name wins).
+The copies get the template&#39;s times (summer/winter time recomputed), id &lt;series&gt;-YYYY-MM-DD, status scheduled and
+first_seen today. Dates that already have the event are skipped, so running the same command again is safe.
+KEY=VALUE sets a key on every copy, as in edit (dj=null, price_nok=150).
+
+Rules:
+  --every=week|Nweeks       every week, every N weeks (2weeks), on the template&#39;s weekday
+  --every=month|Nmonths     every month, every N months, on the template&#39;s day of the month (months without it,
+                            e.g. the 31st, are skipped)
+  --on=WHICH-WEEKDAY        with month rules: the Nth or Nth-last weekday instead: 1st-monday, 2nd-thursday,
+                            last-friday, 2nd-last-sunday (months without a 5th … are skipped)
+
+Options:
+  --count=N         create N events (dates in --except don&#39;t count)
+  --until=DATE      create events up to and including DATE (default without --count: 6 months from today)
+  --start=DATE      first possible date (default: the day after the template); the rhythm stays the template&#39;s
+  --except=DATES    skip dates: 2026-12-24 or a range 2026-12-21..2027-01-03, comma-separated; may be repeated
+  --preview         show each new event as a card; writes nothing
+  --dry-run         list the new events; writes nothing
+  --root=DIR        the events directory (default: events)</code></pre><p><code>tangoedit repeat …</code> is the same command.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../architecture/">« Architecture</a><a class="docs-footer-nextpage" href="../api/">API reference »</a><div class="flexbox-break"></div><p class="footer-message">TangoKalender v1.3.1 · <a href="https://tangokalender.github.io/">Oslo</a> · <a href="https://github.com/Tangokalender/TangoKalender.jl">GitHub</a></p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Sunday 11 October 2026 12:43">Sunday 11 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
