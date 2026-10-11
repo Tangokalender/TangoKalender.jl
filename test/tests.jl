@@ -516,7 +516,7 @@ function find_chrome()
  for c in ("google-chrome","google-chrome-stable","chromium","chromium-browser","chrome","chrome-headless-shell"); x=Sys.which(c); isnothing(x) || return x; end
  nothing
 end
-const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);var m=document.getElementById('morefilters'),c=document.getElementById('fcount');if(m)document.body.setAttribute('data-more',m.getClientRects().length?'1':'0');if(c)document.body.setAttribute('data-fcount',c.textContent);var q=document.getElementById('q'),w=document.getElementById('when');if(w)document.body.setAttribute('data-when',w.getClientRects().length?(Math.abs(w.getBoundingClientRect().bottom-q.getBoundingClientRect().bottom)<2?'line':'below'):'0');</script>"
+const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);var m=document.getElementById('morefilters'),c=document.getElementById('fcount');if(m)document.body.setAttribute('data-more',m.getClientRects().length?'1':'0');if(c)document.body.setAttribute('data-fcount',c.textContent);var q=document.getElementById('q'),w=document.getElementById('when');var fb=document.getElementById('filters'),mn=document.querySelector('main'),ft=document.getElementById('filtertoggle');if(fb&&mn)document.body.setAttribute('data-side',fb.getBoundingClientRect().left>=mn.getBoundingClientRect().right-1?'1':'0');if(ft)document.body.setAttribute('data-toggle',ft.getClientRects().length?'1':'0');if(w)document.body.setAttribute('data-when',w.getClientRects().length?(Math.abs(w.getBoundingClientRect().bottom-q.getBoundingClientRect().bottom)<2?'line':'below'):'0');</script>"
 "Load `page` in headless Chrome at `?search`, return (visible event ids, ticked boxes, url, dom)."
 function browser_view(chrome,dir,page,search;size="1280,900")
  f=joinpath(dir,"b.html"); write(f,replace(page,"</body>"=>PROBE*"</body>"))
@@ -528,7 +528,9 @@ function browser_view(chrome,dir,page,search;size="1280,900")
  more=something(match(r"<body[^>]*data-more=\"([01])\"",dom),(nothing,""))[1]
  fcount=something(match(r"<body[^>]*data-fcount=\"([^\"]*)\"",dom),(nothing,""))[1]
  whenpos=something(match(r"<body[^>]*data-when=\"([^\"]*)\"",dom),(nothing,""))[1]   # line: next to the search box
- (vis=setdiff(vis,Set{String}()),hid,ticked,url=replace(url,"&amp;"=>"&"),more,fcount,whenpos,dom)
+ side=something(match(r"<body[^>]*data-side=\"([01])\"",dom),(nothing,""))[1]       # 1: filters right of the events
+ toggle=something(match(r"<body[^>]*data-toggle=\"([01])\"",dom),(nothing,""))[1]
+ (vis=setdiff(vis,Set{String}()),hid,ticked,url=replace(url,"&amp;"=>"&"),more,fcount,whenpos,side,toggle,dom)
 end
 @testset "filters in a real browser" begin
  # markup (no browser needed): search, time and sort share the top line with «Filter»; only the tags are folded
@@ -538,7 +540,9 @@ end
   @test !isnothing(top) && occursin("id=\"q\"",top[1]) && occursin("id=\"filtertoggle\"",top[1])
   @test all(x->occursin("id=\"$x\"",top[1]),sel) && occursin("class=\"selects\"",top[1])==!isempty(sel)
   @test !occursin("<select",top[2]) && occursin("name=\"type\"",top[2])
+  @test occursin("<div class=\"layout\"><div class=\"filters\"",h)==(v!="week")                         # sidebar on wide screens
  end
+ @test !occursin("class=\"layout\"",render_events_html(FILTER_EVENTS;view="compact",embed=true))
  @test occursin(".more{display:none}.filters.open .more{display:block}.ftoggle{display:inline-flex;",TangoKalender._CSS)   # folds on every width
  chrome=find_chrome()
  if isnothing(chrome)
@@ -559,9 +563,15 @@ end
    r=browser_view(chrome,d,pages["cards"],"?type=class,festival"); @test r.vis==Set(["c","f"])
    # the tags fold away behind «Filter» by default, which shows how many of the folded filters are active.
    # Desktop: search and time on one line, only the tags fold. Phones: time folds away too.
-   r=browser_view(chrome,d,pages["compact"],""); @test r.more=="0" && r.whenpos=="line" && r.fcount==""
-   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all")
+   r=browser_view(chrome,d,pages["compact"],"";size="1000,800"); @test r.more=="0" && r.whenpos=="line" && r.fcount=="" && r.side=="0"
+   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all";size="1000,800")
    @test r.more=="0" && r.whenpos=="line" && r.fcount==" (2)" && r.vis==Set(["a","b","p"])               # time is visible: not counted
+   # laptops and wider: an unfolded sidebar right of the events, no «Filter» toggle; the week grid keeps the top bar
+   for sz in ("1280,800","1920,1080"), v in ("compact","cards")
+    r=browser_view(chrome,d,pages[v],"?type=milonga,practica";size=sz)
+    @test r.side=="1" && r.more=="1" && r.toggle=="0" && r.whenpos=="below" && r.vis==Set(["a","b"])
+   end
+   r=browser_view(chrome,d,pages["week"],"#uke-2035-10";size="1920,1080"); @test r.toggle=="1" && r.more=="0"
    r=browser_view(chrome,d,pages["compact"],"";size="390,844"); @test r.more=="0" && r.whenpos=="0" && r.fcount==""
    r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all";size="390,844")
    @test r.more=="0" && r.whenpos=="0" && r.fcount==" (3)" && r.vis==Set(["a","b","p"])                  # folded, but still filtering
