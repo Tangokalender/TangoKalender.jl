@@ -516,7 +516,7 @@ function find_chrome()
  for c in ("google-chrome","google-chrome-stable","chromium","chromium-browser","chrome","chrome-headless-shell"); x=Sys.which(c); isnothing(x) || return x; end
  nothing
 end
-const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);var m=document.getElementById('morefilters'),c=document.getElementById('fcount');if(m)document.body.setAttribute('data-more',m.getClientRects().length?'1':'0');if(c)document.body.setAttribute('data-fcount',c.textContent);</script>"
+const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);var m=document.getElementById('morefilters'),c=document.getElementById('fcount');if(m)document.body.setAttribute('data-more',m.getClientRects().length?'1':'0');if(c)document.body.setAttribute('data-fcount',c.textContent);var q=document.getElementById('q'),w=document.getElementById('when');if(w)document.body.setAttribute('data-when',w.getClientRects().length?(Math.abs(w.getBoundingClientRect().bottom-q.getBoundingClientRect().bottom)<2?'line':'below'):'0');</script>"
 "Load `page` in headless Chrome at `?search`, return (visible event ids, ticked boxes, url, dom)."
 function browser_view(chrome,dir,page,search;size="1280,900")
  f=joinpath(dir,"b.html"); write(f,replace(page,"</body>"=>PROBE*"</body>"))
@@ -527,9 +527,19 @@ function browser_view(chrome,dir,page,search;size="1280,900")
  url=something(match(r"<body[^>]*data-url=\"([^\"]*)\"",dom),(nothing,""))[1]
  more=something(match(r"<body[^>]*data-more=\"([01])\"",dom),(nothing,""))[1]
  fcount=something(match(r"<body[^>]*data-fcount=\"([^\"]*)\"",dom),(nothing,""))[1]
- (vis=setdiff(vis,Set{String}()),hid,ticked,url=replace(url,"&amp;"=>"&"),more,fcount,dom)
+ whenpos=something(match(r"<body[^>]*data-when=\"([^\"]*)\"",dom),(nothing,""))[1]   # line: next to the search box
+ (vis=setdiff(vis,Set{String}()),hid,ticked,url=replace(url,"&amp;"=>"&"),more,fcount,whenpos,dom)
 end
 @testset "filters in a real browser" begin
+ # markup (no browser needed): search, time and sort share the top line with «Filter»; only the tags are folded
+ for (v,sel) in (("cards",["when","sort"]),("compact",["when"]),("week",String[]))
+  h=render_events_html(FILTER_EVENTS;view=v,site=true,today=Date(2035,3,1))
+  top=match(r"<div class=\"topline\">(.*?)</div><div class=\"more\" id=\"morefilters\">(.*?)</div></div></div>"s,h)
+  @test !isnothing(top) && occursin("id=\"q\"",top[1]) && occursin("id=\"filtertoggle\"",top[1])
+  @test all(x->occursin("id=\"$x\"",top[1]),sel) && occursin("class=\"selects\"",top[1])==!isempty(sel)
+  @test !occursin("<select",top[2]) && occursin("name=\"type\"",top[2])
+ end
+ @test occursin(".more{display:none}.filters.open .more{display:block}.ftoggle{display:inline-flex;",TangoKalender._CSS)   # folds on every width
  chrome=find_chrome()
  if isnothing(chrome)
   @info "No Chrome/Chromium found (set TANGO_CHROME) – skipping browser tests"
@@ -547,11 +557,14 @@ end
    r=browser_view(chrome,d,pages["week"],"?type=practica#uke-2035-10")                                  # the bug: rows stayed visible
    @test r.vis==Set(["b"]) && issubset(Set(["a","c","f"]),r.hid) && startswith(r.url,"?type=practica#uke-2035-10")
    r=browser_view(chrome,d,pages["cards"],"?type=class,festival"); @test r.vis==Set(["c","f"])
-   # phones: the filter block is folded away by default; the toggle shows how many filters are active
-   @test browser_view(chrome,d,pages["compact"],"").more=="1"                                            # desktop: always visible
-   r=browser_view(chrome,d,pages["compact"],"";size="390,844"); @test r.more=="0" && r.fcount==""
+   # the tags fold away behind «Filter» by default, which shows how many of the folded filters are active.
+   # Desktop: search and time on one line, only the tags fold. Phones: time folds away too.
+   r=browser_view(chrome,d,pages["compact"],""); @test r.more=="0" && r.whenpos=="line" && r.fcount==""
+   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all")
+   @test r.more=="0" && r.whenpos=="line" && r.fcount==" (2)" && r.vis==Set(["a","b","p"])               # time is visible: not counted
+   r=browser_view(chrome,d,pages["compact"],"";size="390,844"); @test r.more=="0" && r.whenpos=="0" && r.fcount==""
    r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all";size="390,844")
-   @test r.more=="0" && r.fcount==" (3)" && r.vis==Set(["a","b","p"])                                     # folded, but still filtering
+   @test r.more=="0" && r.whenpos=="0" && r.fcount==" (3)" && r.vis==Set(["a","b","p"])                  # folded, but still filtering
   end
  end
 end

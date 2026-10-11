@@ -5,3 +5,4 @@ app/Manifest.toml
 docs/build/
 docs/Manifest.toml
 docs/src/assets/tangoedit-demo.svg
+tmp/
