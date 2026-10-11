@@ -54,7 +54,7 @@ jobs:
             tar -czf "dist/tangoedit-$v-$PLATFORM.tar.gz" -C build tangoedit
           fi
           ls -l dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: tangoedit-${{ matrix.platform }}
           path: dist/*
