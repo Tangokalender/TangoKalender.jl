@@ -15,10 +15,12 @@ Usage:
   tangokalender templates [DIR]            write the GitHub issue forms for the site into DIR/.github/ISSUE_TEMPLATE/
   tangokalender edit TERM… [KEY=VALUE…]   find upcoming events matching all TERMs; list them, or set KEY=VALUE on all
                                            of them (tangokalender edit --help)
+  tangokalender repeat TERM… --every=RULE  copy an event to new dates: weekly, every N weeks/months, or on the Nth
+                                           (last) weekday of the month (tangokalender repeat --help)
 
 INPUT is an events directory or a single JSON array file. Paths are relative to the current directory.
 
-Options (all but edit):
+Options (all but edit and repeat):
   --site=FILE          the site's settings (default: site.toml in the current directory, if there is one)
 
 Options (build, site):
@@ -140,6 +142,7 @@ Returns 0 on success, 1 on validation errors, 2 on usage errors.
 function (@main)(args)
  args=String.(args)
  !isempty(args) && args[1]=="edit" && return edit_main(args[2:end])
+ !isempty(args) && args[1]=="repeat" && return repeat_main(args[2:end])
  !isempty(args) && args[1]=="init-site" && return _init_site_cli(args[2:end])
  any(in(("-h","--help")),args) && (print(USAGE); return 0)
  i=findfirst(startswith("--site="),args); file=isnothing(i) ? "" : popat!(args,i)[8:end]

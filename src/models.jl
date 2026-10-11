@@ -40,9 +40,11 @@ _last_sunday(y,m)=(d=lastdayofmonth(Date(y,m)); d-Day(mod(dayofweek(d),7)))
 UTC offset in Oslo at local time `t` (\"HH:MM\") on date `d`: CEST from 02:00 on the last Sunday of March
 until 03:00 (CEST) on the last Sunday of October.
 """
-function oslo_offset(d::Date,t::AbstractString="12:00")
- tm=Time(t); spring=_last_sunday(year(d),3); fall=_last_sunday(year(d),10)
- summer=(d>spring || (d==spring && tm>=Time(2))) && (d<fall || (d==fall && tm<Time(3)))
+oslo_offset(d::Date,t::AbstractString="12:00")=(tm=Time(t); _oslo_offset(d,hour(tm)))
+"`oslo_offset` from the hour alone (no `Time` string parsing, which can't be trimmed)."
+function _oslo_offset(d::Date,h::Integer)
+ spring=_last_sunday(year(d),3); fall=_last_sunday(year(d),10)
+ summer=(d>spring || (d==spring && h>=2)) && (d<fall || (d==fall && h<3))
  summer ? "+02:00" : "+01:00"
 end
 _stamp(d,t)=isnothing(t) || isempty(string(t)) ? Dates.format(d,"yyyy-mm-dd") : "$(Dates.format(d,"yyyy-mm-dd"))T$(t):00$(oslo_offset(d,string(t)))"
@@ -74,18 +76,19 @@ _rel(p::AbstractString,root::AbstractString)=(r=rstrip(root,'/')*"/"; startswith
 """
     _write_files!(updates, root; taken, check=validate_event_tree) -> (written, errors)
 
-Write `(old_file, new_file, text)` updates under `root` as one change. A file whose event moved (new date or id) is
-removed from its old place; a move onto an existing file is refused with `taken(path)` as the message. After writing,
-`check(root)` (`(file, message)` pairs) must find nothing, otherwise every file is restored and `written` is empty.
+Write `(old_file, new_file, text)` updates under `root` as one change. `old_file === nothing` creates a new file. A
+file whose event moved (new date or id) is removed from its old place; a move or new file onto an existing file is
+refused with `taken(path)` as the message. After writing, `check(root)` (`(file, message)` pairs) must find nothing,
+otherwise every file is restored (new ones removed) and `written` is empty.
 """
 function _write_files!(updates, root; taken::T=p->"$p already exists", check::C=validate_event_tree) where {T,C}
  errs=String[]; written=String[]
  for (old,new,_) in updates
-  normpath(new)!=normpath(old) && isfile(new) && (push!(errs,taken(_rel(new,root))); return (written,errs))
+  (isnothing(old) || normpath(new)!=normpath(old)) && isfile(new) && (push!(errs,taken(_rel(new,root))); return (written,errs))
  end
- backup=Dict(f=>read(f) for (f,_,_) in updates)
+ backup=Dict{String,Vector{UInt8}}(f=>read(f) for (f,_,_) in updates if !isnothing(f))
  for (old,new,text) in updates
-  normpath(new)==normpath(old) || rm(old)
+  isnothing(old) || normpath(new)==normpath(old) || rm(old)
   mkpath(dirname(new)); write(new,text); push!(written,new)
  end
  for (f,m) in check(root); push!(errs,"$f: $m"); end

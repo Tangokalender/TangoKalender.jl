@@ -979,6 +979,80 @@ end
   @test !isempty(TK.check_event_tree(d))
  end
 end
+@testset "repeat (tangokalender repeat)" begin
+ TK=TangoKalender
+ R(u,n;on=(0,0))=TK.Recurrence(u,n,on...)
+ ds(r,a;kw...)=first(TK.recurrence_dates(r,a;kw...))
+ thu=Date(2026,10,1)
+ @test ds(R(:week,1),thu;from=thu+Day(1),count=3)==[Date(2026,10,8),Date(2026,10,15),Date(2026,10,22)]
+ @test ds(R(:week,2),thu;from=thu+Day(1),until=Date(2026,11,12))==[Date(2026,10,15),Date(2026,10,29),Date(2026,11,12)]
+ @test ds(R(:week,2),thu;from=Date(2026,10,20),count=2)==[Date(2026,10,29),Date(2026,11,12)]   # --start keeps the phase
+ @test ds(R(:month,1),Date(2026,1,31);from=Date(2026,2,1),until=Date(2026,8,31))==[Date(2026,3,31),Date(2026,5,31),Date(2026,7,31),Date(2026,8,31)]
+ @test ds(R(:month,2),Date(2026,10,15);from=Date(2026,10,16),count=3)==[Date(2026,12,15),Date(2027,2,15),Date(2027,4,15)]
+ @test ds(R(:month,1;on=TK.parse_on("2nd-thursday")),thu;from=thu+Day(1),count=3)==[Date(2026,10,8),Date(2026,11,12),Date(2026,12,10)]
+ @test ds(R(:month,1;on=TK.parse_on("last-friday")),thu;from=thu+Day(1),count=3)==[Date(2026,10,30),Date(2026,11,27),Date(2026,12,25)]
+ @test ds(R(:month,1;on=TK.parse_on("2nd-last-sunday")),thu;from=thu+Day(1),count=2)==[Date(2026,10,18),Date(2026,11,22)]
+ @test ds(R(:month,1;on=TK.parse_on("5th-fri")),thu;from=thu+Day(1),until=Date(2027,1,31))==[Date(2026,10,30),Date(2027,1,29)]  # months without a 5th Friday
+ d,x=TK.recurrence_dates(R(:week,1),thu;from=thu+Day(1),count=11,except=TK.parse_except("2026-10-15,2026-12-21..2027-01-03"))
+ @test length(d)==11 && x==[Date(2026,10,15),Date(2026,12,24),Date(2026,12,31)] && last(d)==Date(2027,1,7) && isdisjoint(d,x)
+ @test TK.parse_every("2weeks")==(:week,2) && TK.parse_every("weekly")==(:week,1) && TK.parse_every("3-months")==(:month,3) && TK.parse_every("month")==(:month,1)
+ @test TK.parse_on("first-mon")==(1,1) && TK.parse_on("last-sunday")==(-1,7) && TK.parse_on("3rd-last-wednesday")==(-3,3)
+ for bad in ("0weeks","fortnight","week2"); @test_throws ArgumentError TK.parse_every(bad); end
+ for bad in ("6th-friday","friday","last-funday","2nd-first-friday"); @test_throws ArgumentError TK.parse_on(bad); end
+ @test_throws ArgumentError TK.parse_except("2027-01-03..2026-12-21")
+ @test_throws ArgumentError TK.parse_except("24.12.2026")
+ @test oslo_offset(Date(2026,10,25),"02:30")=="+02:00" && oslo_offset(Date(2026,10,25),"03:00")=="+01:00" && oslo_offset(Date(2026,3,29),"02:00")=="+02:00"
+ # copies: times across the clock change, end after midnight, reset fields
+ t=Event(id="m-2026-10-16",title="Milonga",types=["milonga"],series="m",start="2026-10-16T20:00:00+02:00",end_="2026-10-17T01:00:00+02:00",
+  status="cancelled",first_seen="2026-09-01",last_verified="2026-09-02",crawl_timestamp="2026-09-02T10:00:00+02:00",dj="DJ")
+ c=TK.repeat_event(t,Date(2026,10,30);today=Date(2026,10,10))
+ @test c.id=="m-2026-10-30" && c.start=="2026-10-30T20:00:00+01:00" && c.end_=="2026-10-31T01:00:00+01:00" && c.status=="scheduled"
+ @test c.first_seen=="2026-10-10" && isnothing(c.last_verified) && isnothing(c.crawl_timestamp) && c.dj=="DJ" && isempty(TK.check(c))
+ @test TK.repeat_event(Event(id="f",title="F",types=["festival"],start="2026-10-16",end_="2026-10-18"),Date(2027,1,8)).end_=="2027-01-10"
+ @test TK._repeat_series(Event(id="nico-2026-10-01")) == "nico"
+ # on a tree
+ obj(ps...)=JSON.Object{String,Any}(ps...)
+ ev(id,start;kw...)=obj("id"=>id,"title"=>"Kurs","types"=>["class"],"status"=>"scheduled","series"=>"kurs","start"=>start,"end"=>replace(start,"19:00"=>"21:00"),
+  "venue"=>obj("name"=>"Sal A","address"=>"Gate 1, Oslo","city"=>"Oslo"),"organizer"=>"Org","first_seen"=>"2026-09-01",(string(k)=>v for (k,v) in kw)...)
+ today=Date(2026,10,10)
+ mktempdir() do d
+  save_event_tree([ev("kurs-2026-10-01","2026-10-01T19:00:00+02:00"),ev("kurs-2026-10-15","2026-10-15T19:00:00+02:00"),ev("kurs-2026-10-29","2026-10-29T19:00:00+01:00"),
+   obj("id"=>"solo","title"=>"Solo","types"=>["milonga"],"start"=>"2026-10-16T20:00:00+02:00")],d)
+  snap()=Dict(f=>read(f,String) for f in TK.event_files(d)); before=snap()
+  r=repeat_events(["series:kurs"],TK.Recurrence(:week,1,0,0);root=d,count=3,today,dry_run=true)
+  @test r.template.id=="kurs-2026-10-29" && [e.id for (_,e) in r.events]==["kurs-2026-11-05","kurs-2026-11-12","kurs-2026-11-19"] && snap()==before
+  r=repeat_events(["series:kurs"],TK.Recurrence(:week,1,0,0);root=d,start=Date(2026,10,1),until=Date(2026,11,5),today)  # existing dates skipped
+  @test r.exists==[Date(2026,10,1),Date(2026,10,15),Date(2026,10,29)] && [e.id for (_,e) in r.events]==["kurs-2026-10-08","kurs-2026-10-22","kurs-2026-11-05"]
+  @test isempty(r.errors) && length(r.written)==3 && isempty(validate_event_tree(d)) && isempty(TK.check_event_tree(d))
+  x=JSON.parsefile(only(filter(contains("2026-10-08"),r.written)))
+  @test x["start"]=="2026-10-08T19:00:00+02:00" && x["end"]=="2026-10-08T21:00:00+02:00" && x["first_seen"]==string(today) && collect(keys(x))==collect(keys(JSON.parsefile(r.written[1])))
+  @test read(only(filter(contains("11-05"),r.written)),String)==TK.event_text(TK.repeat_event(r.template,Date(2026,11,5);today),r.keys)
+  @test_throws ArgumentError repeat_events(["kurs","solo"],TK.Recurrence(:week,1,0,0);root=d,count=1)     # nothing matches
+  @test_throws ArgumentError repeat_events(["2026-10-1"],TK.Recurrence(:week,1,0,0);root=d,count=1)       # two series
+  save_event_tree([ev("kurs-x-2026-10-20","2026-10-20T19:00:00+02:00";series="kurs-x")],d)
+  @test TK.repeat_template(["series:kurs"];root=d)[2].id=="kurs-2026-11-05"                                # exact series wins over kurs-x
+  @test_throws ArgumentError TK.repeat_template(["kurs"];root=d)
+  # CLI
+  out=IOBuffer(); err=IOBuffer(); before=snap()
+  @test TK.repeat_main(["solo","--root=$d","--every=month","--on=last-friday","--preview"];io=out,err,today)==0
+  s=String(take!(out)); @test occursin("6 events would be created (dry run",s) && occursin("solo-2026-10-30",s) && occursin("series=solo",s) && snap()==before
+  @test TK.edit_main(["repeat","series:kurs","--root=$d","--every=2weeks","--count=4","--except=2026-12-03..2026-12-10,2027-06-01","--dry-run"];io=out,err)==0
+  s=String(take!(out)); @test occursin("2026-12-03: skipped (--except)",s) && occursin("kurs-2026-12-17",s) && occursin("4 events would be created",s)
+  @test occursin("2027-06-01 matches no date",String(take!(err)))
+  @test TK.repeat_main(["solo","--root=$d","--every=week","--until=2026-10-30","dj=DJ X"];io=out,err=devnull,today)==0
+  @test occursin("2 events created",String(take!(out))) && JSON.parsefile(joinpath(d,"2026","10-october","2026-10-30-solo-2026-10-30.json"))["dj"]=="DJ X"
+  before=snap()
+  @test TK.repeat_main(["series:kurs","--root=$d","--every=week","--count=2","status=foo"];io=out,err=devnull)==1 && snap()==before
+  for bad in (["series:kurs","--root=$d"],["series:kurs","--root=$d","--every=fortnight"],["series:kurs","--root=$d","--every=week","--on=last-friday"],
+              ["series:kurs","--root=$d","--every=week","--count=2","--until=2027-01-01"],["series:kurs","--root=$d","--every=week","--except=2027-01-03..2026-12-21"],
+              ["2026-10-1","--root=$d","--every=week"],["--root=$d","--every=week"],["series:kurs","--root=$d","--every=week","--count=0"],
+              ["series:kurs","--root=$d","--every=week","nope=1"])
+   @test TK.repeat_main(bad;io=out,err=devnull)==2
+  end
+  @test snap()==before
+  @test TK.edit_main(["repeat","--help"];io=out)==0 && occursin("--every=week",String(take!(out)))
+ end
+end
 @testset "site config (one site per city)" begin
  TK=TangoKalender
  @test TK.load_site(SITE_TOML).city=="Oslo" && TK.site_city()=="Oslo"     # the tests run as the Oslo site

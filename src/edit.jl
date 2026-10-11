@@ -128,6 +128,7 @@ KEY=VALUE sets a key on every match. VALUE is read as JSON (250, null, ["A","B"]
          Nested keys use dots: venue.name=…, translations.en.title=….
 Without KEY=VALUE, the matches are only listed.
 A leading `edit` is ignored, so `tangoedit edit TERM…` and `tangoedit TERM…` are the same.
+`tangoedit repeat TERM… --every=…` copies an event to new dates instead (tangoedit repeat --help).
 
 Options:
   --preview         show each event as a card (after the edits, changes highlighted); writes nothing
@@ -143,9 +144,11 @@ Options:
 The `edit` subcommand. `render` turns lines of `(text, face)` segments into something printable: `styled_text`
 (StyledStrings) here, `ansi_text` in the trimmed `tangoedit` app, which also passes `tree_check=check_event_tree`.
 0 = done (also when nothing matches), 1 = an edited event is invalid (nothing written), 2 = usage error.
+A first argument `repeat` runs `repeat_main` with the rest.
 """
 function edit_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err::IO=stderr, tree_check::C=validate_event_tree,
                    render::R=styled_text) where {C,R}   # type parameters: specialise on the functions (needed for trimming)
+ !isempty(args) && args[1]=="repeat" && return repeat_main(args[2:end];io,err,tree_check,render)
  usage(msg::String)=(println(err,msg,"\n"); print(err,EDIT_USAGE); 2)
  terms=String[]; edits=String[]; root="events"; from=Dates.today(); until=nothing; dry=false; preview=false; past=false
  # a leading `edit` is the subcommand name, not a search term (`tangoedit edit …` like `tangokalender edit …`);

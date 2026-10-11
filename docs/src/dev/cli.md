@@ -17,3 +17,12 @@ print(TangoKalender.EDIT_USAGE)
 ```
 
 The stand-alone `tangoedit` is the same command; see [Bulk edits with tangoedit](@ref).
+
+## `repeat`
+
+```@example
+using TangoKalender
+print(TangoKalender.REPEAT_USAGE)
+```
+
+`tangoedit repeat …` is the same command.

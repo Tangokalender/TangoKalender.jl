@@ -46,6 +46,12 @@ TangoKalender.check_event_tree
 find_events
 edit_events
 TangoKalender.edit_main
+repeat_events
+TangoKalender.repeat_main
+TangoKalender.repeat_template
+TangoKalender.repeat_event
+TangoKalender.Recurrence
+TangoKalender.recurrence_dates
 event_card
 event_line
 TangoKalender.styled_text

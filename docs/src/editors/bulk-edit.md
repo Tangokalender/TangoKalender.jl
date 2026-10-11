@@ -49,7 +49,34 @@ tangoedit milonga-x-2026-11-20 teachers='["A", "B"]' dj=null
   while writing restores every file.
 - Changing `start` to another date moves the file; the id stays.
 
-## 4. Publish
+## 4. Create repeating dates
+
+`repeat` copies an existing event to new dates. Then you don't have to submit every date of a weekly milonga or a
+course again:
+
+```bash
+tangoedit repeat milonga-x-2026-11-20 --every=week --count=8                       # the next 8 Fridays
+tangoedit repeat series:onsdagsmilonga --every=2weeks --until=2027-06-30            # continues the series
+tangoedit repeat series:practica --every=month --on=last-friday                     # last Friday of each month
+tangoedit repeat series:nybegynnerkurs --every=week --count=10 --except=2026-12-21..2027-01-03 dj=null
+```
+
+- The search terms must find one event, or events of one series; then the latest one is copied.
+- `--every=week`, `2weeks`, `month`, `3months`, … Weekly rules keep the template's weekday. Monthly rules keep its
+  day of the month and skip months that don't have it (the 31st). With `--on=` they use a weekday instead:
+  `1st-monday`, `2nd-thursday`, `last-friday`, `2nd-last-sunday`.
+- `--count=N` makes N new events. `--until=DATE` stops at a date. Without either, the dates run 6 months from today.
+  `--start=DATE` sets the first possible date (the default is the day after the template).
+- `--except=` skips dates, such as a holiday break: `2026-12-24`, or `2026-12-21..2027-01-03` for a range. You can
+  list several, separated by commas. Skipped dates don't count towards `--count`, so a 10-week course with a break
+  still gets 10 dates.
+- Each copy keeps the template's times. Summer and winter time are handled, so 20:00 stays 20:00. The copy also
+  gets the id `<series>-YYYY-MM-DD`, status scheduled and `first_seen` today. `KEY=VALUE` changes every copy,
+  as in step 3.
+- Dates that already have the event are skipped, so running the same command again is safe. `--dry-run` and
+  `--preview` show the new events without writing anything.
+
+## 5. Publish
 
 Commit the changed files and open a pull request. The *Validate* check runs, and the site is rebuilt once it's
 merged.

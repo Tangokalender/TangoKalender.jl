@@ -47,7 +47,7 @@ and corrections go through [`apply_correction`](@ref TangoKalender.apply_correct
 
 ## Bulk edits and trimming
 
-`src/eventstruct.jl`, `src/edit.jl` and `src/render/term.jl` implement `tangokalender edit` on the [`Event`](@ref)
+`src/eventstruct.jl`, `src/edit.jl`, `src/repeat.jl` and `src/render/term.jl` implement `tangokalender edit` and `repeat` on the [`Event`](@ref)
 struct. That code is written so `juliac --trim` can compile it into the stand-alone `tangoedit`:
 - keys reach fields through generated `if` chains instead of lenses built from strings;
 - field types are passed as `Val`, and nested keys use one function per level instead of recursion;
