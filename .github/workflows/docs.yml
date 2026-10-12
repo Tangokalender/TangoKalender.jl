@@ -1,5 +1,6 @@
 # Builds the documentation (docs/, Documenter) on pull requests and publishes it to the gh-pages branch from main
-# (/dev/) and release tags (/stable/, /vX.Y.Z/): https://tangokalender.github.io/TangoKalender.jl/
+# (/dev/) and release tags (/stable/, /vX.Y.Z/): https://tango.oslo.no/TangoKalender.jl/ (the
+# organisation's Pages sites share the custom domain of tangokalender.github.io)
 name: Docs
 on:
   push:

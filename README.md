@@ -1,6 +1,6 @@
 # TangoKalender
 
-[![Dokumentasjon](https://img.shields.io/badge/docs-stable-blue.svg)](https://tangokalender.github.io/TangoKalender.jl/stable/)
+[![Dokumentasjon](https://img.shields.io/badge/docs-stable-blue.svg)](https://tango.oslo.no/TangoKalender.jl/stable/)
 [![Docs](https://github.com/Tangokalender/TangoKalender.jl/actions/workflows/docs.yml/badge.svg)](https://github.com/Tangokalender/TangoKalender.jl/actions/workflows/docs.yml)
 
 Julia-pakken som bygger tangokalendere: statiske, filtrerbare nettsider for argentinsk tango – milongaer, practicaer,
@@ -9,9 +9,9 @@ kartposisjoner (`venues.json`), innstillinger (`site.toml`) og innsendingsskjema
 
 | By | Nettside | Data |
 |---|---|---|
-| Oslo | https://tangokalender.github.io/ | https://github.com/Tangokalender/tangokalender.github.io |
+| Oslo | https://tango.oslo.no/ | https://github.com/Tangokalender/tangokalender.github.io |
 
-**Dokumentasjon** (engelsk) for byer, redaktører og utviklere: https://tangokalender.github.io/TangoKalender.jl/stable/
+**Dokumentasjon** (engelsk) for byer, redaktører og utviklere: https://tango.oslo.no/TangoKalender.jl/stable/
 
 Redaktører trenger bare skrivetilgang til sin bys data-repo. Koden endres her og tas i bruk av hver by ved å
 oppdatere versjonen i data-repoets `Project.toml`.
@@ -21,8 +21,11 @@ oppdatere versjonen i data-repoets `Project.toml`.
 ```bash
 julia -e 'using Pkg; Pkg.Apps.add(url="git@github.com:Tangokalender/TangoKalender.jl.git")'   # appen `tangokalender`
 tangokalender init-site bergen --slug=bergen --city=Bergen \
-  --site-url=https://tangokalender.github.io/bergen --repo-url=https://github.com/Tangokalender/bergen
+  --site-url=https://tango.bergen.no --repo-url=https://github.com/Tangokalender/bergen
 ```
+
+En ny by trenger sitt eget domene (her `tango.bergen.no`): uten det havner et repo i Tangokalender-organisasjonen under
+Oslos adresse (`https://tango.oslo.no/bergen/`). Se «Custom domain» i dokumentasjonen.
 
 `init-site` lager `site.toml`, tomme `events/` og `venues.json`, `Project.toml` (fester pakkeversjonen),
 arbeidsflyter som kaller de gjenbrukbare her (`site-validate`, `site-pages`, `site-intake`), Dependabot,

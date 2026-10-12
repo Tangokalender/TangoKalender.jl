@@ -17,7 +17,7 @@ end
 "The code repo (the package, the reusable workflows and the issue-form templates)."
 const CODE_REPO_URL="https://github.com/Tangokalender/TangoKalender.jl"
 "The package documentation (Documenter, from docs/; deployed by .github/workflows/docs.yml)."
-const DOCS_URL="https://tangokalender.github.io/TangoKalender.jl/stable/"
+const DOCS_URL="https://tango.oslo.no/TangoKalender.jl/stable/"
 "How data repos fetch the package (`[sources]` in their Project.toml): over SSH. The reusable workflows rewrite it to
 HTTPS on GitHub's runners, which have no SSH key (the code repo is public)."
 const CODE_REPO_GIT="git@github.com:Tangokalender/TangoKalender.jl.git"
@@ -145,7 +145,8 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
 
  ## One-time GitHub setup
  1. Settings → Pages → Source: **GitHub Actions**. A repo that is not `<owner>.github.io` is served under
-    `https://<owner>.github.io/<repo>/`; `site_url` in `site.toml` must match (or set a custom domain).
+    `https://<owner>.github.io/<repo>/`, or under the custom domain of the owner's `<owner>.github.io` site if it has
+    one; `site_url` in `site.toml` must match. A custom domain of its own is set under Settings → Pages.
  2. Settings → Actions → General → Workflow permissions: **Read and write**, and **Allow GitHub Actions to create and
     approve pull requests** (the intake bot opens PRs).
  3. Labels: `nytt-arrangement`, `rettelse` and `trenger-retting`.

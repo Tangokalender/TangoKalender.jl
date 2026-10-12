@@ -11,7 +11,7 @@ Settings for one city's site (`site.toml`):
 - `slug`: short id (`"oslo"`), `name`: site name in titles and feeds (`"Tangokalender | Oslo"`), `city`: the city
   (default `venue.city`, texts, geocoding).
 - `site_url`: where the site is published, without a trailing slash; may have a path
-  (`https://tangokalender.github.io/bergen`). Every absolute URL derives from it.
+  (`https://tango.oslo.no`, `https://example.github.io/bergen`). Every absolute URL derives from it.
 - `repo_url`: the data repo on GitHub; the issue forms (`…/issues/new?template=…`) are there.
 - `map_center` (lat, lon) and `map_zoom`: the map view when no event has a position.
 - `countrycodes` (and optional `viewbox`, "lon1,lat1,lon2,lat2"): Nominatim search limits for `geocode`.
@@ -68,7 +68,7 @@ site_url()=SITE[].site_url
 repo_url()=SITE[].repo_url
 site_name()=SITE[].name
 site_city()=SITE[].city
-"Host of the site URL (`tangokalender.github.io`), used in iCalendar UIDs."
+"Host of the site URL (`tango.oslo.no`), used in iCalendar UIDs."
 site_host()=(m=match(r"^https?://([^/]+)",site_url()); isnothing(m) ? site_url() : String(m[1]))
 "Where the page's «Legg til arrangement» link points: the new-event issue form."
 submit_form_url()=repo_url()*"/issues/new?template=nytt-arrangement.yml"

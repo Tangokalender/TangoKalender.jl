@@ -10,7 +10,7 @@
         "slug": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Short id of the site, e.g. oslo."},
         "name": {"type": "string", "minLength": 1, "description": "Site name in titles, feeds and previews, e.g. «Tangokalender | Oslo»."},
         "city": {"type": "string", "minLength": 1, "description": "The city: default venue city, texts and geocoding."},
-        "site_url": {"type": "string", "pattern": "^https?://[^/]+(/[^?#]*)?$", "description": "Where the site is published (may include a path), e.g. https://tangokalender.github.io/bergen."},
+        "site_url": {"type": "string", "pattern": "^https?://[^/]+(/[^?#]*)?$", "description": "Where the site is published (may include a path), e.g. https://tango.oslo.no or https://example.github.io/bergen."},
         "repo_url": {"type": "string", "pattern": "^https://github\\.com/[^/]+/[^/]+/?$", "description": "The data repo with the issue forms."},
         "og_image": {"type": "string", "minLength": 1, "description": "Link-preview image (1200×630 PNG), relative to site.toml. Default: the package's generic image."},
         "map": {

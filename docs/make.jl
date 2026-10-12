@@ -1,4 +1,4 @@
-# Builds the documentation (https://tangokalender.github.io/TangoKalender.jl/) with Documenter:
+# Builds the documentation (https://tango.oslo.no/TangoKalender.jl/) with Documenter:
 #   julia --project=docs -e 'using Pkg; Pkg.instantiate()'
 #   julia --project=docs docs/make.jl            # → docs/build/; deploys only on GitHub Actions
 using Documenter, TangoKalender
@@ -13,7 +13,7 @@ makedocs(
  authors="Lars Hellemo and contributors",
  repo=Remotes.GitHub("Tangokalender","TangoKalender.jl"),
  format=Documenter.HTML(prettyurls=get(ENV,"CI","")=="true",canonical=TK.DOCS_URL,edit_link="main",
-  footer="TangoKalender v$(pkgversion(TangoKalender)) · [Oslo](https://tangokalender.github.io/) · [GitHub](https://github.com/Tangokalender/TangoKalender.jl)"),
+  footer="TangoKalender v$(pkgversion(TangoKalender)) · [Oslo](https://tango.oslo.no/) · [GitHub](https://github.com/Tangokalender/TangoKalender.jl)"),
  checkdocs=:exports,
  doctest=true,
  linkcheck=false,   # GitHub rate-limits link checks from CI

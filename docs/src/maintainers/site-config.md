@@ -7,7 +7,7 @@ directory (or `--site=FILE`), and a wrong value stops the build with a message n
 slug = "oslo"
 name = "Tangokalender | Oslo"
 city = "Oslo"
-site_url = "https://tangokalender.github.io"
+site_url = "https://tango.oslo.no"
 repo_url = "https://github.com/Tangokalender/tangokalender.github.io"
 og_image = "assets/og-image.png"
 

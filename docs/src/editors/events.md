@@ -17,7 +17,7 @@ events/
   phone numbers or e-mail addresses.
 
 The schema, `schema/tango-event.schema.json`, is published on every site (e.g.
-<https://tangokalender.github.io/schema/tango-event.schema.json>). Add it as `"$schema"` in a file to get
+<https://tango.oslo.no/schema/tango-event.schema.json>). Add it as `"$schema"` in a file to get
 completion in your editor. `tangokalender validate events` checks every file, unique ids and file locations, and warns about two events of
 one series with the same start (usually one date entered twice).
 
