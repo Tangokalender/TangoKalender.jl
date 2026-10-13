@@ -1,6 +1,6 @@
 # TangoTUI (experimental)
 
-Documentation: [Interactive editor (experimental)](https://tango.oslo.no/TangoKalender.jl/dev/editors/tangotui/).
+Documentation: [Interactive editor (experimental)](https://tango.oslo.no/TangoKalender.jl/stable/editors/tangotui/).
 Experimental and Julia only; the screens are Norwegian for now.
 
 A full-screen editor for the events of a TangoKalender data repository, built on
