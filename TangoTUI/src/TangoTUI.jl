@@ -5,6 +5,7 @@ A full-screen editor for one event of a TangoKalender data repository, on Tachik
 their current values, a pick list where only some values are allowed, and a live preview card. Experimental, and
 Julia only: Tachikoma can't be trimmed, so this is not part of the `tangoedit` executable. In a data repository:
 
+    julia --project=PATH/TangoKalender.jl/TangoTUI -m TangoTUI [--all]              # search, then pick an event
     julia --project=PATH/TangoKalender.jl/TangoTUI -m TangoTUI edit TERM… [--all] [--root=events]
     julia --project=PATH/TangoKalender.jl/TangoTUI -m TangoTUI new [TERM…] [--root=events]
 
@@ -29,7 +30,7 @@ mutable struct Editor <: Model
  event::TK.Event
  cursor::Int
  offset::Int
- mode::Symbol                     # :browse, :text, :pick, :confirm, :choose
+ mode::Symbol                     # :search, :browse, :text, :pick, :confirm
  input::TextInput
  pick::Int
  ticked::Vector{Bool}
@@ -37,14 +38,31 @@ mutable struct Editor <: Model
  level::Symbol                    # :info, :ok, :error
  quit::Bool
  saved::Vector{String}
- matches::Vector{Tuple{String,TK.Event,Vector{String}}}   # :choose: the events to pick one from
+ # the event list (:search): every event under `root` (file, event, keys), their search texts, the indices that
+ # match `query` (upcoming only unless `past`), and whether the editor returns to the list (Esc) or quits
+ events::Vector{Tuple{String,TK.Event,Vector{String}}}
+ texts::Vector{String}
+ hits::Vector{Int}
+ query::TextInput
+ past::Bool
+ listoff::Int
+ listing::Bool
 end
-function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree,
-                matches=Tuple{String,TK.Event,Vector{String}}[])
- m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,isempty(matches) ? :browse : :choose,TextInput(text=""),1,Bool[],
-          "",:info,false,String[],matches)
+function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree)
+ m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,:browse,TextInput(text=""),1,Bool[],"",:info,false,String[],
+          Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false)
  isnothing(file) && _new_id!(m)
  m
+end
+"""
+    search_editor(; query="", past=false, root="events", today=today()) -> Editor
+
+The editor on its event list: every event under `root`, filtered as you type `query` (upcoming only unless `past`).
+"""
+function search_editor(; query::AbstractString="", past::Bool=false, root="events", today::Date=Dates.today(), tree_check=TK.validate_event_tree)
+ m=Editor(nothing,TK.new_event(;today),TK.new_event_keys();root,today,tree_check)
+ m.query=TextInput(text=String(query),focused=true); m.past=past; m.listing=true
+ _to_list!(m); m
 end
 should_quit(m::Editor)=m.quit
 _field(m::Editor)=m.fields[m.cursor]
@@ -58,12 +76,42 @@ function _load!(m::Editor,(file,e,ks))
  m.file=file; m.event=m.before=e; m.keys=ks; m.cursor=1; m.offset=0; m.mode=:browse
  _say!(m,"Velg et felt med ↑/↓ og trykk Enter for å endre det.")
 end
+"A copy of `t` on today's date as a new event, with the date field open (`new TERM…`, Ctrl-K in the list)."
+function _copy!(m::Editor,(f,t,ks))
+ e=TK.repeat_event(t,m.today;today=m.today); e=TK._put(e,Val(:last_verified),TK._ymd_str(m.today))
+ m.file=nothing; m.event=m.before=e; m.keys=TK._with_key(TK._with_key(ks,"first_seen"),"last_verified"); _new_id!(m)
+ m.cursor=findfirst(f->f.key=="date",m.fields); m.offset=0
+ m.input=TextInput(text=TK.field_text(e,m.fields[m.cursor]),focused=true); m.mode=:text
+ _say!(m,"Kopi av $(t.id): skriv den nye datoen og trykk Enter.")
+end
+function _blank!(m::Editor)
+ m.file=nothing; m.event=m.before=TK.new_event(;today=m.today); m.keys=TK.new_event_keys(); _new_id!(m)
+ m.cursor=1; m.offset=0; m.mode=:browse; _say!(m,"Nytt arrangement: fyll ut feltene og lagre med Ctrl-S.")
+end
+_upcoming(m::Editor,e::TK.Event)=TK._lastday(e)>=m.today
+"Filter the list by the query; keep the selected event if it is still there, else select the first upcoming one."
+function _filter!(m::Editor; select::Union{Nothing,String}=nothing)
+ cur=isnothing(select) && !isempty(m.hits) && m.pick<=length(m.hits) ? m.events[m.hits[m.pick]][1] : select
+ q=text(m.query)
+ m.hits=[i for (i,(_,e,_)) in enumerate(m.events) if (m.past || _upcoming(m,e)) && TK.search_matches(e,q;text=m.texts[i])]
+ i=isnothing(cur) ? nothing : findfirst(j->m.events[j][1]==cur,m.hits)
+ m.pick=something(i,findfirst(j->_upcoming(m,m.events[j][2]),m.hits),1)
+ nothing
+end
+"(Re)load every event (files may have moved on save) and show the list."
+function _to_list!(m::Editor; select::Union{Nothing,String}=nothing)
+ m.events=TK.find_events(String[];root=m.root,from=nothing); m.texts=[TK.event_search_text(e) for (_,e,_) in m.events]
+ m.mode=:search; _filter!(m;select)
+ _say!(m,isempty(m.saved) ? "Skriv for å søke; ↑/↓ og Enter åpner et arrangement." : "Lagret: $(_rel(m,m.saved[end]))",isempty(m.saved) ? :info : :ok)
+end
+"Leave the form: back to the list when the editor came from it, else quit."
+_leave!(m::Editor)=m.listing ? _to_list!(m;select=m.file) : (m.quit=true; nothing)
 
 # ── Keys ──
 _ctrl(ev::KeyEvent,c::Char)=ev.key===:ctrl && ev.char==c
 _ch(ev::KeyEvent,c::Char)=ev.key===:char && ev.char==c
 function update!(m::Editor, ev::KeyEvent)
- m.mode===:choose ? _choose_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
+ m.mode===:search ? _search_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
  m.mode===:confirm ? _confirm_key!(m,ev) : _browse_key!(m,ev)
  nothing
 end
@@ -81,7 +129,7 @@ function _browse_key!(m::Editor, ev::KeyEvent)
  elseif k===:delete || k===:backspace; _apply!(m,_field(m).kind in (:choice,:multi) ? String[] : "")
  elseif _ctrl(ev,'s'); _save!(m)
  elseif k===:escape || _ch(ev,'q') || k===:ctrl_c
-  _dirty(m) ? (m.mode=:confirm; _say!(m,"Ulagrede endringer: lagre (s), forkast (f) eller fortsett å redigere (Esc)?",:error)) : (m.quit=true)
+  _dirty(m) ? (m.mode=:confirm; _say!(m,"Ulagrede endringer: lagre (s), forkast (f) eller fortsett å redigere (Esc)?",:error)) : _leave!(m)
  end
 end
 function _begin_edit!(m::Editor)
@@ -124,16 +172,24 @@ function _pick_key!(m::Editor, ev::KeyEvent)
  end
 end
 function _confirm_key!(m::Editor, ev::KeyEvent)
- if _ch(ev,'s') || _ctrl(ev,'s'); _save!(m) && (m.quit=true)
- elseif _ch(ev,'f'); m.quit=true
+ if _ch(ev,'s') || _ctrl(ev,'s'); _save!(m) && _leave!(m)
+ elseif _ch(ev,'f'); _leave!(m)
  else m.mode=:browse; _say!(m,"Fortsett å redigere.") end
 end
-function _choose_key!(m::Editor, ev::KeyEvent)
- n=length(m.matches); k=ev.key
- if k===:up; m.pick=mod1(m.pick-1,n)
- elseif k===:down; m.pick=mod1(m.pick+1,n)
- elseif k===:enter; _load!(m,m.matches[m.pick])
- elseif k===:escape || _ch(ev,'q') || k===:ctrl_c; m.quit=true
+function _search_key!(m::Editor, ev::KeyEvent)
+ n=length(m.hits); k=ev.key; sel()=m.events[m.hits[m.pick]]
+ if k===:up; m.pick=max(1,m.pick-1)
+ elseif k===:down; m.pick=clamp(m.pick+1,1,max(1,n))
+ elseif k===:pageup; m.pick=max(1,m.pick-10)
+ elseif k===:pagedown; m.pick=clamp(m.pick+10,1,max(1,n))
+ elseif k===:enter; n>0 ? _load!(m,sel()) : _say!(m,"Ingen arrangementer passer til søket.",:error)
+ elseif _ctrl(ev,'a'); m.past=!m.past; _filter!(m); _say!(m,m.past ? "Viser også tidligere arrangementer." : "Viser bare kommende arrangementer.")
+ elseif _ctrl(ev,'n'); _blank!(m)
+ elseif _ctrl(ev,'k'); n>0 ? _copy!(m,sel()) : _say!(m,"Velg et arrangement å kopiere.",:error)
+ elseif k===:escape; isempty(text(m.query)) ? (m.quit=true) : (set_text!(m.query,""); _filter!(m))
+ elseif k===:ctrl_c; m.quit=true
+ else
+  q=text(m.query); handle_key!(m.query,ev); text(m.query)==q || _filter!(m)
  end
 end
 "Save (refused while `check` finds problems: the cursor goes to the first field that has one)."
@@ -166,11 +222,11 @@ function view(m::Editor, frame::Frame)
  buf=frame.buffer; area=frame.area
  rows=split_layout(Layout(Vertical,[Fixed(1),Fill(),Fixed(3)]),area)
  length(rows)<3 && return
- head=m.mode===:choose ? "tangoedit · velg arrangement ($(length(m.matches)) treff)" :
+ head=m.mode===:search ? "tangoedit · finn et arrangement" :
   _isnew(m) ? "tangoedit · nytt arrangement · $(m.event.id)" : "tangoedit · $(_rel(m,m.file))"
  set_string!(buf,rows[1].x,rows[1].y,_short(head,rows[1].width),tstyle(:title,bold=true))
- if m.mode===:choose
-  _view_matches(m,rows[2],buf)
+ if m.mode===:search
+  _view_list(m,rows[2],buf)
  else
   body=rows[2]
   wide=body.width>=110
@@ -233,28 +289,40 @@ function _view_pick(m::Editor, under::Rect, buf::Buffer)
   set_string!(buf,r.x+2,r.y+i,(i==m.pick ? "› " : "  ")*box*l,i==m.pick ? tstyle(:accent,bold=true) : tstyle(:text),r)
  end
 end
-function _view_matches(m::Editor, rect::Rect, buf::Buffer)
- blk=Block(title="Flere arrangementer passer – velg ett"); render(blk,rect,buf); r=inner_area(blk,rect)
- off=max(0,m.pick-r.height)
- for (i,(_,e,_)) in enumerate(m.matches)
-  y=r.y+i-1-off; (y<r.y || y>bottom(r)) && continue
-  segs=TK.line_segs(e;width=r.width-2); x=r.x+2
-  set_string!(buf,r.x,y,i==m.pick ? "›" : " ",tstyle(:accent,bold=true),r)
-  for (t,face) in segs; set_string!(buf,x,y,t,i==m.pick && face===:bold ? tstyle(:accent,bold=true) : _style(face),r); x+=textwidth(t); end
+function _view_list(m::Editor, rect::Rect, buf::Buffer)
+ rect.height<3 && return
+ set_string!(buf,rect.x,rect.y,"Søk: ",tstyle(:accent,bold=true))
+ cnt="$(length(m.hits)) av $(count(e->m.past || _upcoming(m,e[2]),m.events)) $(m.past ? "(alle, også tidligere)" : "kommende")"
+ cx=right(rect)-textwidth(cnt)+1
+ render(m.query,Rect(rect.x+5,rect.y,max(1,cx-rect.x-6),1),buf)
+ set_string!(buf,cx,rect.y,cnt,tstyle(:text_dim))
+ lr=Rect(rect.x,rect.y+1,rect.width,rect.height-1)
+ blk=Block(title=isempty(text(m.query)) ? "Arrangementer" : "Treff",border_style=tstyle(:border_focus)); render(blk,lr,buf); r=inner_area(blk,lr)
+ r.height<=0 && return
+ isempty(m.hits) && (set_string!(buf,r.x+2,r.y,"Ingen treff. Esc tømmer søket$(m.past ? "" : ", Ctrl-A tar med tidligere arrangementer").",tstyle(:text_dim),r); return)
+ m.listoff=clamp(m.listoff,max(0,m.pick-r.height),m.pick-1)
+ for (row,i) in enumerate(m.hits)
+  y=r.y+row-1-m.listoff; (y<r.y || y>bottom(r)) && continue
+  e=m.events[i][2]; cur=row==m.pick; x=r.x+2
+  set_string!(buf,r.x,y,cur ? "›" : " ",tstyle(:accent,bold=true),r)
+  for (t,face) in TK.line_segs(e;width=r.width-2)
+   st=cur && face===:bold ? tstyle(:accent,bold=true) : !_upcoming(m,e) && face!==:tangokalender_cancelled ? tstyle(:text_dim) : _style(face)
+   set_string!(buf,x,y,t,st,r); x+=textwidth(t)
+  end
  end
 end
 function _view_footer(m::Editor, rect::Rect, buf::Buffer)
  x=rect.x; w=rect.width
- help=m.mode===:choose ? "" : _field(m).help
+ help=m.mode===:search ? "Alle ordene må passe: tittel, sted, arrangør, DJ, lærer, dato, ukedag, id, serie … («type:class», «venue:sentralen» søker i ett felt)." : _field(m).help
  set_string!(buf,x,rect.y,_short(help,w),tstyle(:text_dim))
  st=m.level===:error ? tstyle(:error,bold=true) : m.level===:ok ? tstyle(:success,bold=true) : tstyle(:text)
  set_string!(buf,x,rect.y+1,_short(m.message,w),st)
- keys=m.mode===:choose ? "↑/↓ velg · Enter åpne · Esc avslutt" :
+ keys=m.mode===:search ? "↑/↓ velg · Enter åpne · Ctrl-A $(m.past ? "bare kommende" : "også tidligere") · Ctrl-N nytt · Ctrl-K kopier · Esc $(isempty(text(m.query)) ? "avslutt" : "tøm søket")" :
   m.mode===:text ? "Enter lagre feltet · Tab neste · Esc avbryt" :
   m.mode===:pick ? "↑/↓ flytt · Mellomrom kryss av · Enter velg · Esc avbryt" :
-  m.mode===:confirm ? "s lagre og avslutt · f forkast · Esc fortsett" :
-  "↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc avslutt"
- render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(_isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
+  m.mode===:confirm ? "s lagre · f forkast · Esc fortsett" :
+  "↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
+ render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(m.mode!==:search && _isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
 end
 
 # ── Command line ──
@@ -262,15 +330,18 @@ const USAGE="""
 TangoTUI - edit one event, or add one, in a full-screen form (experimental; Julia only)
 
 Usage (in a data repository):
+  julia --project=PATH/TangoTUI -m TangoTUI [--all] [--root=events]        # search the events, pick one
   julia --project=PATH/TangoTUI -m TangoTUI [edit] TERM… [--all] [--root=events]
   julia --project=PATH/TangoTUI -m TangoTUI new [TERM…] [--root=events]
 
-edit   finds upcoming events as `tangoedit` does (TERM, KEY:TEXT); several matches: pick one.
-new    a blank form; with TERM…, a copy of the matching event (the latest of its series) on a new date.
---all  include past events.
+(none)  a list of the upcoming events: type to search (every word must match, as on the web page), ↑/↓ and
+        Enter to open one. Ctrl-A also shows past events, Ctrl-N starts a new event, Ctrl-K copies the selected.
+edit    the event that matches TERM… (as `tangoedit`: TERM, KEY:TEXT); several or none: the list, searching TERM….
+new     a blank form; with TERM…, a copy of the matching event (the latest of its series) on a new date.
+--all   include past events.
 
-Keys: ↑/↓ choose a field, Enter edit it (a pick list where only some values are allowed), Del clear it,
-Ctrl-S save, Esc quit. Saving writes the file (moved if the date changed); commit it with git afterwards.
+In the form: ↑/↓ choose a field, Enter edit it (a pick list where only some values are allowed), Del clear it,
+Ctrl-S save, Esc back to the list. Saving writes the file (moved if the date changed); commit it with git afterwards.
 """
 function (@main)(args::Vector{String})
  site=try TK._cli_site("") catch err
@@ -281,7 +352,7 @@ end
 function _run(args::Vector{String}; today::Date=Dates.today())
  cmd="edit"; root="events"; past=false; terms=String[]
  for (i,a) in enumerate(args)
-  if i==1 && a in ("edit","new"); cmd=a
+  if i==1 && a in ("edit","new","search"); cmd=a
   elseif a in ("-h","--help"); print(USAGE); return 0
   elseif startswith(a,"--root="); root=a[8:end]
   elseif a=="--all"; past=true
@@ -302,22 +373,19 @@ end
     editor_for(cmd, terms; root="events", past=false, today=today()) -> Editor
 
 The editor for `new` (blank, or a copy of `repeat_template(terms)` on `today`, with the date field open) or `edit`
-(the one matching event, or a list to pick from). Throws `ArgumentError` when nothing matches.
+(the one matching event; with several or none, or without terms, the list searching `terms`). Esc in an opened
+event goes back to the list. Throws `ArgumentError` when `new TERM…` matches nothing.
 """
 function editor_for(cmd::AbstractString, terms::Vector{String}; root="events", past=false, today::Date=Dates.today(),
                     tree_check=TK.validate_event_tree)
  if cmd=="new"
   isempty(terms) && return Editor(nothing,TK.new_event(;today),TK.new_event_keys();root,today,tree_check)
-  f,t,ks=TK.repeat_template(terms;root)
-  e=TK.repeat_event(t,today;today); e=TK._put(e,Val(:last_verified),TK._ymd_str(today))
-  m=Editor(nothing,e,TK._with_key(TK._with_key(ks,"first_seen"),"last_verified");root,today,tree_check)
-  m.cursor=findfirst(f->f.key=="date",m.fields); m.input=TextInput(text=TK.field_text(e,m.fields[m.cursor]),focused=true); m.mode=:text
-  _say!(m,"Kopi av $(t.id): skriv den nye datoen og trykk Enter.")
+  m=Editor(nothing,TK.new_event(;today),TK.new_event_keys();root,today,tree_check)
+  _copy!(m,TK.repeat_template(terms;root))
   return m
  end
- found=TK.find_events(terms;root,from=past ? nothing : today)
- isempty(found) && throw(ArgumentError("Ingen arrangementer passer til $(join(terms," "))$(past ? "" : " (bare kommende; --all tar med tidligere)")."))
- length(found)==1 && return (m=Editor(found[1]...;root,today,tree_check); _load!(m,found[1]); m)
- Editor(found[1]...;root,today,tree_check,matches=found)
+ m=search_editor(;query=join(terms," "),past,root,today,tree_check)
+ isempty(terms) || length(m.hits)!=1 || _load!(m,m.events[m.hits[1]])
+ m
 end
 end

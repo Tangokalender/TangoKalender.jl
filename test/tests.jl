@@ -125,6 +125,13 @@ end
   @test_throws ArgumentError set(e,k,s); try set(e,k,s) catch err; @test occursin(msg,err.msg) && startswith(err.msg,"«") end
  end
  @test TK.field_problems(set(e,"link","ftp://x"),F("link"))==["\"ftp://x\" must start with http:// or https://"] && isempty(TK.field_problems(e,F("link")))
+ s=TK.Event(id="otra-2026-11-02",title="Otra Milonga",types=["class","milonga"],status="cancelled",series="otra",start="2026-11-02T20:00:00+01:00",
+  venue=TK.Venue(name="Sentralen",address="Øvre Slottsgate 3"),organizer="Otra",dj="Kristin",teachers=["Ana"],description="Klasse kl. 19.",
+  translations=TK.Translations(en=TK.Translation(title="Otra night")))
+ st=TK.event_search_text(s)
+ @test all(w->occursin(w,st),["otra milonga","sentralen","øvre slottsgate","kristin","ana","klasse","otra night","2026-11-02","mandag 2. november","kurs","class","avlyst"])
+ q(x)=TK.search_matches(s,x)
+ @test q("") && q("OTRA sentralen") && q("night mandag") && !q("otra tirsdag") && q("type:class") && !q("type:practica") && q("series:otra") && q("venue:sentral")
  n=TK._with_site(()->TK.new_event(today=Date(2026,10,13)),TK.load_site(joinpath(FIXTURE_SITE,"site.toml")))
  @test n.venue.city=="Oslo" && n.status=="scheduled" && n.first_seen=="2026-10-13" && n.confidence==1.0
  n=set(set(set(n,"title","Practica på Majorstuen"),"types",["practica"]),"start_time","12:00")

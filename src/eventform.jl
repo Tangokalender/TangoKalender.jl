@@ -216,3 +216,35 @@ function save_form_event(file::Union{Nothing,AbstractString}, e::Event, keys_::V
  written,errs=_write_files!([(file,new,event_text(e,keys_))],root;taken=p->"$p finnes allerede (samme id og dato)",check=tree_check)
  isempty(errs) ? (new,String[]) : (nothing,errs)
 end
+"""
+    event_search_text(e) -> String
+
+What the editors' event list searches, in lower case: like the web page's search box (title in every language,
+venue and address, organiser, DJ, description, «avlyst») plus what editors know events by: teachers, types, id,
+series, the date and the weekday («lørdag 24. oktober», `2026-10-24`).
+"""
+function event_search_text(e::Event)
+ parts=String[e.id,e.title,something(e.series,""),e.start,something(e.organizer,""),something(e.dj,""),
+  join(something(e.teachers,String[])," "),something(e.description,""),_searchtext(e.venue),join(e.types," "),join(_type_label.(e.types)," ")]
+ d=_ymd(e.start); isnothing(d) || push!(parts,_longday(d))
+ t=e.translations
+ if !isnothing(t)
+  for x in (t.nb,t.en,t.es); isnothing(x) || append!(parts,(something(x.title,""),something(x.description,""))); end
+ end
+ e.status=="cancelled" && push!(parts,"avlyst cancelled")
+ lowercase(join(parts," "))
+end
+"""
+    search_matches(e, query; text=event_search_text(e)) -> Bool
+
+Whether `e` matches every word of `query` (ignoring case): a plain word anywhere in `event_search_text`, a
+`key:text` word in that key only, as `tangoedit`'s search terms (`type:class`, `venue:sentralen`, `series:otra`).
+An empty query matches everything.
+"""
+function search_matches(e::Event, query::AbstractString; text::AbstractString=event_search_text(e))
+ for w in split(lowercase(query))
+  t=SearchTerm(w)
+  (isnothing(t.key) ? occursin(t.text,text) : matches(e,t)) || return false
+ end
+ true
+end

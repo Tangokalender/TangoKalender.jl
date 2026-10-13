@@ -79,15 +79,41 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   c.input=TextInput(text="2028-05-20",focused=true); keys!(c,:enter)
   @test c.event.id=="kristiania-tango-festival-2027-2028-05-20" && c.event.series=="kristiania-tango-festival-2027"
  end
- @testset "several matches: pick one; quitting with changes asks first" begin
-  root=tree(); m=TangoTUI.editor_for("edit",["series:kristiania-tango-festival-2027"];root,today=TODAY)
-  @test m.mode===:choose && length(m.matches)>1 && has(m,"velg ett")
-  keys!(m,:down,:enter); @test m.mode===:browse && m.event.id==m.matches[2][2].id
+ @testset "search list: type to filter, ↑/↓ and Enter to open, Esc back" begin
+  root=tree(); m=TangoTUI.search_editor(;root,today=TODAY)
+  up=count(x->TK._lastday(x[2])>=TODAY,m.events)
+  @test m.mode===:search && length(m.hits)==up && has(m,"Søk:") && has(m,"$up av $up kommende")
+  @test all(i->TK._lastday(m.events[i][2])>=TODAY,m.hits) && issorted([m.events[i][2].start for i in m.hits])
+  keys!(m,"kristiania show")                                         # every word must match, as on the web page
+  @test !isempty(m.hits) && all(i->occursin("show",m.texts[i]) && occursin("kristiania",m.texts[i]),m.hits) && has(m,"Milonga med show")
+  @test any(i->!occursin("show",lowercase(m.events[i][2].title)),m.hits)   # the description counts, as on the web page
+  keys!(m,:escape); @test isempty(text(m.query)) && length(m.hits)==up && !m.quit   # first Esc clears the search
+  keys!(m,"type:festival"); @test !isempty(m.hits) && all(i->"festival" in m.events[i][2].types,m.hits)
+  keys!(m,:escape,"lørdag sentralen"); @test !isempty(m.hits) && all(i->dayofweek(TK._ymd(m.events[i][2].start))==6,m.hits)
+  keys!(m,:escape,:ctrl=>'a'); @test m.past && length(m.hits)==length(m.events) && has(m,"også tidligere")
+  @test m.events[m.hits[m.pick]][2].start>=string(TODAY)            # the selection starts at today, not in the past
+  keys!(m,:ctrl=>'a',"ktf-milonga-2027-05-2"); n=length(m.hits); @test n>1
+  keys!(m,:down,:enter); e=m.events[m.hits[2]]
+  @test m.mode===:browse && m.file==e[1] && has(m,"Esc tilbake til listen")
   keys!(to!(m,"dj"),:enter,"DJ Test",:enter,:escape)
   @test m.mode===:confirm && !m.quit
-  keys!(m,:escape); @test m.mode===:browse
-  keys!(m,:escape,"f"); @test Tachikoma.should_quit(m) && m.saved==String[]   # what the app loop asks
-  @test_throws ArgumentError TangoTUI.editor_for("edit",["finnes-ikke"];root,today=TODAY)
+  keys!(m,"s"); @test m.mode===:search && m.saved==[e[1]] && m.events[m.hits[m.pick]][1]==e[1] && has(m,"Lagret: ")
+  @test m.events[m.hits[m.pick]][2].dj=="DJ Test" && text(m.query)=="ktf-milonga-2027-05-2"   # reloaded, search kept
+  keys!(m,:enter,:escape); @test m.mode===:search                   # unchanged: straight back
+  keys!(m,:escape,:escape); @test Tachikoma.should_quit(m)
+ end
+ @testset "search list: new and copy; edit TERM opens the one match" begin
+  root=tree(); m=TangoTUI.search_editor(;root,today=TODAY)
+  keys!(m,:ctrl=>'n'); @test m.mode===:browse && TangoTUI._isnew(m) && isempty(m.event.title)
+  keys!(m,:escape); @test m.mode===:search                         # nothing typed: back without asking
+  keys!(m,"ktf-milonga-2027-05-22",:ctrl=>'k')
+  @test m.mode===:text && TangoTUI._isnew(m) && m.fields[m.cursor].key=="date" && occursin("Kopi av ktf-milonga-2027-05-22",m.message)
+  o=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root,today=TODAY)
+  @test o.mode===:browse && o.listing && endswith(o.file,"2027-05-22-ktf-milonga-2027-05-22.json")
+  keys!(o,:escape); @test o.mode===:search && text(o.query)=="ktf-milonga-2027-05-22" && length(o.hits)==1
+  z=TangoTUI.editor_for("edit",["finnes-ikke"];root,today=TODAY)
+  @test z.mode===:search && isempty(z.hits) && has(z,"Ingen treff")
+  @test_throws ArgumentError TangoTUI.editor_for("new",["finnes-ikke"];root,today=TODAY)
  end
  @testset "relative --root, as in a data repository" begin
   cd(dirname(tree())) do
