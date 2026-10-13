@@ -1,5 +1,8 @@
 # TangoTUI (experimental)
 
+Documentation: [Interactive editor (experimental)](https://tango.oslo.no/TangoKalender.jl/dev/editors/tangotui/).
+Experimental and Julia only; the screens are Norwegian for now.
+
 A full-screen editor for the events of a TangoKalender data repository, built on
 [Tachikoma.jl](https://github.com/kahliburke/Tachikoma.jl). It starts on a list of the upcoming events: type to search, as on
 the web page, then pick one with ↑/↓ and Enter. In the form, every field is on the left with its current value; on the right, a

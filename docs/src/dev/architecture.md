@@ -55,3 +55,22 @@ struct. That code is written so `juliac --trim` can compile it into the stand-al
 - terminal output goes through [`TangoKalender.ansi_text`](@ref) instead of StyledStrings.
 
 Keep it that way and run `bin/build_tangoedit.sh` after changing that path.
+
+## The event form and TangoTUI (experimental)
+
+`src/eventform.jl` is the form behind interactive editors, independent of any terminal library:
+- `form_fields()` lists the fields in order, with Norwegian labels and help and the allowed values of choice fields;
+- `field_text` and `set_field` read and write a field as the text an editor types, through `set_path` (dates, times
+  with the Oslo offset, the end after midnight, video links, the other language);
+- `field_problems` maps `check` messages to fields;
+- `event_search_text` and `search_matches` are the list search;
+- `changed_fields`, `later_in_series`, `later_in_selection`, `split_by_organizer` (the guardrail: only the same
+  organiser) and `copy_fields` apply one change to later dates;
+- `save_form_event` writes one or several events at once, all or nothing.
+
+`TangoTUI/` is a separate package (its own `Project.toml`, TangoKalender by path, plus Tachikoma.jl) with the
+[full-screen editor](@ref "Interactive editor (experimental)") on that form. Tachikoma pulls in REPL and Pkg and can't
+be trimmed, so it stays out of TangoKalender's dependencies and out of `tangoedit`. Its tests drive the editor with
+key events and read the screen from Tachikoma's `TestBackend`; `bin/make_tui_demo.jl` uses the same screens for the
+animated demo (Tachikoma's `export_svg`). A trimmed interactive mode for `tangoedit` would reuse `eventform.jl` with a
+small terminal layer of its own (an earlier trim spike is on the `experimental/interactive-tangoedit` branch).

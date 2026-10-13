@@ -11,6 +11,9 @@ editors with write access use the command line in a clone of the data repository
 The programs aren't signed. On macOS, remove the quarantine once with `xattr -dr com.apple.quarantine tangoedit`; on
 Windows, SmartScreen may warn («More info» → «Run anyway»).
 
+To edit one event at a time in a form, finding it by search, there is also an
+[interactive editor](@ref "Interactive editor (experimental)") (experimental, needs Julia).
+
 ![tangoedit cancelling a weekly milonga for November (invented events)](../assets/tangoedit-demo.svg)
 
 ## 1. Find the events
