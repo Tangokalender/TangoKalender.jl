@@ -101,6 +101,17 @@ end
  @test occursin("<aside>fredag 15. jan</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2027-01-15")]))
  @test occursin("<aside>fredag 9. okt · 17:00</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2026-10-09T17:00:00+02:00")]))
 end
+@testset "organiser in list rows" begin
+ E(;kw...)=Dict{String,Any}("title"=>"Nybegynnerkurs","types"=>["class"],"start"=>"2026-10-22T20:15:00+02:00",(string(k)=>v for (k,v) in kw)...)
+ org(e)=occursin("title=\"Arrangør\">",render_events_html([e];view="compact"))
+ h=render_events_html([E(organizer="Tango Puente")];view="compact")
+ @test occursin("<div class=\"facts\"><span class=\"f\" title=\"Arrangør\"><svg class=\"ic\" aria-hidden=\"true\" focusable=\"false\"><use href=\"#i-org\"/></svg><span class=\"sr\">Arrangør: </span>Tango Puente</span>",h)   # first fact
+ @test !org(E(title="Otra Milonga",organizer="Otra Milonga"))                                # already in the title
+ @test !org(E(title="Milonga",organizer="otra",translations=Dict("en"=>Dict("title"=>"Otra night"))))   # in a translated title
+ @test !org(E(organizer="Patrycja Jablonska",teachers=["Patrycja Jablonska"])) && !org(E(organizer="Dj X",dj="DJ X"))
+ @test !org(E()) && !org(E(organizer=nothing))
+ @test !occursin("Arrangør",render_events_html([E(organizer="Tango Puente")];view="week"))      # week cells stay compact
+end
 @testset "marathon type" begin
  m=[Dict("title"=>"Maraton M","types"=>["marathon"],"start"=>"2027-03-24","end"=>"2027-03-28")]
  for (l,lbl) in (("nb","Maraton"),("en","Marathon"),("es","Maratón"))

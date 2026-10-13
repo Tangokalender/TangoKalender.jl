@@ -37,6 +37,7 @@ llm_rules()="""Pages to use (open them if you can browse; if you cannot, work fr
 Rules:
 - Output ONLY a JSON value that conforms to this JSON Schema, with no explanation around it: $(submission_schema_url())
 - Required in every object: "title", "types", "start", "venue" (with "name" and "address"), "organizer" and "link". Everything else may be null or left out.
+- "title" is the event's own name, without the organiser, venue or date: "Nybegynnerkurs i tango", not "Nybegynnerkurs i tango (Tango Puente)". The organiser goes in "organizer" and is shown next to the title. Keep a name that is the event's real name, such as "Otra Milonga" or "Kristiania Tango Festival".
 - "organizer" is the group or person the source names as organiser. If none is named, use the page or profile that published the event (on Facebook: the event host). Ask the user if you cannot tell.
 - One JSON object per date. If the event repeats (e.g. "every Wednesday until 9 December"), output an array with one object per date and leave out dates the source says are cancelled. If no end date is given, include the next 4 dates.
 - "start" and "end" are $(site_city()) local time: "YYYY-MM-DDTHH:MM", without a time zone. Use "YYYY-MM-DD" when no time is given (e.g. festivals). If the event ends after midnight, "end" has the next day's date. If the year is not stated, use the next upcoming occurrence of that date.
