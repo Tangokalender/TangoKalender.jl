@@ -1,0 +1,21 @@
+# Experimental: tests TangoTUI (the Tachikoma editor in TangoTUI/, Julia only) on experimental branches and on demand.
+# The form logic it uses lives in the package (src/eventform.jl), so package changes run it too.
+name: TangoTUI (experimental)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['experimental/**']
+    paths: ['TangoTUI/**', 'src/**', 'Project.toml', '.github/workflows/tangotui.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Test
+        run: julia --project=TangoTUI -e 'using Pkg; Pkg.instantiate(); Pkg.test()'

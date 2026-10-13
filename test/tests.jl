@@ -101,6 +101,43 @@ end
  @test occursin("<aside>fredag 15. jan</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2027-01-15")]))
  @test occursin("<aside>fredag 9. okt · 17:00</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2026-10-09T17:00:00+02:00")]))
 end
+@testset "event form (TangoTUI)" begin
+ TK=TangoKalender; F(k)=only(filter(f->f.key==k,TK.form_fields())); set(e,k,v)=TK.set_field(e,F(k),v); txt(e,k)=TK.field_text(e,F(k))
+ @test all(f->!isempty(f.label),TK.form_fields()) && allunique(f.key for f in TK.form_fields())
+ @test [v for (v,_) in F("types").choices]==TK.TYPE_ORDER && Set(v for (v,_) in F("music_style").choices)==Set(keys(TK._MUSIC))
+ e=TK.Event(id="x-2026-10-24",title="X",types=["milonga"],start="2026-10-24T20:00:00+02:00",end_="2026-10-25T01:00:00+02:00")
+ @test txt(e,"date")=="2026-10-24" && txt(e,"start_time")=="20:00" && txt(e,"end")=="01:00" && txt(e,"types")=="Milonga" && txt(e,"status")=="Planlagt"
+ m=set(e,"date","31.10.2026")                                                     # across the clock change: offsets follow
+ @test m.start=="2026-10-31T20:00:00+01:00" && m.end_=="2026-11-01T01:00:00+01:00" && txt(m,"end")=="01:00"
+ @test set(e,"start_time","21:30").end_=="2026-10-25T01:00:00+02:00"              # «ends 01:00» stays so
+ @test set(e,"end","24:00").end_=="2026-10-25T00:00:00+02:00" && set(e,"end","23:00").end_=="2026-10-24T23:00:00+02:00"
+ f=set(set(e,"start_time",""),"end","2026-10-26")                                 # a festival: whole days
+ @test f.start=="2026-10-24" && f.end_=="2026-10-26" && txt(f,"end")=="2026-10-26" && txt(f,"start_time")==""
+ @test set(e,"end","2026-10-26 18:00").end_=="2026-10-26T18:00:00+01:00" && txt(set(e,"end","2026-10-26 18:00"),"end")=="2026-10-26 18:00"
+ @test isnothing(set(e,"end","").end_) && set(e,"price_nok","250 kr").price_nok==250 && isnothing(set(set(e,"price_nok","250"),"price_nok","").price_nok)
+ @test set(e,"types",["milonga","class","nope"]).types==["class","milonga"] && set(e,"types","Kurs, milonga").types==["class","milonga"]
+ @test set(e,"status",["cancelled"]).status=="cancelled" && isnothing(set(e,"lang",["nb"]).lang) && set(e,"lang",["en"]).lang=="en"
+ @test set(e,"teachers","A, B ,").teachers==["A","B"] && set(e,"teachers","").teachers==String[]
+ v=set(e,"video","https://www.youtube.com/watch?v=7mY5BMxr_t0"); @test v.video.id=="7mY5BMxr_t0" && txt(v,"video")=="https://youtu.be/7mY5BMxr_t0"
+ t=set(e,"other_title","Milonga night"); @test t.translations.en.title=="Milonga night" && txt(t,"other_title")=="Milonga night"
+ @test isnothing(set(t,"other_title","").translations)                              # an empty translation is removed
+ for (k,s,msg) in (("date","32.13.2026","er ikke en dato"),("start_time","25:00","klokkeslett"),("price_nok","gratis","helt tall"),("video","https://x.no","YouTube"))
+  @test_throws ArgumentError set(e,k,s); try set(e,k,s) catch err; @test occursin(msg,err.msg) && startswith(err.msg,"«") end
+ end
+ @test TK.field_problems(set(e,"link","ftp://x"),F("link"))==["\"ftp://x\" must start with http:// or https://"] && isempty(TK.field_problems(e,F("link")))
+ n=TK._with_site(()->TK.new_event(today=Date(2026,10,13)),TK.load_site(joinpath(FIXTURE_SITE,"site.toml")))
+ @test n.venue.city=="Oslo" && n.status=="scheduled" && n.first_seen=="2026-10-13" && n.confidence==1.0
+ n=set(set(set(n,"title","Practica på Majorstuen"),"types",["practica"]),"start_time","12:00")
+ @test TK.form_id(n)=="practica-pa-majorstuen-2026-10-13" && TK.form_id(set(n,"series","ukepractica"))=="ukepractica-2026-10-13"
+ mktempdir() do d
+  cp(TREE,joinpath(d,"events")); root=joinpath(d,"events")
+  file,errs=TK.save_form_event(nothing,n,TK.new_event_keys();root,today=Date(2026,10,14))
+  @test isempty(errs) && endswith(file,"2026/10-october/2026-10-13-practica-pa-majorstuen-2026-10-13.json") && isempty(validate_event_tree(root))
+  @test TK.read_event(file)[1].last_verified=="2026-10-14" && !occursin("\$schema",read(file,String))
+  @test TK.save_form_event(nothing,n,TK.new_event_keys();root)[2]==["2026/10-october/2026-10-13-practica-pa-majorstuen-2026-10-13.json finnes allerede (samme id og dato)"]
+  @test TK.save_form_event(nothing,set(n,"types",String[]),TK.new_event_keys();root)[2]==["types: [] needs at least one type"]
+ end
+end
 @testset "organiser in list rows" begin
  E(;kw...)=Dict{String,Any}("title"=>"Nybegynnerkurs","types"=>["class"],"start"=>"2026-10-22T20:15:00+02:00",(string(k)=>v for (k,v) in kw)...)
  org(e)=occursin("title=\"Arrangør\">",render_events_html([e];view="compact"))
