@@ -28,7 +28,7 @@ body:
     id: tittel
     attributes:
       label: Tittel
-      description: Title
+      description: Arrangementets navn, uten arrangøren (den har eget felt) / The event's name, without the organiser
       placeholder: f.eks. Milonga Sentimental
     validations:
       required: true

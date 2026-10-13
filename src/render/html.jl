@@ -140,11 +140,24 @@ function _time_cell(e,d)
  isnothing(q) || !q[2] || _evening_end(dt,q[1],q[2])!=Date(dt) ? (length(_days(e))>1 ? _t("from",_hm(dt)) : _hm(dt)) : "$(_hm(dt))–$(_hm(q[1]))"
 end
 _first_sentence(s)=(t=strip(string(s)); m=match(r"^(.{20,180}?[.!?])(\s|$)",t); isnothing(m) ? (length(t)>180 ? first(t,177)*"…" : t) : m[1])
+"""
+The organiser for a list row, or "" when it adds nothing: it is already in the title (in any language: «Otra Milonga»,
+«Kristiania Tango Festival») or is the DJ or a teacher. Titles never carry the organiser (data rule), so this is
+where the list shows who runs an event.
+"""
+function _row_org(e)
+ org=strip(string(_val(e,"organizer",""))); isempty(org) && return ""
+ o=lowercase(org)
+ occursin(o,lowercase(_alltext(e,"title"))) && return ""
+ people=[string(_val(e,"dj",""));string.(something(_val(e,"teachers",Any[]),Any[]))]
+ any(p->lowercase(strip(p))==o,people) ? "" : String(org)
+end
 "One dense row (compact list and week view) for event `e` on day `d`."
 function _row(e,d; links=true, lead=false)
  days=_days(e); n=length(days); k=findfirst(==(d),days); cancelled=_val(e,"status","")=="cancelled"
  (vname,vaddr)=_venue(e)
  facts=String[]; fact(ic,label,v)=push!(facts,"<span class=\"f\" title=\"$label\">$(_icon(ic,label))$(_esc(v))</span>")
+ org=_row_org(e); isempty(org) || fact("org",_t("organizer"),org)
  p=_price(e); isempty(p) || fact("price",_t("price"),p)
  dj=string(_val(e,"dj","")); isempty(dj) || fact("dj","DJ",dj)
  t=join(something(_val(e,"teachers",Any[]),Any[]),", "); isempty(t) || fact("teachers",_t("teachers"),t)
