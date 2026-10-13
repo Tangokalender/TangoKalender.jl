@@ -132,7 +132,7 @@ end
 "The list line as segments (see `event_line`)."
 function line_segs(e::Event; width::Int=80)
  p=_parse_dt(e.start); d=_ymd(e.start)
- when=!isnothing(p) ? "$(_wd3(p[1])) $(_two(day(p[1]))).$(_two(month(p[1]))).$(_two(year(p[1])%100)) $(_hm(p[1]))" :
+ when=!isnothing(p) && p[2] ? "$(_wd3(p[1])) $(_two(day(p[1]))).$(_two(month(p[1]))).$(_two(year(p[1])%100)) $(_hm(p[1]))" :
   !isnothing(d) ? "$(_wd3(d)) $(_two(day(d))).$(_two(month(d))).$(_two(year(d)%100))" : e.start
  rest=max(width-20-16-4-textwidth(e.id),50)   # title and venue share what's left; long ids may wrap
  tw=(rest*2)÷3; vw=rest-tw
