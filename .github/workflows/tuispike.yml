@@ -1,0 +1,59 @@
+# Experimental: builds the terminal spike (app/tuispike/spike.jl) trimmed on Linux, macOS and Windows and checks that
+# it reads keys in raw mode (through a pseudo-terminal, Linux and macOS) and refuses a non-terminal. Windows has no pty
+# here, so its build is uploaded for a manual test in Windows Terminal and the old console. Only on experimental
+# branches and on demand.
+name: tui spike (experimental)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['experimental/**']
+    paths: ['app/tuispike/**', '.github/workflows/tuispike.yml']
+permissions:
+  contents: read
+jobs:
+  spike:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, platform: linux-x64, exe: spike}
+          - {os: macos-latest, platform: macos-arm64, exe: spike}
+          - {os: windows-latest, platform: windows-x64, exe: spike.exe}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      EXE: app/tuispike/build/bin/${{ matrix.exe }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Build (trimmed)
+        run: |
+          julia --project=app/tuispike -e 'using Pkg; isempty(Pkg.Registry.reachable_registries()) && Pkg.Registry.add("General"); Pkg.resolve(); Pkg.instantiate()'
+          julia --project=app/tuispike -e 'using JuliaC; JuliaC.main(ARGS)' -- \
+            --output-exe spike --bundle app/tuispike/build --trim=safe --experimental --project=app/tuispike app/tuispike/spike.jl
+          du -sh app/tuispike/build
+      - name: Not a terminal → exit 2
+        run: |
+          set +e; "$EXE" < /dev/null; code=$?; set -e
+          echo "exit $code"; test "$code" = 2
+      - name: Keys in raw mode (pty)
+        if: runner.os != 'Windows'
+        run: |
+          out=$(python3 -I app/tuispike/ptydrive.py "$EXE" '\x1b[A' x 'æ' q)
+          echo "$out"
+          echo "$out" | grep -q "bytes: 27 91 65 120 195 166"
+          echo "$out" | grep -q "restored: True"
+      - name: Package
+        if: runner.os == 'Windows'
+        run: 7z a -tzip spike-windows-x64.zip ./app/tuispike/build > /dev/null
+      - uses: actions/upload-artifact@v7
+        if: runner.os == 'Windows'
+        with:
+          name: tuispike-windows-x64
+          path: spike-windows-x64.zip
+          retention-days: 14
