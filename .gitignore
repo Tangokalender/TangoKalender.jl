@@ -2,6 +2,7 @@ public/
 _site/
 build/
 app/Manifest.toml
+TangoTUI/Manifest.toml
 docs/build/
 docs/Manifest.toml
 docs/src/assets/tangoedit-demo.svg

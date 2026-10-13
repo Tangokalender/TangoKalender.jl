@@ -27,6 +27,6 @@ version by moving the pin in its `Project.toml` (see [Workflows and upgrades](@r
 
 - **Starting or running a city:** [Start a new city](@ref), [`site.toml`](@ref site-config), [Workflows and upgrades](@ref).
 - **Editing events:** [Events](@ref events) (the file format), [Submissions and review](@ref), [Bulk edits with tangoedit](@ref),
-  [Venues and maps](@ref).
+  [Interactive editor (experimental)](@ref), [Venues and maps](@ref).
 - **Working on the code:** [Architecture](@ref), [Command line](@ref), [API reference](@ref),
   [Development and releases](@ref).

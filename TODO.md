@@ -28,3 +28,14 @@ entered in Norwegian or English. Spanish pages show English text when there is a
 The schema already accepts `translations.es`; offering it means a «Español» option in «Tekstspråk» (`_parse_lang`,
 the issue forms) and «andre språk» fields that can hold more than one language. Also worth considering: a native
 speaker proofreading the Spanish (rioplatense) interface text.
+
+## TangoTUI in English and Spanish
+
+TangoTUI (`TangoTUI/`, experimental) is Norwegian only: the field labels and help in `form_fields()`
+(`src/eventform.jl`), and the messages, key hints and dialog texts in `TangoTUI/src/TangoTUI.jl`.
+- Move them into `_T` (`src/i18n.jl`) with nb/en/es, like the site's interface text (a test then checks that every
+  key has all three languages), and choose the language with `--lang=nb|en|es`, defaulting from the `LANG`
+  environment variable.
+- `check` messages (`src/eventstruct.jl`) are English; show them in the chosen language too.
+- Make the demo per language (`bin/make_tui_demo.jl --lang=`, `tangotui-demo-en.svg` …) and use it on the docs page.
+- The docs page (`docs/src/editors/tangotui.md`) quotes Norwegian field names; update it to match.

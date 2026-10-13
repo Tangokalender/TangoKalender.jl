@@ -22,7 +22,8 @@ makedocs(
   "City maintainers"=>["Start a new city"=>"maintainers/new-city.md","site.toml"=>"maintainers/site-config.md",
    "Workflows and upgrades"=>"maintainers/workflows.md"],
   "Editors"=>["Events"=>"editors/events.md","Submissions and review"=>"editors/submissions.md",
-   "Bulk edits with tangoedit"=>"editors/bulk-edit.md","Venues and maps"=>"editors/venues.md"],
+   "Bulk edits with tangoedit"=>"editors/bulk-edit.md","Interactive editor (experimental)"=>"editors/tangotui.md",
+   "Venues and maps"=>"editors/venues.md"],
   "Developers"=>["Architecture"=>"dev/architecture.md","Command line"=>"dev/cli.md","API reference"=>"dev/api.md",
    "Development and releases"=>"dev/development.md"],
  ])
