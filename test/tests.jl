@@ -1152,6 +1152,20 @@ end
   c,w=mktemp() do p,io; c=redirect_stdout(()->redirect_stderr(()->TK.main(["validate",d,"--venues=$(joinpath(d,"nope.json"))"]),io),devnull); close(io); (c,read(p,String)) end
   @test c==0 && occursin(r"Warning: .*series \"kurs\" has 2 events starting 2026-12-06 19:00",w)
  end
+ # the latest of a series is a special (Sunday, another title): a note names a typical event to copy instead
+ mktempdir() do d
+  fri(day;title="Milonga Social")=obj("id"=>"ms-2026-$day","title"=>title,"types"=>["milonga"],"series"=>"ms","start"=>"2026-$(day)T20:00:00+01:00")
+  save_event_tree([fri("11-13"),fri("11-20";title="14 years Milonga Social"),fri("12-18"),fri("12-27";title="Christmas Milonga Social")],d)
+  r=repeat_events(["series:ms"],[Date(2026,12,4)];root=d,today,dry_run=true)
+  @test r.template.id=="ms-2026-12-27" && r.note=="Note: copying the latest event of the series, ms-2026-12-27 (Sunday, \"Christmas Milonga Social\"), "*
+   "but most of the series is Friday, \"Milonga Social\". To copy another event, give its id, e.g. repeat ms-2026-12-18 …"
+  @test repeat_events(["ms-2026-12-27"],[Date(2026,12,4)];root=d,today,dry_run=true).note==""        # chosen by id: no note
+  @test repeat_events(["series:ms"],[Date(2026,12,4)];root=d,today,dry_run=true,except=TK.parse_except("2026-12-04")).note!=""
+  out=IOBuffer(); err=IOBuffer()
+  @test TK.repeat_main(["series:ms","--root=$d","--on=2026-12-04","--dry-run"];io=out,err,today)==0 && occursin("e.g. repeat ms-2026-12-18",String(take!(err)))
+  @test TK.repeat_main(["ms-2026-12-18","--root=$d","--every=week","--count=1","--dry-run"];io=out,err,today)==0 && isempty(take!(err))
+  @test TK.template_note(TK.read_event(only(filter(contains("12-18"),TK.event_files(d))))[1],Event[])==""
+ end
 end
 @testset "site config (one site per city)" begin
  TK=TangoKalender

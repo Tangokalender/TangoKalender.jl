@@ -143,17 +143,19 @@ end
 The event to copy: the only event matching all `terms` (past ones included), or the latest one when all matches
 share one series, or the latest of the series a `series:` term names exactly. `ArgumentError` otherwise.
 """
-function repeat_template(terms; root::AbstractString="events")
+repeat_template(terms; root::AbstractString="events")=first(_repeat_template(terms;root))
+# (template, the series events it was chosen from as the latest; empty when the terms found just the template)
+function _repeat_template(terms; root::AbstractString="events")
  found=find_events(terms;root,from=nothing)
  isempty(found) && throw(ArgumentError("no event matches $(join(terms," "))"))
- length(found)==1 && return found[1]
+ length(found)==1 && return (found[1],Event[])
  ss=unique([x[2].series for x in found])
- length(ss)==1 && !isnothing(ss[1]) && return found[end]
+ length(ss)==1 && !isnothing(ss[1]) && return (found[end],Event[x[2] for x in found])
  for t in terms   # series:esa also matches esa-tandas; the series named exactly wins
   st=t isa SearchTerm ? t : SearchTerm(t)
   st.key=="series" || continue
   exact=filter(x->lowercase(something(x[2].series,""))==st.text,found)
-  isempty(exact) || return exact[end]
+  isempty(exact) || return (exact[end],Event[x[2] for x in exact])
  end
  ids=[x[2].id for x in found]
  throw(ArgumentError("$(length(found)) events from different series match $(join(terms," ")); use a narrower term or the id: "*
@@ -168,7 +170,8 @@ or from `start`, until `until`, or `count` new events; without either, until 6 m
 (`"key=value"`, see `set_path`) apply to every copy. Dates that already have the event (same id or file, or any event
 of the series that day) are skipped.
 Every copy must pass `check`; then the files are written unless `dry_run`, and `tree_check(root)` runs (rolling back
-on problems). Returns `(template, keys, events, exists, excepted, written, errors)`, `events` as `(file, event)`.
+on problems). Returns `(template, keys, events, exists, excepted, written, errors, note)`, `events` as
+`(file, event)`; `note` is `template_note(template, series)` when the latest of a series was copied.
 
     repeat_events(terms, dates::Vector{Date}; root="events", except=[], edits=[], today=today(), dry_run=false, …)
 
@@ -190,7 +193,8 @@ end
 const _NO_DATE=Date(0)
 function _repeat_events(terms, rule::Recurrence, ondates::Vector{Date}, root::String, count::Int, until::Date, start::Date, except::Vector{Tuple{Date,Date}},
                         es::Vector{Tuple{Vector{String},String}}, today::Date, dry_run::Bool, tree_check::C) where {C}
- _,t,ks=repeat_template(terms;root)
+ (_,t,ks),group=_repeat_template(terms;root)
+ note=template_note(t,group)
  anchor=something(_ymd(t.start),today)
  count==0 && until==_NO_DATE && (until=today+Month(6))
  from=start==_NO_DATE ? anchor+Day(1) : start
@@ -220,7 +224,32 @@ function _repeat_events(terms, rule::Recurrence, ondates::Vector{Date}, root::St
   ups=Tuple{Union{Nothing,String},String,String}[(nothing,f,event_text(e,keys_)) for (f,e) in out]
   written,errs=_write_files!(ups,root; check=tree_check)
  end
- (template=t,keys=keys_,events=out,exists,excepted,written,errors=errs)
+ (template=t,keys=keys_,events=out,exists,excepted,written,errors=errs,note)
+end
+const _WEEKDAY_EN=("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+_most(xs::Vector{T}) where {T}=(c=Dict{T,Int}(); for x in xs; c[x]=get(c,x,0)+1; end; m=maximum(values(c)); (c,m))
+"""
+    template_note(t, group) -> String
+
+A note for when the series' latest event `t`, picked as the template from `group` (its series), isn't like the rest:
+on another weekday or with another title than most of them, such as a Sunday Christmas special of a Friday milonga.
+It names the latest typical event to copy instead. Empty when `t` is typical or wasn't picked from a series.
+"""
+function template_note(t::Event, group::Vector{Event})
+ length(group)<3 && return ""
+ wd(e::Event)=(d=_ymd(e.start); isnothing(d) ? 0 : dayofweek(d))
+ title(e::Event)=something(e.title,"")
+ wc,wm=_most(Int[wd(e) for e in group]); tc,tm=_most(String[title(e) for e in group])
+ odd_wd=wc[wd(t)]<wm; odd_title=tc[title(t)]<tm
+ (odd_wd || odd_title) || return ""
+ typical=filter(e->wc[wd(e)]==wm && tc[title(e)]==tm && e.id!=t.id,group)
+ isempty(typical) && (typical=filter(e->wc[wd(e)]==wm && e.id!=t.id,group))
+ isempty(typical) && return ""
+ u=typical[end]; parts=String[]
+ odd_wd && wd(t)>0 && push!(parts,_WEEKDAY_EN[wd(t)]); odd_title && push!(parts,"\"$(title(t))\"")
+ uparts=String[]; odd_wd && wd(u)>0 && push!(uparts,_WEEKDAY_EN[wd(u)]); odd_title && push!(uparts,"\"$(title(u))\"")
+ "Note: copying the latest event of the series, $(t.id) ($(join(parts,", "))), but most of the series is " *
+  "$(join(uparts,", ")). To copy another event, give its id, e.g. repeat $(u.id) …"
 end
 const REPEAT_USAGE="""
 tangokalender repeat - copy an event to new dates
@@ -231,6 +260,8 @@ Usage:
 
 TERM     finds the template, as in edit (past events included): it must match one event, or events of one series,
          of which the latest is copied (series:esa-tandas continues that series; an exact series name wins).
+         To copy a particular event, give its id. A note says when the latest is on another weekday or has another
+         title than most of its series (a holiday special).
 The copies get the template's times (summer/winter time recomputed), id <series>-YYYY-MM-DD, status scheduled and
 first_seen today. Dates that already have the event, or any event of its series, are skipped, so running the same
 command again is safe.
@@ -313,6 +344,7 @@ function repeat_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err:
  w=displaysize(io)[2]
  show_(lines::Vector{Vector{Seg}})=println(io,render(lines))
  show_(Vector{Seg}[Seg[("Template:",:shadow)],line_segs(res.template;width=w)]); println(io)
+ isempty(res.note) || println(err,res.note)
  for (f,e) in res.events
   json ? show_json(io,f,e,res.keys,root,render) : preview ? (show_(card_lines(e;width=w)); println(io)) : show_([line_segs(e;width=w)])
  end

@@ -69,7 +69,16 @@ tangoedit repeat series:nybegynnerkurs --every=week --count=10 --except=2026-12-
 tangoedit repeat milonga-x-2026-11-20 --on=2026-12-27 'title=Juledagsmilonga'        # one date, on any weekday
 ```
 
-- The search terms must find one event, or events of one series; then the latest one is copied.
+- The search terms must find one event, or events of one series; then the latest one is copied. **To copy a
+  particular event, give its id.** That matters when the latest date is a special, such as a Sunday Christmas
+  milonga at the end of a Friday series: copying it would give Sunday dates (with `--every`) or its holiday title.
+  `repeat` prints a note when the latest event is on another weekday or has another title than most of its series,
+  and names a typical event to copy instead:
+
+  ```bash
+  tangoedit series:milonga-social --all                              # the series, with ids
+  tangoedit repeat milonga-social-2026-12-18 --on=2026-12-04 dj=TBA  # copy a regular Friday
+  ```
 - `--every=week`, `2weeks`, `month`, `3months`, … Weekly rules keep the template's weekday. Monthly rules keep its
   day of the month and skip months that don't have it (the 31st). With `--on=` they use a weekday instead:
   `1st-monday`, `2nd-thursday`, `last-friday`, `2nd-last-sunday`.
