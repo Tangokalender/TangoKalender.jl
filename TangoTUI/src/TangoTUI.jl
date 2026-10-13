@@ -47,10 +47,21 @@ mutable struct Editor <: Model
  past::Bool
  listoff::Int
  listing::Bool
+ # changing several events (:scope): the search the event was opened from (its files and text), the changed fields,
+ # and the later events of the series / of that selection, split by the organiser guardrail into targets and skipped
+ selection::Vector{String}
+ selquery::String
+ scope::Vector{TK.FormField}
+ sertargets::Vector{Tuple{String,TK.Event,Vector{String}}}
+ serskip::Vector{Tuple{String,TK.Event,Vector{String}}}
+ seltargets::Vector{Tuple{String,TK.Event,Vector{String}}}
+ selskip::Vector{Tuple{String,TK.Event,Vector{String}}}
+ then::Symbol
 end
 function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree)
  m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,:browse,TextInput(text=""),1,Bool[],"",:info,false,String[],
-          Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false)
+          Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false,
+          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay)
  isnothing(file) && _new_id!(m)
  m
 end
@@ -65,6 +76,7 @@ function search_editor(; query::AbstractString="", past::Bool=false, root="event
  _to_list!(m); m
 end
 should_quit(m::Editor)=m.quit
+_none()=Tuple{String,TK.Event,Vector{String}}[]
 _field(m::Editor)=m.fields[m.cursor]
 "`file` relative to the folder that holds the events directory (`events/2026/…`)."
 _rel(m::Editor,file)=relpath(file,dirname(abspath(m.root)))
@@ -73,6 +85,11 @@ _dirty(m::Editor)=_isnew(m) ? !isempty(m.event.title) : TK.event_text(m.event,m.
 _new_id!(m::Editor)=(_isnew(m) && (m.event=TK._put(m.event,Val(:id),TK.form_id(m.event))); nothing)
 _say!(m::Editor,s::AbstractString,level::Symbol=:info)=(m.message=String(s); m.level=level; nothing)
 function _load!(m::Editor,(file,e,ks))
+ if m.mode===:search   # opened from the list: its result is the «selection» a change may also apply to
+  m.selection=[m.events[i][1] for i in m.hits]; m.selquery=strip(text(m.query))
+ else
+  m.selection=String[]; m.selquery=""
+ end
  m.file=file; m.event=m.before=e; m.keys=ks; m.cursor=1; m.offset=0; m.mode=:browse
  _say!(m,"Velg et felt med ↑/↓ og trykk Enter for å endre det.")
 end
@@ -102,7 +119,7 @@ end
 function _to_list!(m::Editor; select::Union{Nothing,String}=nothing)
  m.events=TK.find_events(String[];root=m.root,from=nothing); m.texts=[TK.event_search_text(e) for (_,e,_) in m.events]
  m.mode=:search; _filter!(m;select)
- _say!(m,isempty(m.saved) ? "Skriv for å søke; ↑/↓ og Enter åpner et arrangement." : "Lagret: $(_rel(m,m.saved[end]))",isempty(m.saved) ? :info : :ok)
+ m.level===:ok || _say!(m,"Skriv for å søke; ↑/↓ og Enter åpner et arrangement.")   # keep «Lagret: …»
 end
 "Leave the form: back to the list when the editor came from it, else quit."
 _leave!(m::Editor)=m.listing ? _to_list!(m;select=m.file) : (m.quit=true; nothing)
@@ -112,7 +129,7 @@ _ctrl(ev::KeyEvent,c::Char)=ev.key===:ctrl && ev.char==c
 _ch(ev::KeyEvent,c::Char)=ev.key===:char && ev.char==c
 function update!(m::Editor, ev::KeyEvent)
  m.mode===:search ? _search_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
- m.mode===:confirm ? _confirm_key!(m,ev) : _browse_key!(m,ev)
+ m.mode===:confirm ? _confirm_key!(m,ev) : m.mode===:scope ? _scope_key!(m,ev) : _browse_key!(m,ev)
  nothing
 end
 _move!(m::Editor,d::Int)=(m.cursor=clamp(m.cursor+d,1,length(m.fields)); nothing)
@@ -172,7 +189,7 @@ function _pick_key!(m::Editor, ev::KeyEvent)
  end
 end
 function _confirm_key!(m::Editor, ev::KeyEvent)
- if _ch(ev,'s') || _ctrl(ev,'s'); _save!(m) && _leave!(m)
+ if _ch(ev,'s') || _ctrl(ev,'s'); _save!(m;then=:leave)
  elseif _ch(ev,'f'); _leave!(m)
  else m.mode=:browse; _say!(m,"Fortsett å redigere.") end
 end
@@ -192,9 +209,52 @@ function _search_key!(m::Editor, ev::KeyEvent)
   q=text(m.query); handle_key!(m.query,ev); text(m.query)==q || _filter!(m)
  end
 end
-"Save (refused while `check` finds problems: the cursor goes to the first field that has one)."
-function _save!(m::Editor)
- file,errs=TK.save_form_event(m.file,m.event,m.keys;root=m.root,today=m.today,tree_check=m.tree_check)
+"""
+Save. When fields of an existing event changed and later events of its series, or of the search it was opened from,
+have the same organiser, ask first (:scope) whether the change applies to them too; `then=:leave` leaves the form
+after saving.
+"""
+function _save!(m::Editor; then::Symbol=:stay)
+ m.then=then
+ if !_isnew(m) && isempty(TK.check(m.event))
+  m.scope=TK.changed_fields(m.before,m.event;fields=m.fields)
+  if !isempty(m.scope)
+   m.sertargets,m.serskip=TK.split_by_organizer(m.before,TK.later_in_series(m.file,m.before;root=m.root))
+   sel=isempty(m.selquery) ? _none() : TK.later_in_selection(m.file,m.before,m.selection;root=m.root)
+   m.seltargets,m.selskip=TK.split_by_organizer(m.before,sel)
+   if !isempty(m.sertargets) || !isempty(m.seltargets)
+    m.mode=:scope; _say!(m,"Gjelder endringen flere datoer? Se valgene til høyre.")
+    return false
+   end
+  end
+ end
+ _write!(m,_none())
+end
+_label(f::TK.FormField)=f.label
+function _scope_keys(m::Editor)
+ ks=String[]
+ isempty(m.sertargets) || push!(ks,"a alle senere i serien"); isempty(m.seltargets) || push!(ks,"u alle senere i utvalget")
+ join([ks;"d bare denne datoen";"Esc avbryt"]," · ")
+end
+"How many of `xs` have their own value (different from the edited event's old one) in a changed field: it is overwritten."
+_overwrites(m::Editor,xs)=count(x->any(f->!TK.same_field(x[2],m.before,f),m.scope),xs)
+function _scope_key!(m::Editor, ev::KeyEvent)
+ if _ch(ev,'a') && !isempty(m.sertargets); _write!(m,m.sertargets)
+ elseif _ch(ev,'u') && !isempty(m.seltargets); _write!(m,m.seltargets)
+ elseif _ch(ev,'d'); _write!(m,_none())
+ elseif ev.key===:escape; m.mode=:browse; _say!(m,"Ikke lagret.")
+ end
+end
+"Write the event, and `later` with the changed fields copied (`TK.copy_fields`), all in one go."
+function _write!(m::Editor, later)
+ others=_none()
+ for (f,x,ks) in later
+  y=try TK.copy_fields(x,m.event,m.scope) catch err
+   err isa ArgumentError || rethrow(); m.mode=:browse; _say!(m,"Ikke lagret: $(x.id): $(err.msg)",:error); return false
+  end
+  push!(others,(f,y,ks))
+ end
+ file,errs=TK.save_form_event(m.file,m.event,m.keys;root=m.root,today=m.today,tree_check=m.tree_check,others)
  if isnothing(file)
   ps=TK.check(m.event); i=findfirst(f->!isempty(TK.field_problems(m.event,f;problems=ps)),m.fields)
   isnothing(i) || (m.cursor=i)
@@ -202,8 +262,10 @@ function _save!(m::Editor)
   return false
  end
  e,ks=TK.read_event(file); m.file=file; m.event=m.before=e; m.keys=ks; m.mode=:browse
- file in m.saved || push!(m.saved,file)
- _say!(m,"Lagret: $(_rel(m,file))",:ok)
+ for f in [file;[x[1] for x in others]]; f in m.saved || push!(m.saved,f); end
+ n=length(others)
+ _say!(m,"Lagret: $(_rel(m,file))"*(n==0 ? "" : " og $n senere dato$(n==1 ? "" : "er")"),:ok)
+ m.then===:leave && _leave!(m)
  true
 end
 
@@ -234,6 +296,7 @@ function view(m::Editor, frame::Frame)
   _view_fields(m,parts[1],buf)
   length(parts)>1 && _view_card(m,parts[2],buf)
   m.mode===:pick && _view_pick(m,parts[1],buf)
+  m.mode===:scope && length(parts)>1 && _view_scope(m,parts[2],buf)
  end
  _view_footer(m,rows[3],buf)
 end
@@ -276,6 +339,31 @@ function _view_card(m::Editor, rect::Rect, buf::Buffer)
    x+=textwidth(t)
   end
  end
+end
+"The scope question: the changed fields, each choice with its dates, and the events the guardrail leaves out."
+function _view_scope(m::Editor, rect::Rect, buf::Buffer)
+ for yy in rect.y:bottom(rect); set_string!(buf,rect.x,yy," "^rect.width,tstyle(:text)); end
+ blk=Block(title="Gjelder endringen flere datoer?",border_style=tstyle(:border_focus)); render(blk,rect,buf); r=inner_area(blk,rect)
+ lines=Tuple{String,Style}[]
+ add(t,st=tstyle(:text))=push!(lines,(t,st))
+ add("Endret: "*join(_label.(m.scope),", "),tstyle(:warning,bold=true)); add("")
+ short(x)=(e=x[2]; d=TK._ymd(e.start); (isnothing(d) ? e.start : "$(TK._wd3(d)) $(TK._two(day(d))).$(TK._two(month(d)))")*"  "*e.title)
+ function choice(key,what,xs,skip)
+  isempty(xs) && isempty(skip) && return
+  if isempty(xs); add("   $what: ingen med samme arrangør",tstyle(:text_dim))
+  else
+   o=_overwrites(m,xs)
+   add("$key  $what: $(length(xs)) dato$(length(xs)==1 ? "" : "er")"*(o>0 ? " – $o har egen verdi som overskrives" : ""),tstyle(:accent,bold=true))
+   for x in first(xs,6); add("     "*short(x)*(any(f->!TK.same_field(x[2],m.before,f),m.scope) ? "  (egen verdi)" : "")); end
+   length(xs)>6 && add("     … og $(length(xs)-6) til",tstyle(:text_dim))
+  end
+  isempty(skip) || add("   Hoppes over, annen arrangør: $(length(skip)) ("*join(unique(something(x[2].organizer,"uten arrangør") for x in skip),", ")*")",tstyle(:error))
+  add("")
+ end
+ choice("a","Alle senere i serien «$(something(m.before.series,""))»",m.sertargets,m.serskip)
+ choice("u","Alle senere i utvalget «$(m.selquery)»",m.seltargets,m.selskip)
+ add("d  Bare denne datoen",tstyle(:accent,bold=true)); add("Esc  Avbryt (ingenting lagres)",tstyle(:text_dim))
+ for (i,(t,st)) in enumerate(lines); y=r.y+i-1; y>bottom(r) && break; set_string!(buf,r.x+1,y,_short(t,r.width-1),st,r); end
 end
 function _view_pick(m::Editor, under::Rect, buf::Buffer)
  f=_field(m); n=length(f.choices)
@@ -321,6 +409,7 @@ function _view_footer(m::Editor, rect::Rect, buf::Buffer)
   m.mode===:text ? "Enter lagre feltet · Tab neste · Esc avbryt" :
   m.mode===:pick ? "↑/↓ flytt · Mellomrom kryss av · Enter velg · Esc avbryt" :
   m.mode===:confirm ? "s lagre · f forkast · Esc fortsett" :
+  m.mode===:scope ? _scope_keys(m) :
   "↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
  render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(m.mode!==:search && _isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
 end

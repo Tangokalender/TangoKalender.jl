@@ -132,6 +132,22 @@ end
  @test all(w->occursin(w,st),["otra milonga","sentralen","øvre slottsgate","kristin","ana","klasse","otra night","2026-11-02","mandag 2. november","kurs","class","avlyst"])
  q(x)=TK.search_matches(s,x)
  @test q("") && q("OTRA sentralen") && q("night mandag") && !q("otra tirsdag") && q("type:class") && !q("type:practica") && q("series:otra") && q("venue:sentral")
+ # changing several events: changed fields, copying per date, and the organiser guardrail
+ a=set(set(set(e,"price_nok","180"),"start_time","19:00"),"date","2026-10-31")
+ @test [f.key for f in TK.changed_fields(e,a)]==["start_time","price_nok"]                  # the date is never copied
+ w=TK.Event(id="x-2026-12-05",title="X",types=["milonga"],start="2026-12-05T20:00:00+01:00",end_="2026-12-06T01:00:00+01:00",price_nok=300)
+ c=TK.copy_fields(w,a,TK.changed_fields(e,a))
+ @test c.start=="2026-12-05T19:00:00+01:00" && c.end_=="2026-12-06T01:00:00+01:00" && c.price_nok==180 && !TK.same_field(w,e,F("price_nok"))
+ fest=TK.Event(id="f",title="F",types=["festival"],start="2027-05-20",end_="2027-05-23"); nf=set(fest,"end","2027-05-24")
+ @test TK.copy_fields(TK.Event(id="g",title="F",types=["festival"],start="2028-05-18",end_="2028-05-21"),nf,TK.changed_fields(fest,nf)).end_=="2028-05-22"   # keeps its length
+ org(o)=("f",TK.Event(id="x",title="x",types=["milonga"],start="2026-11-01",organizer=o),String[])
+ same,other=TK.split_by_organizer(TK.Event(id="e",title="e",types=["milonga"],start="2026-11-01",organizer="Otra  Milonga"),[org("otra milonga"),org("Otra Milonga, Loca"),org(nothing)])
+ @test [x[2].organizer for x in same]==["otra milonga"] && length(other)==2
+ @test length(first(TK.split_by_organizer(TK.Event(id="e",title="e",types=["milonga"],start="2026-11-01"),[org(nothing),org("")])))==2
+ lf,le,_=TK.find_events(["series:otra-milonga"];root=TREE,from=Date(2026,10,13))[1]
+ l=TK.later_in_series(lf,le;root=TREE); @test !isempty(l) && all(x->x[2].series==le.series && x[2].start>le.start,l) && !any(x->x[1]==lf,l)
+ @test isempty(TK.later_in_series(lf,TK.Event(id="n",title="n",types=["milonga"],start="2026-10-12");root=TREE))   # no series
+ @test [x[1] for x in TK.later_in_selection(lf,le,[lf;[x[1] for x in l[1:2]]];root=TREE)]==[x[1] for x in l[1:2]] && isempty(TK.later_in_selection(lf,le,String[];root=TREE))
  n=TK._with_site(()->TK.new_event(today=Date(2026,10,13)),TK.load_site(joinpath(FIXTURE_SITE,"site.toml")))
  @test n.venue.city=="Oslo" && n.status=="scheduled" && n.first_seen=="2026-10-13" && n.confidence==1.0
  n=set(set(set(n,"title","Practica på Majorstuen"),"types",["practica"]),"start_time","12:00")

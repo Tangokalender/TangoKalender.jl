@@ -44,8 +44,26 @@ In the form:
 | Enter | edit the field: type, then Enter (Tab saves and goes on, Esc cancels) |
 | in a pick list | ↑ ↓, Space ticks (several allowed), Enter chooses |
 | Del | clear the field |
-| Ctrl-S | save (refused while a field has a problem, marked `!` in red) |
+| Ctrl-S | save (refused while a field has a problem, marked `!` in red); with later dates: **a**/**u**/**d** (below) |
 | Esc, q | back to the list (asks first when there are unsaved changes) |
+
+### The same change on several dates
+
+When you save a change to an event that has later dates, TangoTUI asks whether the change applies to them too:
+
+- **a**: all later dates of the event's **series** (from this date on; a festival's other events the same day count);
+- **u**: all later events of the **search** you opened the event from (offered only when the list was filtered);
+- **d**: only this date; **Esc** cancels (nothing is saved).
+
+Only the fields you changed are copied, never the date. A new start or end time is set for each date (summer or
+winter time), and an end some days later keeps its length. The question lists the dates and marks those that had
+their own value (e.g. a special price) that would be overwritten.
+
+**Guardrail:** only events with the **same organiser** as the edited event (ignoring case and spacing) are ever
+changed. Events of other organisers in the series or the search are left alone, and the question lists them as
+skipped. All files are written together: if the tree check fails, none are.
+
+### Saving
 
 Saving writes the event file in its own key order, sets `last_verified` to today, moves the file when the date
 changes, and refuses to overwrite another event. A new event gets the id `<series or title>-YYYY-MM-DD`.

@@ -201,21 +201,84 @@ new_event_keys()=filter(!=("\$schema"),jsonkeys(Event))
 "The id of a new event: `<series or slug of the title>-YYYY-MM-DD`, as the issue forms make it."
 form_id(e::Event)="$(something(e.series,_slug(e.title)))-$(first(e.start,10))"
 """
-    save_form_event(file, e, keys; root="events", today=today(), tree_check=validate_event_tree) -> (file, errors)
+    save_form_event(file, e, keys; root="events", today=today(), tree_check=validate_event_tree, others=[]) -> (file, errors)
 
 Write the edited event `e` (`file === nothing` for a new one, which gets `form_id`) with `last_verified` today, after
 `check`. Moves the file when the date or id changed; refuses to overwrite another event; rolls back when
-`tree_check(root)` finds problems. Returns the new file (or `nothing`) and the problems.
+`tree_check(root)` finds problems. `others` are more edited events as `(file, event, keys)` (the later dates of a
+series, `copy_fields`), written in the same go: all or nothing. Returns the new file (or `nothing`) and the problems.
 """
 function save_form_event(file::Union{Nothing,AbstractString}, e::Event, keys_::Vector{String}; root::AbstractString="events",
-                         today::Date=Dates.today(), tree_check::C=validate_event_tree) where {C}
+                         today::Date=Dates.today(), tree_check::C=validate_event_tree,
+                         others::Vector{Tuple{String,Event,Vector{String}}}=Tuple{String,Event,Vector{String}}[]) where {C}
  isnothing(file) && (e=_put(e,Val(:id),form_id(e)))
- e=_put(e,Val(:last_verified),_ymd_str(today))
- errs=check(e); isempty(errs) || return (nothing,errs)
+ stamp(x)=_put(x,Val(:last_verified),_ymd_str(today))
+ e=stamp(e); others=[(f,stamp(x),ks) for (f,x,ks) in others]
+ errs=check(e)
+ for (_,x,_) in others; append!(errs,("$(x.id): $m" for m in check(x))); end
+ isempty(errs) || return (nothing,errs)
  new=event_path(e;root)
- written,errs=_write_files!([(file,new,event_text(e,keys_))],root;taken=p->"$p finnes allerede (samme id og dato)",check=tree_check)
+ ups=Tuple{Union{Nothing,String},String,String}[(file,new,event_text(e,keys_))]
+ for (f,x,ks) in others; push!(ups,(f,event_path(x;root),event_text(x,ks))); end
+ written,errs=_write_files!(ups,root;taken=p->"$p finnes allerede (samme id og dato)",check=tree_check)
  isempty(errs) ? (new,String[]) : (nothing,errs)
 end
+"""
+    changed_fields(before, after; fields=form_fields()) -> Vector{FormField}
+
+The fields an editor changed. «Dato» is never among them: a date isn't copied to other dates.
+"""
+changed_fields(before::Event, after::Event; fields=form_fields())=
+ [f for f in fields if f.key!="date" && _fieldvalue(before,f)!=_fieldvalue(after,f)]
+_fieldvalue(e::Event,f::FormField)=f.kind in (:choice,:multi) ? join(field_values(e,f),",") : field_text(e,f)
+"""
+    later_in_series(file, e; root="events") -> [(file, event, keys)]
+
+The other events of `e`'s series from `e`'s date on, by start (what «Rett opp» calls «Denne og alle senere datoer i
+serien»; a festival's other events the same day count). Empty when `e` has no series.
+"""
+function later_in_series(file::Union{Nothing,AbstractString}, e::Event; root::AbstractString="events")
+ s=e.series; isnothing(s) && return Tuple{String,Event,Vector{String}}[]
+ d=_firstday(e); me=isnothing(file) ? "" : normpath(file)
+ [x for x in find_events(["series:$s"];root,from=d) if x[2].series==s && _firstday(x[2])>=d && normpath(x[1])!=me]
+end
+"""
+    copy_fields(target, source, fields) -> Event
+
+`target` with `fields` set to their values in `source`, through `set_field`, so the target keeps its own date: a start
+or end time is recomputed for that date (summer/winter time), and an end some days later keeps its distance in days.
+"""
+function copy_fields(t::Event, src::Event, fields)
+ for f in fields
+  if f.key=="end" && !isnothing(src.end_) && isnothing(_form_hm(field_text(src,f);allow24=true))   # an end on another day
+   n=Dates.value(something(_ymd(src.end_),_firstday(src))-_firstday(src))
+   t=_put(t,Val(:end_),_move_stamp(src.end_,_firstday(t)+Day(n)))
+  else
+   t=f.kind in (:choice,:multi) ? set_field(t,f,field_values(src,f)) : set_field(t,f,field_text(src,f))
+  end
+ end
+ t
+end
+"""
+    later_in_selection(file, e, files; root="events") -> [(file, event, keys)]
+
+The events among `files` (an editor's search result) from `e`'s date on, other than `file` itself, by start.
+"""
+function later_in_selection(file::Union{Nothing,AbstractString}, e::Event, files; root::AbstractString="events")
+ want=Set(normpath.(files)); d=_firstday(e); me=isnothing(file) ? "" : normpath(file)
+ isempty(want) && return Tuple{String,Event,Vector{String}}[]
+ [x for x in find_events(String[];root,from=d) if normpath(x[1]) in want && normpath(x[1])!=me && _firstday(x[2])>=d]
+end
+_org(e::Event)=lowercase(join(split(something(e.organizer,""))," "))
+"""
+    split_by_organizer(e, events) -> (same, other)
+
+The guardrail for changing several events at once: only events with `e`'s organiser (ignoring case and spacing; an
+event without one only matches others without one) may be changed. `other` are the ones left out.
+"""
+split_by_organizer(e::Event, xs)=(filter(x->_org(x[2])==_org(e),xs),filter(x->_org(x[2])!=_org(e),xs))
+"Whether `x` has the same value as `e` in field `f` (used to warn before overwriting a date's own value)."
+same_field(x::Event,e::Event,f::FormField)=_fieldvalue(x,f)==_fieldvalue(e,f)
 """
     event_search_text(e) -> String
 
