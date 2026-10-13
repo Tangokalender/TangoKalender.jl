@@ -1,6 +1,6 @@
 name = "TangoKalender"
 uuid = "8fa2004d-d644-4dc6-9815-18e81ae74980"
-version = "1.3.5"
+version = "1.3.6"
 authors = ["Lars Hellemo"]
 
 [deps]
