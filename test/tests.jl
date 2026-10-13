@@ -101,6 +101,16 @@ end
  @test occursin("<aside>fredag 15. jan</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2027-01-15")]))
  @test occursin("<aside>fredag 9. okt · 17:00</aside>",render_events_html([Dict("title"=>"x","types"=>["festival"],"start"=>"2026-10-09T17:00:00+02:00")]))
 end
+@testset "marathon type" begin
+ m=[Dict("title"=>"Maraton M","types"=>["marathon"],"start"=>"2027-03-24","end"=>"2027-03-28")]
+ for (l,lbl) in (("nb","Maraton"),("en","Marathon"),("es","Maratón"))
+  h=render_events_html(m;view="compact",lang=l)
+  @test occursin("value=\"marathon\"><span>$lbl</span>",h) && occursin(">$lbl</span>",h)   # filter pill and chip
+ end
+ @test count("<h3>Maraton M",render_events_html(m;view="compact"))==5                       # on each of its days
+ @test occursin("cell ev t-marathon",render_events_html(m;view="week"))
+ @test TangoKalender._parse_field("Type","Maraton")==(["marathon"],nothing) && TangoKalender._parse_field("Type","Marathon, Milonga")==(["milonga","marathon"],nothing)
+end
 @testset "submit link" begin
  h=render_events_html([Dict("title"=>"a","types"=>["milonga"],"start"=>"2026-10-01")])
  @test count(TangoKalender.submit_form_url(),h)==2 && occursin("+ Legg til arrangement</a>",h)
