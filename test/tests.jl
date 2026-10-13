@@ -1061,6 +1061,8 @@ end
  s=sprint(print,event_card(TK.set_path(e,["confidence"],"0.5");before=e))
  @test occursin("✎ confidence: null → 0.5",s)
  @test !occursin('\n',sprint(print,event_line(e))) && occursin("x-1",sprint(print,event_line(e)))
+ @test startswith(sprint(print,event_line(TK.Event(id="f",title="F",types=["festival"],start="2026-11-28"))),"lør 28.11.26 ")   # date only: no 00:00
+ @test !occursin("00:00",sprint(print,event_line(TK.Event(id="f",title="F",types=["festival"],start="2026-11-28")))) && occursin("20:00",sprint(print,event_line(TK.Event(id="m",title="M",types=["milonga"],start="2026-11-28T20:00:00+01:00"))))
  @test occursin("Milonga X",sprint(show,MIME("text/plain"),e))
  lines=TK.card_lines(c;before=e,width=80)                                     # the ANSI renderer of the trimmed app
  @test TK.ansi_text(lines;color=false)==sprint(print,TK.styled_text(lines))  # same text as StyledStrings
