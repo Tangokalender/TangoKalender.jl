@@ -1,11 +1,13 @@
 # Coordinates for maps. Events only store address text; `venues.json` (repo root) caches address → lat/lon, filled by
 # `tangokalender geocode` from OpenStreetMap Nominatim (at most one request per second, identifying User-Agent, see
-# https://operations.osmfoundation.org/policies/nominatim/). Builds never use the network: they read the cache.
+# https://operations.osmfoundation.org/policies/nominatim/), falling back to Kartverket's address register (Norway) when
+# Nominatim has no house-level match. Builds never use the network: they read the cache.
 # Only precise matches (a house number, a building or an amenity) or manual entries put an event on a map.
 using Base.ScopedValues: ScopedValue
 const VENUES_FILE="venues.json"
 const VENUES_SCHEMA_FILE=joinpath(@__DIR__,"..","schema","venues.schema.json")
 const NOMINATIM_URL="https://nominatim.openstreetmap.org/search"
+const KARTVERKET_URL="https://ws.geonorge.no/adresser/v1/sok"
 geo_user_agent()="Tangokalender/1 (+$(repo_url()))"
 "The venue cache used while rendering (set by `write_site`/`_with_venues`): normalised address => entry."
 const VENUES=ScopedValue(Dict{String,Any}())
@@ -50,13 +52,45 @@ function _nominatim(q)
  r=JSON.parse(String(take!(io))); isempty(r) ? nothing : r[1]
 end
 """
-    geocode!(venues, events; fetch=_nominatim, retry=false, pause=1.0, today=Dates.today()) -> (added, failed)
-
-Look up every event address missing from `venues` (normalised keys). Manual entries are never touched; addresses
-stored as not found (`precision: "none"`) are only retried with `retry=true`. Network errors leave the address out,
-so it is tried again next time. `pause` seconds between requests keep within Nominatim's usage policy.
+The Kartverket search for an address `q` («Chr. Krohgs gate 60, 0186 Oslo»), or `nothing` without a house number:
+`(sok, nummer, bokstav, postnummer)`. The street and the city go in `sok` (abbreviations such as «Chr.» become «Chr*»,
+«gt.» becomes «gate»); the postcode is only used to choose between hits, since a wrong one would exclude the right one.
 """
-function geocode!(venues::AbstractDict, events; fetch=_nominatim, retry::Bool=false, pause::Real=1.0, today::Date=Dates.today())
+function _kv_query(q)
+ parts=strip.(split(q,','))
+ m=match(r"^(.*?\S)\s+(\d+)\s*([A-Za-z]?)$",parts[1]); isnothing(m) && return nothing
+ street=replace(m[1],r"\bgt\b\.?"=>"gate",r"(\w+)\."=>s"\1*")
+ pc=match(r"\b(\d{4})\b",q)
+ city=length(parts)>1 ? strip(replace(parts[end],r"\b\d{4}\b"=>"")) : ""
+ (sok=strip("$street $(m[2])$(m[3]) $city"),nummer=m[2],bokstav=uppercase(m[3]),postnummer=isnothing(pc) ? "" : pc[1])
+end
+"""
+Query Kartverket's address register for `q`: `Dict("lat","lon","name")` for the one address with exactly that house
+number (and letter; the given postcode decides between several), otherwise `nothing`. Norway only. Throws on network errors.
+"""
+function _kartverket(q)
+ "no" in split(SITE[].countrycodes,',') || return nothing
+ k=_kv_query(q); isnothing(k) && return nothing
+ io=IOBuffer(); Downloads.request(KARTVERKET_URL*"?sok="*_urlenc(k.sok)*"&treffPerSide=10&utkoordsys=4258";output=io,headers=["User-Agent"=>geo_user_agent()],throw=true)
+ _kv_pick(get(JSON.parse(String(take!(io))),"adresser",[]),k)
+end
+"The one Kartverket hit (`adresser`) with `k`'s house number and letter, preferring `k`'s postcode, as `Dict(\"lat\",\"lon\",\"name\")`; else `nothing`."
+function _kv_pick(adresser,k)
+ hits=[a for a in adresser if string(get(a,"nummer",""))==k.nummer && uppercase(something(get(a,"bokstav",""),""))==k.bokstav]
+ pick=filter(a->get(a,"postnummer","")==k.postnummer,hits); isempty(pick) && (pick=hits)
+ length(pick)==1 || return nothing
+ a=only(pick); p=a["representasjonspunkt"]
+ Dict{String,Any}("lat"=>p["lat"],"lon"=>p["lon"],"name"=>"$(a["adressetekst"]), $(a["postnummer"]) $(a["poststed"])")
+end
+"""
+    geocode!(venues, events; fetch=_nominatim, fallback=_kartverket, retry=false, pause=1.0, today=Dates.today()) -> (added, failed)
+
+Look up every event address missing from `venues` (normalised keys) with `fetch` (Nominatim), and with `fallback`
+(Kartverket, `source: "kartverket"`) when that finds nothing or only the street. Manual entries are never touched;
+addresses stored as not found (`precision: "none"`) are only retried with `retry=true`. Network errors leave the
+address out, so it is tried again next time. `pause` seconds between requests keep within Nominatim's usage policy.
+"""
+function geocode!(venues::AbstractDict, events; fetch=_nominatim, fallback=_kartverket, retry::Bool=false, pause::Real=1.0, today::Date=Dates.today())
  added=String[]; failed=String[]; first_=true
  for a in unique(filter(!isempty,[_geo_address(e) for e in events]))
   k=_addrkey(a); old=get(venues,k,nothing)
@@ -68,6 +102,13 @@ function geocode!(venues::AbstractDict, events; fetch=_nominatim, retry::Bool=fa
    x["lat"]=round(parse(Float64,string(r["lat"]));digits=6); x["lon"]=round(parse(Float64,string(r["lon"]));digits=6)
    x["precision"]=_precise(r) ? "house" : "street"
    haskey(r,"osm_type") && haskey(r,"osm_id") && (x["osm"]="$(r["osm_type"])/$(r["osm_id"])")
+  end
+  if x["precision"]!="house"
+   kv=try fallback(a) catch err; push!(failed,"$a: $(sprint(showerror,err))"); continue end
+   if !isnothing(kv)
+    x["lat"]=round(Float64(kv["lat"]);digits=6); x["lon"]=round(Float64(kv["lon"]);digits=6)
+    x["precision"]="house"; x["source"]="kartverket"; delete!(x,"osm"); x["note"]="Kartverket: «$(kv["name"])»"
+   end
   end
   venues[k]=x; push!(added,a)
  end

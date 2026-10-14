@@ -953,12 +953,27 @@ end
   startswith(q,"Veien") ? Dict("lat"=>"59.9","lon"=>"10.7","category"=>"highway","address"=>Dict("road"=>"Veien")) :
   startswith(q,"Ukjent") ? nothing : error("timeout"))
  v=Dict{String,Any}("manuell vei 5"=>Dict{String,Any}("address"=>"Manuell vei 5","lat"=>59.95,"lon"=>10.8,"precision"=>"street","source"=>"manual"))
- added,failed=TK.geocode!(v,evs;fetch=fake,pause=0,today=T)
+ nokv(q)=nothing                                                                                                              # no Kartverket fallback here (see below)
+ added,failed=TK.geocode!(v,evs;fetch=fake,fallback=nokv,pause=0,today=T)
  @test added==["Storgata 1, 0155 Oslo","Veien 2, Oslo","Ukjent sted 9, Oslo"] && isempty(failed) && calls==added              # one query per address; manual untouched
  @test v["storgata 1"]["precision"]=="house" && v["veien 2"]["precision"]=="street" && v["ukjent sted 9"]["precision"]=="none" && v["storgata 1"]["osm"]=="node/1"
- empty!(calls); TK.geocode!(v,evs;fetch=fake,pause=0); @test isempty(calls)                                                  # cached, «none» not retried
- TK.geocode!(v,evs;fetch=fake,pause=0,retry=true); @test calls==["Ukjent sted 9, Oslo"]
- @test only(TK.geocode!(Dict{String,Any}(),[E("x","Feil 1")];fetch=q->error("timeout"),pause=0)[2]) |> s->occursin("timeout",s)     # network errors: not stored
+ empty!(calls); TK.geocode!(v,evs;fetch=fake,fallback=nokv,pause=0); @test isempty(calls)                                                  # cached, «none» not retried
+ TK.geocode!(v,evs;fetch=fake,fallback=nokv,pause=0,retry=true); @test calls==["Ukjent sted 9, Oslo"]
+ @test only(TK.geocode!(Dict{String,Any}(),[E("x","Feil 1")];fetch=q->error("timeout"),fallback=nokv,pause=0)[2]) |> s->occursin("timeout",s)     # network errors: not stored
+ # Kartverket fallback: only when Nominatim has no house-level match; abbreviations as wildcards; exact house number
+ @test TK._kv_query("Chr. Krohgs gate 60, 0186 Oslo")==(sok="Chr* Krohgs gate 60 Oslo",nummer="60",bokstav="",postnummer="0186")
+ @test TK._kv_query("Karl Johans gt. 1b, Oslo")==(sok="Karl Johans gate 1b Oslo",nummer="1",bokstav="B",postnummer="") && isnothing(TK._kv_query("Youngstorget, Oslo"))
+ A(t,n,b,pc;lat=59.9)=Dict{String,Any}("adressetekst"=>t,"nummer"=>n,"bokstav"=>b,"postnummer"=>pc,"poststed"=>"OSLO","representasjonspunkt"=>Dict("lat"=>lat,"lon"=>10.7))
+ k=TK._kv_query("Storgata 2, 0155 Oslo")
+ @test TK._kv_pick([A("Storgata 1",1,"","0155"),A("Storgata 2A",2,"A","0155"),A("Storgata 2",2,"","0155";lat=59.91)],k)==Dict("lat"=>59.91,"lon"=>10.7,"name"=>"Storgata 2, 0155 OSLO")
+ @test TK._kv_pick([A("Storgata 2",2,"","0182";lat=59.92),A("Storgata 2",2,"","0155")],k)["lat"]==59.9         # the postcode decides
+ @test isnothing(TK._kv_pick([A("Storgata 2",2,"","3000"),A("Storgata 2",2,"","4000")],k)) && isnothing(TK._kv_pick([A("Storgata 1",1,"","0155")],k))   # ambiguous / no exact number
+ kvcalls=String[]; kv(q)=(push!(kvcalls,q); startswith(q,"Feil") ? error("503") : startswith(q,"Ukjent") ? nothing : Dict("lat"=>59.9173778,"lon"=>10.7601484,"name"=>"Christian Krohgs gate 60, 0186 OSLO"))
+ v2=Dict{String,Any}(); added,failed=TK.geocode!(v2,[evs[1:3];E("f","Feil 3")];fetch=q->(q=="Feil 3, Oslo" ? nothing : fake(q)),fallback=kv,pause=0,today=T)
+ @test kvcalls==["Veien 2, Oslo","Ukjent sted 9, Oslo","Feil 3, Oslo"] && added==["Storgata 1, 0155 Oslo","Veien 2, Oslo","Ukjent sted 9, Oslo"]   # not for house hits
+ @test v2["veien 2"]==Dict("address"=>"Veien 2, Oslo","lat"=>59.917378,"lon"=>10.760148,"precision"=>"house","source"=>"kartverket","checked"=>"2026-10-05","note"=>"Kartverket: «Christian Krohgs gate 60, 0186 OSLO»")
+ @test v2["storgata 1"]["source"]=="nominatim" && v2["ukjent sted 9"]["precision"]=="none" && !haskey(v2,"feil 3") && occursin("503",only(failed))   # fallback errors: not stored
+ @test venue_coords(E("g","Veien 2"),v2)==(59.917378,10.760148) && isempty(TK.validate_venues(TK.save_venues(v2,joinpath(mktempdir(),"venues.json"))))
  # only precise (house) or manual positions are used
  @test venue_coords(evs[1],v)==(59.91,10.75)==venue_coords(evs[4],v) && isnothing(venue_coords(evs[2],v)) && isnothing(venue_coords(evs[3],v)) && venue_coords(evs[5],v)==(59.95,10.8)
  @test isnothing(venue_coords(Dict("venue"=>nothing),v)) && isnothing(venue_coords(evs[1]))                                  # no cache in scope
@@ -1283,7 +1298,7 @@ end
   @test TK._addrkey("Strandgaten 1, 5013 Bergen")=="strandgaten 1"                    # the site's city, not Oslo
   @test TK._geo_address(Dict("venue"=>Dict("address"=>"Strandgaten 1")))=="Strandgaten 1, Bergen"
   @test TK.events_from_form(TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","weekly.md"),String));today=Date(2026,10,1))[1][1]["venue"]["city"]=="Bergen"
-  calls=String[]; TK.geocode!(Dict{String,Any}(),ev;fetch=q->(push!(calls,q); nothing),pause=0.0,today=Date(2026,10,1))
+  calls=String[]; TK.geocode!(Dict{String,Any}(),ev;fetch=q->(push!(calls,q); nothing),fallback=q->nothing,pause=0.0,today=Date(2026,10,1))
   @test calls==["Strandgaten 1, Bergen"]
  end
  # CLI: --site=FILE, else ./site.toml, else the current site

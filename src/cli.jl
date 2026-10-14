@@ -8,7 +8,7 @@ Usage:
                                            kalender.ics, rss.xml, … – in Norwegian, and again under en/ and es/ –
                                            plus events.json, for-ki.html, llms.txt, schema/*.json
   tangokalender validate [INPUT]           validate only (also venues.json, if present)
-  tangokalender geocode [INPUT]            look up coordinates for new addresses (OpenStreetMap Nominatim) into venues.json
+  tangokalender geocode [INPUT]            look up coordinates for new addresses (Nominatim, then Kartverket) into venues.json
   tangokalender from-issue BODY.md         apply a submitted issue form: new event(s) (form, «Tabell» or «JSON»), or a correction («Arrangement-ID»)
   tangokalender init-site DIR --slug=S --city=C --site-url=URL --repo-url=URL [--name=N]
                                            start a new city's data repo in DIR (site.toml, workflows, forms, …)
@@ -190,7 +190,7 @@ function _main(args)
  if cmd=="geocode"
   v=load_venues(venues); added,failed=geocode!(v,load_events(input);retry)
   isempty(added) || save_venues(v,venues)
-  for a in added; x=v[_addrkey(a)]; println("$(rpad(x["precision"],6)) $a", isnothing(x["lat"]) ? "" : "  ($(x["lat"]), $(x["lon"]))"); end
+  for a in added; x=v[_addrkey(a)]; println("$(rpad(x["precision"],6)) $a", isnothing(x["lat"]) ? "" : "  ($(x["lat"]), $(x["lon"]))", x["source"]=="kartverket" ? "  [Kartverket]" : ""); end
   foreach(f->println(stderr,"failed: $f"),failed)
   println("$(length(added)) new, $(length(failed)) failed → $venues"); return 0   # never fail the caller (e.g. intake) on a network problem
  end
