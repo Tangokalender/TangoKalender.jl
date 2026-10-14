@@ -13,7 +13,7 @@ function _event_jsonld(e)
  desc=first(_text(e,"description")); isempty(desc) || (d["description"]=desc)
  org=_s(get(e,"organizer",nothing)); isempty(org) || (d["organizer"]=JSON.Object{String,Any}("@type"=>"Organization","name"=>org))
  img=_http(get(e,"flyer_url",nothing)); isempty(img) || (d["image"]=[img])
- p=get(e,"price_nok",nothing); c=get(e,"class_price_nok",nothing); price=something(p,c,missing)
+ p=_pwyc(e) ? nothing : get(e,"price_nok",nothing); c=get(e,"class_price_nok",nothing); price=something(p,c,missing)   # a suggested amount isn't a price
  ismissing(price) || (d["offers"]=JSON.Object{String,Any}("@type"=>"Offer","price"=>price,"priceCurrency"=>"NOK","url"=>something(_none(_http(get(e,"link",nothing))),event_url(e))))
  replace(JSON.json(d),"<"=>"\\u003c",">"=>"\\u003e","&"=>"\\u0026")   # safe inside <script>
 end

@@ -24,11 +24,24 @@ function correction_fields(e)
  Dict{String,String}("arrangement_id"=>_s(e["id"]),"tittel"=>_s(get(e,"title",nothing)),"dato"=>first(_s(get(e,"start",nothing)),10),
   "starttid"=>_hhmm(get(e,"start",nothing)),"sluttid"=>_hhmm(get(e,"end",nothing)),"sted"=>_s(get(v,"name",nothing)),
   "adresse"=>_s(get(v,"address",nothing)),"arrangor"=>_s(get(e,"organizer",nothing)),"dj"=>_s(get(e,"dj",nothing)),
-  "laerere"=>join(something(get(e,"teachers",nothing),Any[]),", "),"pris"=>_s(get(e,"price_nok",nothing)),
+  "laerere"=>join(something(get(e,"teachers",nothing),Any[]),", "),"pris"=>_price_form_text(get(e,"price_nok",nothing),_pwyc(e)),
   "studentpris"=>_s(get(e,"student_price_nok",nothing)),"kurspris"=>_s(get(e,"class_price_nok",nothing)),
   "flyer"=>_s(get(e,"flyer_url",nothing)),"video"=>_video_url(get(e,"video",nothing)),"lenke"=>_s(get(e,"link",nothing)),
   "beskrivelse"=>_s(get(e,"description",nothing)),
   "tittel_annet"=>_translation(e,_other_lang(_textlang(e)),"title"),"beskrivelse_annet"=>_translation(e,_other_lang(_textlang(e)),"description"))
+end
+"""
+`x` with `pay_what_you_can` set to true (a new key goes in its schema place, after the prices), or removed (`false`).
+"""
+function _set_pwyc(x,on::Bool)
+ k="pay_what_you_can"
+ on || (haskey(x,k) && delete!(x,k); return x)
+ haskey(x,k) && (x[k]=true; return x)
+ ks=jsonkeys(Event); before=ks[1:findfirst(==(k),ks)-1]
+ prev=findlast(in(before),collect(keys(x)))
+ y=JSON.Object{String,Any}(); isnothing(prev) && (y[k]=true)
+ for (i,(kk,v)) in enumerate(x); y[kk]=v; i==prev && (y[k]=true); end
+ y
 end
 "Set (or with `nothing`, remove) `translations[l][k]`, dropping empty entries."
 function _set_translation!(x,l,k,v)
@@ -90,7 +103,9 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
    label in REQUIRED_LABELS ? err("«$label» kan ikke fjernes.") : !isempty(cur[fid]) && (ch[label]=nothing)
    continue
   end
-  v,e=_parse_field(label,s); isnothing(e) ? (ch[label]=v) : err(e)
+  v,e=_parse_field(label,s); isnothing(e) || (err(e); continue)
+  label=="Pris (kr)" && v==(get(orig,"price_nok",nothing),_pwyc(orig)) && continue   # same price, other wording
+  ch[label]=v
  end
  t=get_("Type")
  if !isempty(_checked(t))   # no box ticked = unchanged
@@ -132,7 +147,10 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
    for k in ("title","description"); v=_translation(x,new,k); isempty(v) && continue; _set_translation!(x,new,k,nothing); _set_translation!(x,old,k,v); end
   end
   for (label,k) in OTHER_TEXT_FIELDS; haskey(ch,label) && _set_translation!(x,_other_lang(_textlang(x)),k,ch[label]); end
-  for (k,field) in PRICE_FIELDS; apply!(field,k); end
+  for (k,field) in PRICE_FIELDS[2:end]; apply!(field,k); end
+  if haskey(ch,"Pris (kr)")   # (price, pay_what_you_can), or `nothing` to clear both
+   p,pwyc=something(ch["Pris (kr)"],(nothing,false)); x["price_nok"]=p; x=_set_pwyc(x,pwyc)
+  end
   if haskey(ch,"Sted") || haskey(ch,"Adresse")
    v=get(x,"venue",nothing); v isa AbstractDict || (v=JSON.Object{String,Any}("name"=>nothing,"address"=>nothing,"city"=>site_city()))
    haskey(ch,"Sted") && (v["name"]=ch["Sted"]); haskey(ch,"Adresse") && (v["address"]=ch["Adresse"]); x["venue"]=v

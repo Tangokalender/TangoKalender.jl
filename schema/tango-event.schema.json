@@ -161,6 +161,13 @@
         "class_price_nok": {
             "$ref": "#/definitions/nok"
         },
+        "pay_what_you_can": {
+            "type": [
+                "boolean",
+                "null"
+            ],
+            "description": "`true` when entry is pay what you can (shown as «Betal det du kan», «Pay what you can», «A la gorra»); `price_nok` is then a suggested amount, or null. Left out otherwise."
+        },
         "description": {
             "$ref": "#/definitions/text"
         },

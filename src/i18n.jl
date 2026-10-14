@@ -43,6 +43,8 @@ function _t(key,args...)
  for (i,a) in enumerate(args); s=replace(s,"{$i}"=>string(a)); end
  s
 end
+"«Betal det du kan», with a suggested amount «(forslag 100 kr)», in the current language."
+_pwyc_text(p)=_t("price.pwyc")*(isnothing(p) ? "" : " ($(_t("price.suggested")) $p kr)")
 
 # Event types and music styles (the data values are English slugs; Norwegian labels are `_TYPES`/`_MUSIC` in labels.jl,
 # which the Norwegian issue forms also parse).
@@ -197,6 +199,7 @@ _strings!(
  "allday"=>("hele dagen","all day","todo el día"),"ongoing"=>("pågår","ongoing","en curso"),"from"=>("fra {1}","from {1}","desde {1}"),
  "price.none"=>("Pris ikke oppgitt","Price not given","Precio no indicado"),
  "price.student"=>("student","students","estudiantes"),"price.class"=>("kurs","class","clase"),
+ "price.pwyc"=>("Betal det du kan","Pay what you can","A la gorra"),"price.suggested"=>("forslag","suggested","sugerido"),
  "venue.none"=>("Sted ikke oppgitt","Venue not given","Lugar no indicado"),
  "moreinfo"=>("Mer info ↗","More info ↗","Más info ↗"),
  "correct"=>("Rett opp ↗","Suggest a correction ↗","Proponer una corrección ↗"),

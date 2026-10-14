@@ -50,10 +50,14 @@ function _video(e)
       p=="vimeo" && occursin(r"^[0-9]+$",id) ? "https://player.vimeo.com/video/$id" : ""
  isempty(src) ? "" : "<div class=\"video\"><iframe src=\"$src\" title=\"Video: $(_esc(_title(e)))\" loading=\"lazy\" referrerpolicy=\"strict-origin-when-cross-origin\" allow=\"fullscreen; picture-in-picture; encrypted-media\" allowfullscreen></iframe></div>"
 end
-"Prices «150 kr · student 100 kr», or \"\" when none is given (show `_t(\"price.none\")` where needed)."
+"""
+Prices «150 kr · student 100 kr» (pay what you can: «Betal det du kan (forslag 100 kr)»), or \"\" when none is given
+(show `_t(\"price.none\")` where needed).
+"""
 function _price(e)
  parts=String[]
- for (k,label) in [("price_nok",""),("student_price_nok",_t("price.student")*" "),("class_price_nok",_t("price.class")*" ")]
+ _pwyc(e) && push!(parts,_pwyc_text(get(e,"price_nok",nothing)))
+ for (k,label) in [(_pwyc(e) ? "" : "price_nok",""),("student_price_nok",_t("price.student")*" "),("class_price_nok",_t("price.class")*" ")]
   v=get(e,k,nothing); !isnothing(v) && push!(parts,"$(label)$(v) kr")
  end
  join(parts," · ")

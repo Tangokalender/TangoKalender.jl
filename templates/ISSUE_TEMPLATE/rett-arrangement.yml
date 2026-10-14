@@ -101,6 +101,7 @@ body:
     id: pris
     attributes:
       label: Pris (kr)
+      description: Hele kroner, eller «betal det du kan» (gjerne med et forslag – «betal det du kan, 100»).
   - type: input
     id: studentpris
     attributes:

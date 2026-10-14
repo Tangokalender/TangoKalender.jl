@@ -1382,3 +1382,46 @@ end
   @test !occursin(rel,read(joinpath(d,TK.EMBED_LIST),String))   # the iframe list for other sites has no footer
  end
 end
+@testset "pay what you can (betal det du kan / a la gorra)" begin
+ TK=TangoKalender; T=Date(2026,10,1); P=TK._parse_price
+ # «Pris (kr)»: a number, or a pay-what-you-can wording in any of the three languages, with an optional suggestion
+ @test P("150")==P("150 kr")==(150,false) && P("Betal det du kan")==P("pay what you can")==P("À la gorra")==P("PWYC")==(nothing,true)
+ @test P("betal det du kan, forslag 100")==P("Pay what you can (suggested 100 NOK)")==P("a la gorra, 100 kr")==(100,true)
+ @test all(isnothing,P.(["gratis","100-150","-5","betal det du kan, 100 eller 150","kanskje"]))
+ @test all(P(TK._price_form_text(p,b))==(p,b) for (p,b) in ((150,false),(nothing,true),(100,true)))   # what corrections and the editor show reads back
+ # new-event form (and so the spreadsheet): the flag right after the prices, left out when not set
+ f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
+ e=only(first(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"Betal det du kan, forslag 100"));today=T)))
+ ks=collect(keys(e)); @test e["price_nok"]==100 && e["pay_what_you_can"]===true && findfirst(==("pay_what_you_can"),ks)==findfirst(==("class_price_nok"),ks)+1
+ @test isempty(validate_event(e)) && !haskey(only(first(TK.events_from_form(f;today=T))),"pay_what_you_can")
+ @test occursin("«betal det du kan»",only(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"gratis"));today=T)[2]))
+ # shown in the page language; a suggested amount is no schema.org price
+ @test [TK._with_lang(()->TK._price(e),l) for l in ("nb","en","es")]==["Betal det du kan (forslag 100 kr) · student 100 kr",
+  "Pay what you can (suggested 100 kr) · students 100 kr","A la gorra (sugerido 100 kr) · estudiantes 100 kr"]
+ @test TK._price(merge(e,Dict("price_nok"=>nothing,"student_price_nok"=>nothing)))=="Betal det du kan" && !occursin("offers",TK._event_jsonld(e))
+ @test occursin("A la gorra",TK.render_event_page(e,[e];lang="es")) && occursin("Pay what you can",replace(TK.event_ics(e;today=T,lang="en"),"\r\n "=>""))
+ # corrections: set, «same price in other words» is no change, «150» or «-» clear the flag (and the key)
+ mktempdir() do root
+  x=merge(e,Dict("id"=>"x-2026-11-14","pay_what_you_can"=>nothing,"price_nok"=>150)); delete!(x,"pay_what_you_can"); save_event_tree([x],root)
+  fix(v)=TK.apply_correction(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok","Pris (kr)"=>v),root;today=T)
+  u,er,ch=fix("a la gorra, 150"); y=u[1][2]
+  @test isempty(er) && y["pay_what_you_can"]===true && y["price_nok"]==150 && ("Pris (kr)","150","Betal det du kan, forslag 150") in ch
+  @test occursin("Pris (kr): Betal det du kan, forslag 150",TK.current_summary(y)) && TK.correction_fields(y)["pris"]=="Betal det du kan, forslag 150"
+  save_event_tree([y],root)
+  @test any(occursin("Ingen endringer",m) for m in fix("betal det du kan, forslag 150")[2])
+  u,er,_=fix("150"); @test isempty(er) && !haskey(u[1][2],"pay_what_you_can") && u[1][2]["price_nok"]==150
+  u,er,_=fix("-"); @test isempty(er) && !haskey(u[1][2],"pay_what_you_can") && isnothing(u[1][2]["price_nok"])
+ end
+ # editor form (TangoTUI): «Pris» carries the flag, also when copied to later dates; a null flag is never written
+ ev=TK.Event(id="x-2026-11-14",title="X",types=["milonga"],start="2026-11-14T20:00:00+01:00",price_nok=150)
+ F=TK._field("price_nok"); y=TK.set_field(ev,F,"betal det du kan")
+ @test isnothing(y.price_nok) && y.pay_what_you_can===true && TK.field_text(y,F)=="Betal det du kan" && [f.key for f in TK.changed_fields(ev,y)]==["price_nok"]
+ @test TK.copy_fields(ev,y,[F]).pay_what_you_can===true && isnothing(TK.set_field(y,F,"").pay_what_you_can)
+ @test !occursin("pay_what_you_can",TK.event_text(TK.set_field(y,F,"150"),TK.new_event_keys())) && occursin("\"pay_what_you_can\": true",TK.event_text(y,TK.new_event_keys()))
+ @test_throws ArgumentError TK.set_field(ev,F,"gratis")
+ # JSON submissions (KI): the flag is kept; the rules and the submission schema explain it
+ j=JSON.json(Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"Sal","address"=>"Gate 1"),
+  "organizer"=>"Org","link"=>"https://example.org","price_nok"=>100,"pay_what_you_can"=>true))
+ ev2,er=TK.events_from_json(j;today=T); @test isempty(er) && only(ev2)["pay_what_you_can"]===true && only(ev2)["price_nok"]==100
+ @test occursin("\"pay_what_you_can\": true",TK.llm_rules()) && haskey(TK.submission_schema()["definitions"]["event"]["properties"],"pay_what_you_can")
+end

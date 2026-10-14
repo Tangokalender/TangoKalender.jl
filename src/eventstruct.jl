@@ -46,6 +46,7 @@ StructUtils.@kwarg struct Event
  price_nok::Union{Nothing,Int}=nothing
  student_price_nok::Union{Nothing,Int}=nothing
  class_price_nok::Union{Nothing,Int}=nothing
+ pay_what_you_can::Union{Nothing,Bool}=nothing
  description::Union{Nothing,String}=nothing
  lang::Union{Nothing,String}=nothing
  translations::Union{Nothing,Translations}=nothing
@@ -104,6 +105,7 @@ _typename(::Type{Union{Nothing,T}}) where {T}="$(_typename(T)) or null"
 _typename(::Type{String})="text"
 _typename(::Type{Int})="whole number"
 _typename(::Type{Float64})="number"
+_typename(::Type{Bool})="true or false"
 _typename(::Type{Vector{String}})="list of texts, e.g. [\"a\",\"b\"]"
 _typename(::Type{T}) where {T}="object ($(join(jsonkeys(T),", ")))"
 """
@@ -156,10 +158,11 @@ end
     write_event(io, e, keys)
 
 Write `e` as `save_events` does (4-space indent, trailing newline): first the keys in `keys` (the order the file
-had), then any other field that is not null. A file read with `read_event` and written back unchanged is identical.
+had), then any other field that is not null. Keys in `OMIT_NULL_KEYS` are left out when null. A file read with
+`read_event` and written back unchanged is identical.
 """
 function write_event(io::IO, e::Event, keys_::AbstractVector{<:AbstractString}=jsonkeys(Event))
- ks=String[String(k) for k in keys_]
+ ks=String[String(k) for k in keys_ if !(k in OMIT_NULL_KEYS && _withfield(isnothing,e,k))]
  for k in jsonkeys(Event); k in ks || _withfield(isnothing,e,k) || push!(ks,k); end
  print(io,"{\n")
  for (i,k) in enumerate(ks)
@@ -168,6 +171,8 @@ function write_event(io::IO, e::Event, keys_::AbstractVector{<:AbstractString}=j
  end
  print(io,"}\n")
 end
+"Keys that are only written when set (`pay_what_you_can` is true or absent, never null)."
+const OMIT_NULL_KEYS=("pay_what_you_can",)
 event_text(e::Event, keys_=jsonkeys(Event))=sprint(write_event,e,keys_)
 "Plain-JSON form of `e` (an ordered `JSON.Object`), for the Dict-based functions (`validate_event`, renderers)."
 event_dict(e::Event, keys_=jsonkeys(Event))=JSON.parse(event_text(e,keys_))

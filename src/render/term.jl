@@ -42,8 +42,9 @@ end
 _types_label(e::Event)=join(_type_label.(sort(e.types,by=t->something(findfirst(==(t),TYPE_ORDER),99)))," · ")
 _date_label(e::Event)=_date_label(e.start,something(e.end_,""))
 function _price(e::Event)
- parts=String[]
- for (v,label) in ((e.price_nok,""),(e.student_price_nok,_t("price.student")*" "),(e.class_price_nok,_t("price.class")*" "))
+ parts=String[]; pwyc=e.pay_what_you_can===true
+ pwyc && push!(parts,_pwyc_text(e.price_nok))
+ for (v,label) in ((pwyc ? nothing : e.price_nok,""),(e.student_price_nok,_t("price.student")*" "),(e.class_price_nok,_t("price.class")*" "))
   isnothing(v) || push!(parts,"$(label)$(v) kr")
  end
  join(parts," · ")
@@ -71,7 +72,7 @@ function _footer(e::Event)
 end
 _cancelled(e::Event)=e.status=="cancelled"
 "Keys shown in the card's sections; a change to any other key gets its own «✎ key: old → new» line."
-const _CARD_KEYS=Set(["start","end","types","status","price_nok","student_price_nok","class_price_nok","title","venue",
+const _CARD_KEYS=Set(["start","end","types","status","price_nok","student_price_nok","class_price_nok","pay_what_you_can","title","venue",
  "organizer","teachers","dj","music_style","description","id","series","flyer_url","video","link"])
 "`f(e)` in `face`, or, when it differs from `f(before)`, highlighted and followed by the old value struck through."
 function _hl(f, e::Event, before::Union{Nothing,Event}, face::Symbol)

@@ -31,6 +31,26 @@ function _time(s;allow24=false)
  (h<24 && mi<60) || (allow24 && t=="24:00") ? t : nothing
 end
 _parse_int(s)=tryparse(Int,replace(strip(s),r"(?i)\s*(kr|nok|,-)\s*$"=>"",r"\s"=>""))
+"Pay-what-you-can wordings accepted in «Pris (kr)», in lower case without accents (Norwegian, English, Spanish)."
+const PWYC_PHRASES=Set(["betal det du kan","betal hva du kan","betal det du vil","betal hva du vil","frivillig bidrag","frivillig betaling",
+ "donasjon","pay what you can","pay what you want","pay as you wish","donation","by donation","pwyc","a la gorra","gorra","a voluntad"])
+"""
+    _parse_price(s) -> (price, pay_what_you_can) or nothing
+
+The «Pris (kr)» field: «150» or «150 kr» → `(150, false)`; «Betal det du kan» (or «pay what you can», «a la gorra»
+…) → `(nothing, true)`; with a suggested amount, «betal det du kan, forslag 100» → `(100, true)`.
+"""
+function _parse_price(s)
+ n=_parse_int(s); isnothing(n) || return n<0 ? nothing : (n,false)
+ t=Base.Unicode.normalize(String(s);stripmark=true,casefold=true)
+ nums=[m.match for m in eachmatch(r"\d+",t)]; length(nums)>1 && return nothing
+ t=strip(replace(t,r"\d+|\b(forslag|foreslatt|anbefalt|veiledende|suggested|suggestion|recommended|sugerido|sugerida|kr|nok|ca)\b"=>" ",r"[^\p{L}]+"=>" "))
+ t in PWYC_PHRASES ? (isempty(nums) ? nothing : parse(Int,nums[1]),true) : nothing
+end
+"«Pris (kr)» as text for an entry price and the pay-what-you-can flag (read back by `_parse_price`)."
+_price_form_text(p,pwyc::Bool)=pwyc ? (isnothing(p) ? "Betal det du kan" : "Betal det du kan, forslag $p") : isnothing(p) ? "" : string(p)
+"Is entry pay what you can?"
+_pwyc(e::AbstractDict)=get(e,"pay_what_you_can",nothing)===true
 "First image URL in a drag-and-drop textarea (markdown or <img>), or a bare http(s) URL."
 function _image_url(s)
  for r in (r"!\[[^\]]*\]\((https?://[^)\s]+)\)", r"<img[^>]*\bsrc=\"(https?://[^\"]+)\"", r"^\s*(https?://\S+)\s*$")
@@ -83,6 +103,8 @@ function _parse_field(label::AbstractString,s::AbstractString)
   t=_time(s;allow24=label=="Sluttid"); isnothing(t) ? bad("«$label» må være på formen TT:MM (fikk «$s»).") : (t,nothing)
  elseif label=="Lenke"
   occursin(r"^https?://\S+$",s) ? (s,nothing) : bad("«Lenke» må være en nettadresse som begynner med https://.")
+ elseif label=="Pris (kr)"   # (price, pay_what_you_can)
+  v=_parse_price(s); isnothing(v) ? bad("«Pris (kr)» må være et helt tall eller «betal det du kan», gjerne med et forslag: «betal det du kan, 100» (fikk «$s»).") : (v,nothing)
  elseif label in last.(PRICE_FIELDS)
   v=_parse_int(s); isnothing(v) || v<0 ? bad("«$label» må være et helt tall (fikk «$s»).") : (v,nothing)
  elseif label=="Flyer"
@@ -131,6 +153,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
   err("«Gjentas til»/«Unntatt datoer» brukes bare når «Gjentas» er «Ukentlig».")
  end
  prices=Dict{String,Any}(k=>val(field) for (k,field) in PRICE_FIELDS)
+ entry,pwyc=something(prices["price_nok"],(nothing,false))
  music=something(val("Musikk"),Any[]); flyer=val("Flyer"); video=val("Video")
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  isempty(errs) || return (JSON.Object{String,Any}[],errs)
@@ -139,7 +162,8 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
   "start"=>_stamp(date,st),"end"=>isnothing(et) ? nothing : _end_stamp(date,st,et),
   "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>site_city()),"organizer"=>org,"dj"=>none(get_("DJ")),
   "teachers"=>something(val("Lærere"),Any[]),
-  "price_nok"=>prices["price_nok"],"student_price_nok"=>prices["student_price_nok"],"class_price_nok"=>prices["class_price_nok"],
+  "price_nok"=>entry,"student_price_nok"=>prices["student_price_nok"],"class_price_nok"=>prices["class_price_nok"],
+  (pwyc ? ["pay_what_you_can"=>true] : Pair{String,Bool}[])...,
   "description"=>none(get_("Beskrivelse")),"lang"=>lang,"translations"=>_translations(lang,f),"music_style"=>music,"flyer_url"=>flyer,"video"=>video,"link"=>link,
   "source"=>"Innsendt via skjema","source_url"=>isnothing(issue_url) ? nothing : string(issue_url),"published_date"=>string(today),
   "first_seen"=>string(today),"last_verified"=>string(today),"crawl_timestamp"=>nothing,"confidence"=>1.0)

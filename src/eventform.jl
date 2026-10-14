@@ -6,8 +6,8 @@
 
 One field of the event form. `key` is a JSON path (`venue.name`) or a form-only key: `date`, `start_time`, `end`,
 `video`, `other_title`, `other_description` (the text in the language that isn't `lang`). `label` and `help` are
-Norwegian, like the issue forms. `kind` is one of `:text`, `:longtext`, `:int`, `:date`, `:time`, `:end`, `:choice`,
-`:multi`, `:list`, `:url`, `:video`; `choices` are the allowed `(value, label)` pairs of `:choice`/`:multi`, and
+Norwegian, like the issue forms. `kind` is one of `:text`, `:longtext`, `:int`, `:price` (an entry price or «betal det
+du kan», which also sets `pay_what_you_can`), `:date`, `:time`, `:end`, `:choice`, `:multi`, `:list`, `:url`, `:video`; `choices` are the allowed `(value, label)` pairs of `:choice`/`:multi`, and
 `checks` the `check` keys whose problems belong to the field.
 """
 struct FormField
@@ -35,7 +35,7 @@ function form_fields()
   F("dj","DJ",:text,""),
   F("teachers","Lærere",:list,"Skilt med komma."),
   F("music_style","Musikk",:multi,"Bare hvis arrangøren sier det.";choices=[(m,_MUSIC[m]) for m in sort(collect(keys(_MUSIC)))]),
-  F("price_nok","Pris",:int,"Vanlig inngang, hele kroner."),
+  F("price_nok","Pris",:price,"Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).";checks=["price_nok","pay_what_you_can"]),
   F("student_price_nok","Studentpris",:int,"Hele kroner."),
   F("class_price_nok","Kurspris",:int,"Kurs- eller klassedelen. Pris for et helt kurs: skriv det i beskrivelsen."),
   F("description","Beskrivelse",:longtext,"1–3 korte, nøytrale setninger (nivå, inngang, påmelding)."),
@@ -71,6 +71,7 @@ function field_text(e::Event, f::FormField)
  k=="date" && return first(e.start,10)
  k=="start_time" && (t=_hm_of(e.start); return isnothing(t) ? "" : _hm_text(t))
  k=="end" && return _end_text(e)
+ f.kind==:price && return _price_form_text(e.price_nok,e.pay_what_you_can===true)
  k=="video" && return isnothing(e.video) ? "" : e.video.platform=="vimeo" ? "https://vimeo.com/$(e.video.id)" : "https://youtu.be/$(e.video.id)"
  f.kind in (:choice,:multi) && return join((l for (v,l) in f.choices if v in field_values(e,f)),", ")
  _text_at(e,k=="other_title" ? "translations.$(_other_lang(e)).title" : k=="other_description" ? "translations.$(_other_lang(e)).description" : k)
@@ -140,6 +141,9 @@ function set_field(e::Event, f::FormField, s::AbstractString)
   l=_other_lang(e); part=k=="other_title" ? "title" : "description"
   e=set_path(e,["translations",l,part],isempty(s) ? "null" : JSON.json(s))
   return _prune_translations(e)
+ elseif f.kind==:price
+  v=isempty(s) ? (nothing,false) : _parse_price(s); isnothing(v) && bad("«$s» er ikke et helt tall eller «betal det du kan».")
+  return _put(_put(e,Val(:price_nok),v[1]),Val(:pay_what_you_can),v[2] ? true : nothing)
  elseif f.kind==:int
   isempty(s) && return set_path(e,_path(k),"null")
   n=tryparse(Int,replace(s,r"\s|kr\.?$|,-$"=>"")); isnothing(n) && bad("«$s» er ikke et helt tall.")
