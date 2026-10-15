@@ -4,7 +4,8 @@ tangokalender - build the tango calendar as one static HTML page
 Usage:
   tangokalender [build] [INPUT] [OUTPUT]   validate, then render (default: events public/index.html)
   tangokalender site [INPUT] [DIR]         validate, then write the whole site to DIR (default: events _site):
-                                           index.html (list), uke.html, kort.html, arrangement/<id>/ pages and .ics,
+                                           index.html (list), uke.html, kart.html, kort.html (upcoming events only),
+                                           tidligere.html + tidligere-YYYY.html (past events), arrangement/<id>/ pages and .ics,
                                            kalender.ics, rss.xml, … – in Norwegian, and again under en/ and es/ –
                                            plus events.json, for-ki.html, llms.txt, schema/*.json
   tangokalender validate [INPUT]           validate only (also venues.json, if present)
@@ -207,6 +208,6 @@ function _main(args)
   println("Wrote $(length(files)) files to $dir"); return 0
  end
  output=get(pos,2,joinpath("public","index.html"))
- _with_venues(load_venues(venues)) do; render_events_file(input,output;(Symbol(k)=>v for (k,v) in opts)...); end; println("Wrote $output")
+ _with_venues(load_venues(venues)) do; render_events_file(input,output;from=Dates.today(),(Symbol(k)=>v for (k,v) in opts)...); end; println("Wrote $output")
  0
 end

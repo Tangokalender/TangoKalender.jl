@@ -114,7 +114,8 @@ $EXAMPLE_OUTPUT
     write_site(dir, events; today=Dates.today(), venues=Dict(), kwargs...) -> files
 
 Write the whole static site. Per language (Norwegian at the root, English under `en/`, Spanish under `es/`, same file
-names): the three views (index.html = compact list, uke.html, kort.html), one page and one .ics per event
+names): the views (index.html = compact list, uke.html, kart.html, kort.html; only events that haven't ended by `today`),
+the archive of past events (tidligere-YYYY.html per year, tidligere.html = the newest year), one page and one .ics per event
 (arrangement/<id>/index.html, arrangement/<id>.ics), kalender.ics, rss.xml, legg-til.html, om.html, bygg-inn.html and
 the embeds (embed/). Once, at the root: events.json, the old for-ki.html redirect, the spreadsheet template, llms.txt
 and the schemas. `site` (see `load_site`) gives the city, name and URLs; `venues` (see `load_venues`) gives map
@@ -130,7 +131,11 @@ function _write_site(dir::AbstractString, events; today::Date=Dates.today(), kwa
  for lang in LANGS
   root=joinpath(dir,_prefix(lang))
   w(rel,content)=(f=joinpath(root,rel); mkpath(dirname(f)); write(f,content); push!(files,f))
-  for (view,(file,_)) in _VIEWS; w(file,render_events_html(ev;view,site=true,today,lang,kwargs...)); end
+  for (view,(file,_)) in _VIEWS; w(file,render_events_html(ev;view,site=true,today,from=today,lang,kwargs...)); end
+  # past events: one page per year, the newest also as tidligere.html (its canonical URL is the year page)
+  ys=archive_years(ev;today); isempty(ys) && push!(ys,year(today))
+  for y in ys; w(archive_file(y),render_archive_html(ev,y;site=true,today,lang,kwargs...)); end
+  w(ARCHIVE_PAGE,render_archive_html(ev,first(ys);site=true,today,lang,kwargs...))
   for e in ev
    _haspage(e) || continue
    w(joinpath("arrangement",string(e["id"]),"index.html"),render_event_page(e,ev;today,correct_url=cu,lang))
@@ -141,7 +146,7 @@ function _write_site(dir::AbstractString, events; today::Date=Dates.today(), kwa
   w(ADD_PAGE,legg_til_html(;lang)); w(ABOUT_PAGE,om_html(;lang)); w(EMBED_PAGE,bygg_inn_html(;lang))
   # embeds for other websites; «today» is the build date (nightly rebuild)
   w(EMBED_TODAY,today_svg(ev;today,lang)); w(EMBED_WEEK,week_svg(ev;today,lang))
-  w(EMBED_LIST,render_events_html(ev;view="compact",site=true,embed=true,today,lang,kwargs...))
+  w(EMBED_LIST,render_events_html(ev;view="compact",site=true,embed=true,today,from=today,lang,kwargs...))
  end
  wr(rel,content)=(f=joinpath(dir,rel); mkpath(dirname(f)); write(f,content); push!(files,f))
  wr("events.json",events_json(ev;today))

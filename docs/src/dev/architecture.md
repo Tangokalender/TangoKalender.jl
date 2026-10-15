@@ -30,7 +30,11 @@ functions. A test fails on a hard-coded site URL.
 ## The site
 
 - **Views** (`src/render/html.jl`): `index.html` (compact list), `uke.html` (week), `kart.html` (map),
-  `kort.html` (cards). One page script filters the rows; the filter state lives in the URL.
+  `kort.html` (cards). They hold only events that haven't ended by the build date (the week view keeps the whole
+  current week), so pages stay small and show no old events, also without JavaScript. One page script filters the
+  rows (and still hides events that end between nightly builds); the filter state lives in the URL.
+- **Archive** (`render_archive_html`): past events, one page per year (`tidligere-YYYY.html`, newest day first, with
+  search and type/music filters); `tidligere.html` is the newest year. Old `?when=all` links are sent there.
 - **Event pages** (`src/render/event.jl`): `arrangement/<id>/` with JSON-LD, link previews and a map.
 - **Feeds and embeds:** `kalender.ics` and per-event `.ics` (`src/ics.jl`), `rss.xml`, `events.json`, the SVG images
   that pick the current day themselves (`src/render/svg.jl`), and an iframe list (`src/render/embed.jl`).

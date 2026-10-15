@@ -9,6 +9,9 @@ TangoKalender.SiteConfig
 TangoKalender.load_site
 write_site
 render_events_html
+render_archive_html
+TangoKalender.ARCHIVE_PAGE
+TangoKalender.archive_file
 render_events_file
 render_event_page
 calendar_ics

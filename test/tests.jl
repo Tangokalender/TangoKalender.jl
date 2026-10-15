@@ -335,10 +335,24 @@ end
    c=r["counts"]
    @test r["default"]=="upcoming" && r["reset"]=="upcoming"
    @test sort(c["upcoming"])==["2026-10-01","2026-10-02","2026-10-08"]   # ongoing festival + today + future; past and yesterday's late milonga hidden
-   @test length(c["all"])==5 && sort(c["today"])==["2026-10-01","2026-10-02"] && c["recurring"]==["2026-10-02"]
+   @test !haskey(c,"all") && sort(c["today"])==["2026-10-01","2026-10-02"] && c["recurring"]==["2026-10-02"]
    @test sort(c["week"])==["2026-10-01","2026-10-02","2026-10-08"]
   end
  end
+ # from=: the build date's cut, so the page carries no past events, also without JavaScript
+ h=render_events_html(evs;from=Date(2026,10,2)); l=render_events_html(evs;view="compact",from=Date(2026,10,2))
+ @test !occursin("Fortid",h) && !occursin("Sen milonga",h) && occursin("Festival",h) && occursin("I dag",h)   # ongoing festival kept
+ @test !occursin("data-group=\"2026-10-01\"",l) && occursin("data-group=\"2026-10-02\"",l)                  # but not its days already over
+ @test !occursin("value=\"all\"",h)
+ w=render_events_html(evs;view="week",from=Date(2026,10,2),today=Date(2026,10,2))
+ @test occursin("Fortid",w) && count("class=\"week\"",w)==2                                                     # the whole current week
+ @test !occursin("Fortid",render_events_html(evs;view="week",from=Date(2026,10,5),today=Date(2026,10,5)))
+ # archive: past events of one year, newest day first, no time filter
+ a=TangoKalender.render_archive_html(evs,2026;today=Date(2026,10,2),site=true)
+ @test occursin("Fortid",a) && occursin("Sen milonga",a) && !occursin("Neste uke",a) && !occursin("id=\"when\"",a)
+ @test findfirst("data-group=\"2026-10-01\"",a)[1]<findfirst("data-group=\"2026-09-30\"",a)[1]
+ @test occursin("<title>Tidligere arrangementer 2026 – ",a) && occursin("<a href=\"tidligere-2026.html\" class=\"on\" aria-current=\"page\">2026</a>",a)
+ @test occursin("Ingen tidligere arrangementer",TangoKalender.render_archive_html(evs,2025;today=Date(2026,10,2)))
 end
 @testset "JSON submissions (KI)" begin
  TK=TangoKalender; T=Date(2026,10,1)
@@ -533,6 +547,16 @@ end
   files=TK.write_site(d,evs;today=T)
   @test all(isfile(joinpath(d,f)) for f in ("index.html","uke.html","kort.html","kalender.ics","rss.xml","legg-til.html","for-ki.html","llms.txt",joinpath("arrangement","a","index.html"),joinpath("arrangement","a.ics")))
   @test occursin("class=\"group\"",read(joinpath(d,"index.html"),String))                                # index = compact list
+  # views: only events not yet over (T); the past ones are on the archive pages, per year, in every language
+  for f in ("index.html","uke.html","kart.html","kort.html",joinpath("embed","liste.html"))
+   v=read(joinpath(d,f),String); @test !occursin("data-eid=\"old\"",v) && occursin("data-eid=\"a\"",v)
+  end
+  @test occursin("<a href=\"tidligere.html\">Tidligere arrangementer</a>",read(joinpath(d,"index.html"),String))
+  @test !occursin("tidligere.html",read(joinpath(d,"embed","liste.html"),String))
+  for pre in ("","en","es"), f in ("tidligere.html","tidligere-2026.html")
+   v=read(joinpath(d,pre,f),String); @test occursin("data-eid=\"old\"",v) && !occursin("data-eid=\"a\"",v)
+  end
+  @test occursin("<link rel=\"canonical\" href=\"$(TK.site_url())/en/tidligere-2026.html\">",read(joinpath(d,"en","tidligere.html"),String))
   k=read(joinpath(d,"kalender.ics"),String); @test count("BEGIN:VEVENT",k)==4 && !occursin("UID:old@",k)   # window: 30 days back (old is 31)
   broken=String[]
   for (r,_,fs) in walkdir(d), f in fs
@@ -590,7 +614,8 @@ FILTER_EVENTS=[Dict{String,Any}("id"=>id,"title"=>t,"types"=>[ty],"start"=>st,"v
   @test r["initial"]["search"]=="?type=milonga,practica" && all(endswith(t,"?type=milonga,practica") for t in r["initial"]["tabs"])
   @test eids(run_(c,"?music=traditional,alternative"))==Set(["b","c"])                                  # any of the ticked music styles
   @test eids(run_(c,"?q=kurs%20salen"))==Set(["c"]) && eids(run_(c,"?q=Salen%20Kurs"))==Set(["c"])       # several words: all must match, any order
-  @test "p" in eids(run_(c,"?when=all")) && run_(c,"?when=all")["initial"]["when"]=="all"
+  @test run_(c,"?when=all&type=milonga&sort=desc&q=a%20b")["replaced"]=="tidligere.html?type=milonga&q=a+b"   # old links: the archive
+  @test haskey(run_(render_events_html(FILTER_EVENTS;view="compact",embed=true),"?when=all"),"initial")          # no archive in embeds
   r=run_(c,"?when=bogus&type=nope&sort=x"); @test eids(r)==Set(["a","b","c","f"]) && r["initial"]["search"]==""   # unknown values ignored
   r=run_(c,"?type=class"); @test r["afterReset"]["search"]=="" && r["afterReset"]["checked"]==0           # «Nullstill» clears URL too
   w=render_events_html(FILTER_EVENTS;view="week",site=true)
@@ -605,6 +630,8 @@ function find_chrome()
  nothing
 end
 const PROBE="<script>document.querySelectorAll('.ev,.group').forEach(e=>e.setAttribute('data-vis',e.getClientRects().length?'1':'0'));document.querySelectorAll('input[type=checkbox]').forEach(b=>b.setAttribute('data-checked',b.checked?'1':'0'));document.body.setAttribute('data-url',location.search+location.hash);var m=document.getElementById('morefilters'),c=document.getElementById('fcount');if(m)document.body.setAttribute('data-more',m.getClientRects().length?'1':'0');if(c)document.body.setAttribute('data-fcount',c.textContent);var q=document.getElementById('q'),w=document.getElementById('when');var fb=document.getElementById('filters'),mn=document.querySelector('main'),ft=document.getElementById('filtertoggle');if(fb&&mn)document.body.setAttribute('data-side',fb.getBoundingClientRect().left>=mn.getBoundingClientRect().right-1?'1':'0');if(ft)document.body.setAttribute('data-toggle',ft.getClientRects().length?'1':'0');if(w)document.body.setAttribute('data-when',w.getClientRects().length?(Math.abs(w.getBoundingClientRect().bottom-q.getBoundingClientRect().bottom)<2?'line':'below'):'0');</script>"
+"`page` with the browser's clock fixed at noon on `day` (YYYY-MM-DD), for date-dependent filters on fixed test events."
+freeze_date(page,day)=replace(page,"<head>"=>"<head><script>(()=>{const D=Date,N=new D('$(day)T12:00:00').getTime();Date=class extends D{constructor(...a){super(...(a.length?a:[N]))}static now(){return N}}})()</script>";count=1)
 "Load `page` in headless Chrome at `?search`, return (visible event ids, ticked boxes, url, dom)."
 function browser_view(chrome,dir,page,search;size="1280,900")
  f=joinpath(dir,"b.html"); write(f,replace(page,"</body>"=>PROBE*"</body>"))
@@ -645,15 +672,14 @@ end
    @test occursin("href=\"uke.html?type=milonga,practica\"",r.dom)                                       # tabs keep the filter
    @test browser_view(chrome,d,pages["compact"],"?q=kurs%20salen").vis==Set(["c"])
    @test browser_view(chrome,d,pages["compact"],"?music=traditional,alternative").vis==Set(["b","c"])
-   @test "p" in browser_view(chrome,d,pages["compact"],"?when=all").vis
    r=browser_view(chrome,d,pages["week"],"?type=practica#uke-2035-10")                                  # the bug: rows stayed visible
    @test r.vis==Set(["b"]) && issubset(Set(["a","c","f"]),r.hid) && startswith(r.url,"?type=practica#uke-2035-10")
    r=browser_view(chrome,d,pages["cards"],"?type=class,festival"); @test r.vis==Set(["c","f"])
    # the tags fold away behind «Filter» by default, which shows how many of the folded filters are active.
    # Desktop: search and time on one line, only the tags fold. Phones: time folds away too.
    r=browser_view(chrome,d,pages["compact"],"";size="1000,800"); @test r.more=="0" && r.whenpos=="line" && r.fcount=="" && r.side=="0"
-   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all";size="1000,800")
-   @test r.more=="0" && r.whenpos=="line" && r.fcount==" (2)" && r.vis==Set(["a","b","p"])               # time is visible: not counted
+   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=month";size="1000,800")
+   @test r.more=="0" && r.whenpos=="line" && r.fcount==" (2)" && isempty(r.vis) && issubset(Set(["a","b"]),r.hid)   # time is visible: not counted
    # laptops and wider: an unfolded sidebar right of the events, no «Filter» toggle; the week grid keeps the top bar
    for sz in ("1280,800","1920,1080"), v in ("compact","cards")
     r=browser_view(chrome,d,pages[v],"?type=milonga,practica";size=sz)
@@ -661,8 +687,8 @@ end
    end
    r=browser_view(chrome,d,pages["week"],"#uke-2035-10";size="1920,1080"); @test r.toggle=="1" && r.more=="0"
    r=browser_view(chrome,d,pages["compact"],"";size="390,844"); @test r.more=="0" && r.whenpos=="0" && r.fcount==""
-   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=all";size="390,844")
-   @test r.more=="0" && r.whenpos=="0" && r.fcount==" (3)" && r.vis==Set(["a","b","p"])                  # folded, but still filtering
+   r=browser_view(chrome,d,pages["compact"],"?type=milonga,practica&when=month";size="390,844")
+   @test r.more=="0" && r.whenpos=="0" && r.fcount==" (3)" && isempty(r.vis) && issubset(Set(["a","b"]),r.hid)   # folded, but still filtering
   end
  end
 end
@@ -906,7 +932,7 @@ end
   end
   chrome=find_chrome()
   if !isnothing(chrome)
-   r=browser_view(chrome,dir,read(joinpath(dir,"en","index.html"),String),"?type=practica&when=all")
+   r=browser_view(chrome,dir,freeze_date(read(joinpath(dir,"en","index.html"),String),"2026-10-05"),"?type=practica")
    @test r.vis==Set(["y"]) && occursin("1 of 2 events",r.dom)
   end
  end
@@ -1009,7 +1035,7 @@ end
  if !isnothing(chrome)
   mktempdir() do d
    page=replace(k,r"<link rel=\"stylesheet\" href=\"https://cdnjs[^>]*>|<script src=\"https://cdnjs[^>]*></script>"=>"")   # no network: marker data only
-   r=browser_view(chrome,d,replace(page,"</body>"=>"<script>document.body.setAttribute('data-markers',JSON.stringify(window.__markers.markers.map(m=>m.items.length)))</script></body>"),"?type=milonga&when=all")
+   r=browser_view(chrome,d,replace(page,"</body>"=>"<script>document.body.setAttribute('data-markers',JSON.stringify(window.__markers.markers.map(m=>m.items.length)))</script></body>") |> x->freeze_date(x,string(T)),"?type=milonga&when=upcoming")
    @test r.vis==Set(["a","b","c","e"]) && occursin("data-markers=\"[1,1]\"",r.dom)                                       # d (practica) filtered off its shared marker
   end
  end

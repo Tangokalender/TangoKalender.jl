@@ -1,7 +1,8 @@
 // Runs a page's own inline <script> against its rows with a minimal DOM stand-in and a fixed "now".
 // Usage: node filters.js PAGE.html YYYY-MM-DD [#hash] [?search]
-// → JSON {initial:{rows:[[date,type,eid]…], groups, search, tabs, checked, q, when}, default, counts:{when:[dates]},
+// → JSON {initial:{rows:[[date,type,eid]…], groups, search, tabs, checked, q, when, count}, default, counts:{when:[dates]},
 //          groups:{when:[…]}, reset, afterReset:{search,checked}, weeks:{…}}   (weeks only on the week page)
+// or {replaced:URL} when the page sent the visitor elsewhere (?when=all → archive).
 // Only class names are simulated here; test/js/browser.js checks what a real browser actually shows.
 const fs=require('fs'); const html=fs.readFileSync(process.argv[2],'utf8'); const NOW=process.argv[3]; const HASH=process.argv[4]||''; const SEARCH=process.argv[5]||'';
 const script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.startsWith('var T='));   // the page script (the head script handles languages: test/js/lang.js)
@@ -21,19 +22,20 @@ const ids=['q','when','sort','count','empty','reset','sharefilter','prevw','next
 const el={}; for(const i of ids) if(html.includes(`id="${i}"`)) el['#'+i]=ctl(i);
 if(html.includes('id="events"')) el['#events']={appendChild(){}};
 const RealDate=Date; global.Date=class extends RealDate{constructor(...a){super(...(a.length?a:[NOW+'T12:00:00']))};static UTC(...a){return RealDate.UTC(...a)}};
-global.location={hash:HASH,search:SEARCH,pathname:'/p.html',origin:'http://localhost'};
+global.location={hash:HASH,search:SEARCH,pathname:'/p.html',origin:'http://localhost',replace(u){location.replaced=u}};
 global.history={replaceState:(a,b,u)=>{u=u.replace(/^https?:\/\/[^/]+/,'');const m=u.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);location.pathname=m[1]||location.pathname;location.search=m[2]||'';location.hash=m[3]||''}};
 global.window={addEventListener(){}};
 const sel={'.ev':ROWS,'.group':groups,'.week':weeks,'.col':cols,'input[name=type]':boxes.filter(b=>b.name==='type'),'input[name=music]':boxes.filter(b=>b.name==='music'),'.tabs a':tabs};
 global.document={addEventListener(t,f){if(t==='keydown')global.keydown=f},documentElement:{classList:classList('')},querySelectorAll:s=>sel[s]||[],querySelector:s=>el[s]||null,getElementById:i=>el['#'+i]||null};
 eval(script);
+if(location.replaced){console.log(JSON.stringify({replaced:location.replaced}));process.exit(0)}
 const visible=()=>ROWS.filter(c=>!c.classList.has('hidden')).map(c=>c.dataset.date);
 const visGroups=()=>groups.filter(g=>!g.classList.has('hidden')&&!g.classList.has('noev')).map(g=>g.dataset.group);
 const out={initial:{rows:ROWS.filter(c=>!c.classList.has('hidden')).map(c=>[c.dataset.date,c.dataset.type,c.dataset.eid]),groups:visGroups(),search:location.search,
-  markers:global.window.__markers||null,tabs:tabs.map(a=>a.getAttribute('href')),checked:boxes.filter(b=>b.checked).map(b=>b.name+':'+b.value),q:el['#q']?el['#q'].value:null,when:el['#when']?el['#when'].value:null},
+  markers:global.window.__markers||null,tabs:tabs.map(a=>a.getAttribute('href')),checked:boxes.filter(b=>b.checked).map(b=>b.name+':'+b.value),q:el['#q']?el['#q'].value:null,when:el['#when']?el['#when'].value:null,count:el['#count']?el['#count'].textContent:null},
   default:el['#when']?el['#when'].value:null,counts:{},groups:{}};
-for(const w of (el['#when']?['upcoming','all','today','week','month','recurring']:['any'])){if(el['#when'])el['#when'].value=w; window.apply(); out.counts[w]=visible(); out.groups[w]=visGroups();}
-if(el['#reset']){if(el['#when'])el['#when'].value='all'; el['#reset'].onclick(); out.reset=el['#when']?el['#when'].value:null; out.afterReset={search:location.search,checked:boxes.filter(b=>b.checked).length}}
+for(const w of (el['#when']?['upcoming','today','week','month','recurring']:['any'])){if(el['#when'])el['#when'].value=w; window.apply(); out.counts[w]=visible(); out.groups[w]=visGroups();}
+if(el['#reset']){if(el['#when'])el['#when'].value='today'; el['#reset'].onclick(); out.reset=el['#when']?el['#when'].value:null; out.afterReset={search:location.search,checked:boxes.filter(b=>b.checked).length}}
 if(weeks.length){const cur=()=>weeks.find(w=>!w.classList.has('off')).dataset.week; out.weeks={hash:cur()};
   el['#todayw'].onclick(); out.weeks.default=cur(); out.weeks.label=el['#weeklabel'].textContent; out.weeks.today=cols.filter(c=>c.classList.has('today')).map(c=>c.dataset.group);
   el['#nextw'].onclick(); out.weeks.next=cur(); el['#prevw'].onclick(); el['#prevw'].onclick(); out.weeks.prev=cur(); out.weeks.anchor=location.hash; out.weeks.prevDisabledAtStart=!!el['#prevw'].disabled;
