@@ -551,7 +551,8 @@ end
   for f in ("index.html","uke.html","kart.html","kort.html",joinpath("embed","liste.html"))
    v=read(joinpath(d,f),String); @test !occursin("data-eid=\"old\"",v) && occursin("data-eid=\"a\"",v)
   end
-  @test occursin("<a href=\"tidligere.html\">Tidligere arrangementer</a>",read(joinpath(d,"index.html"),String))
+  ix=read(joinpath(d,"index.html"),String)
+  @test count("<a href=\"tidligere.html\">Tidligere arrangementer</a>",ix)==1 && occursin(r"<div class=\"sitefooter\">[^\n]*href=\"tidligere.html\"",ix)   # footer only
   @test !occursin("tidligere.html",read(joinpath(d,"embed","liste.html"),String))
   for pre in ("","en","es"), f in ("tidligere.html","tidligere-2026.html")
    v=read(joinpath(d,pre,f),String); @test occursin("data-eid=\"old\"",v) && !occursin("data-eid=\"a\"",v)
