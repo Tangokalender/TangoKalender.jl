@@ -77,8 +77,8 @@ saving is refused until it's fixed. Some fields take short forms:
 - **Starttid**: `20:00`; empty for events without a time (festivals).
 - **Slutt**: `23:30`, or a time before the start for after midnight (`01:30`); `2026-11-08` for an event over several
   days, or `2026-11-08 18:00`. Summer and winter time are handled.
-- **Lærere**: names separated by commas. **Pris**: whole kroner (`150` or `150 kr`), or
-  «betal det du kan» for pay what you can, optionally with a suggested amount («betal det du kan, 100»).
+- **Lærere**: names separated by commas. **Pris**: whole kroner (`150` or `150 kr`). For pay what you can, set
+  **Betal det du kan** to «Ja»; **Pris** is then the suggested amount, or empty.
 - **Tittel**: the event's own name, without the organiser (it has its own field and is shown in the list).
 
 A new event gets the id `<series or title>-YYYY-MM-DD`, like events from the submission forms.

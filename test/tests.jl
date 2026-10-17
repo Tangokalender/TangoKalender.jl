@@ -1449,30 +1449,48 @@ end
  e=only(first(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"Betal det du kan, forslag 100"));today=T)))
  ks=collect(keys(e)); @test e["price_nok"]==100 && e["pay_what_you_can"]===true && findfirst(==("pay_what_you_can"),ks)==findfirst(==("class_price_nok"),ks)+1
  @test isempty(validate_event(e)) && !haskey(only(first(TK.events_from_form(f;today=T))),"pay_what_you_can")
- @test occursin("«betal det du kan»",only(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"gratis"));today=T)[2]))
+ @test occursin("kryss av for «Betal det du kan»",only(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"gratis"));today=T)[2]))
+ # the checkbox: «Pris (kr)» is then the suggestion, or empty; unticked, a number as before
+ box="- [X] Betal det du kan – inngangen er frivillig, og «Pris (kr)» over er et forslag"
+ e1=only(first(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"100","Betal det du kan"=>box));today=T)))
+ e2=only(first(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"","Betal det du kan"=>box));today=T)))
+ e3=only(first(TK.events_from_form(merge(f,Dict("Pris (kr)"=>"100","Betal det du kan"=>"- [ ] Betal det du kan"));today=T)))
+ @test e1["price_nok"]==100 && e1["pay_what_you_can"]===true && isnothing(e2["price_nok"]) && e2["pay_what_you_can"]===true
+ @test e3["price_nok"]==100 && !haskey(e3,"pay_what_you_can") && isempty(validate_event(e1)) && isempty(validate_event(e2))
+ # the spreadsheet: a «Betal det du kan» column with «Ja»
+ tab="Tittel\tType\tDato\tStarttid\tSted\tAdresse\tArrangør\tLenke\tPris (kr)\tBetal det du kan\nMilonga X\tMilonga\t2026-11-14\t20:00\tSal\tGate 1\tOrg\thttps://x.org\t100\tJa\n\t\t2026-11-21\t\t\t\t\t\t150\t-"
+ t,er=TK.events_from_table(tab;today=T)
+ @test isempty(er) && t[1]["pay_what_you_can"]===true && t[1]["price_nok"]==100 && !haskey(t[2],"pay_what_you_can") && t[2]["price_nok"]==150
  # shown in the page language; a suggested amount is no schema.org price
  @test [TK._with_lang(()->TK._price(e),l) for l in ("nb","en","es")]==["Betal det du kan (forslag 100 kr) · student 100 kr",
   "Pay what you can (suggested 100 kr) · students 100 kr","A la gorra (sugerido 100 kr) · estudiantes 100 kr"]
  @test TK._price(merge(e,Dict("price_nok"=>nothing,"student_price_nok"=>nothing)))=="Betal det du kan" && !occursin("offers",TK._event_jsonld(e))
  @test occursin("A la gorra",TK.render_event_page(e,[e];lang="es")) && occursin("Pay what you can",replace(TK.event_ics(e;today=T,lang="en"),"\r\n "=>""))
- # corrections: set, «same price in other words» is no change, «150» or «-» clear the flag (and the key)
+ # corrections: the «Betal det du kan» dropdown sets or clears the flag (blank or «Som før»: unchanged); a number in «Pris»
+ # only changes the amount; the old wording in «Pris» still sets it; «same price in other words» is no change
  mktempdir() do root
   x=merge(e,Dict("id"=>"x-2026-11-14","pay_what_you_can"=>nothing,"price_nok"=>150)); delete!(x,"pay_what_you_can"); save_event_tree([x],root)
-  fix(v)=TK.apply_correction(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok","Pris (kr)"=>v),root;today=T)
-  u,er,ch=fix("a la gorra, 150"); y=u[1][2]
-  @test isempty(er) && y["pay_what_you_can"]===true && y["price_nok"]==150 && ("Pris (kr)","150","Betal det du kan, forslag 150") in ch
-  @test occursin("Pris (kr): Betal det du kan, forslag 150",TK.current_summary(y)) && TK.correction_fields(y)["pris"]=="Betal det du kan, forslag 150"
+  fix(v,b="Som før")=TK.apply_correction(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok","Pris (kr)"=>v,"Betal det du kan"=>b),root;today=T)
+  u,er,ch=fix("","Ja – betal det du kan"); y=u[1][2]
+  @test isempty(er) && y["pay_what_you_can"]===true && y["price_nok"]==150 && ("Betal det du kan","Nei","Ja") in ch
+  @test occursin("Pris (kr): 150\nBetal det du kan: Ja",TK.current_summary(y)) && TK.correction_fields(y)["pris"]=="150"
+  @test !occursin("Betal det du kan",TK.current_summary(x))
+  @test fix("a la gorra, 150")[1][1][2]["pay_what_you_can"]===true                                   # the old wording still works
   save_event_tree([y],root)
-  @test any(occursin("Ingen endringer",m) for m in fix("betal det du kan, forslag 150")[2])
-  u,er,_=fix("150"); @test isempty(er) && !haskey(u[1][2],"pay_what_you_can") && u[1][2]["price_nok"]==150
+  @test any(occursin("Ingen endringer",m) for m in fix("betal det du kan, forslag 150")[2]) && any(occursin("Ingen endringer",m) for m in fix("","Ja – betal det du kan")[2])
+  u,er,_=fix("120"); @test isempty(er) && u[1][2]["pay_what_you_can"]===true && u[1][2]["price_nok"]==120   # amount only
+  u,er,_=fix("","Nei – fast pris"); @test isempty(er) && !haskey(u[1][2],"pay_what_you_can") && u[1][2]["price_nok"]==150
   u,er,_=fix("-"); @test isempty(er) && !haskey(u[1][2],"pay_what_you_can") && isnothing(u[1][2]["price_nok"])
+  u,er,_=fix("-","Ja – betal det du kan"); @test isempty(er) && u[1][2]["pay_what_you_can"]===true && isnothing(u[1][2]["price_nok"])   # no suggestion
  end
- # editor form (TangoTUI): «Pris» carries the flag, also when copied to later dates; a null flag is never written
+ # editor form (TangoTUI): «Betal det du kan» is its own Ja/Nei field; «Pris» is the amount; both copy to later dates
  ev=TK.Event(id="x-2026-11-14",title="X",types=["milonga"],start="2026-11-14T20:00:00+01:00",price_nok=150)
- F=TK._field("price_nok"); y=TK.set_field(ev,F,"betal det du kan")
- @test isnothing(y.price_nok) && y.pay_what_you_can===true && TK.field_text(y,F)=="Betal det du kan" && [f.key for f in TK.changed_fields(ev,y)]==["price_nok"]
- @test TK.copy_fields(ev,y,[F]).pay_what_you_can===true && isnothing(TK.set_field(y,F,"").pay_what_you_can)
- @test !occursin("pay_what_you_can",TK.event_text(TK.set_field(y,F,"150"),TK.new_event_keys())) && occursin("\"pay_what_you_can\": true",TK.event_text(y,TK.new_event_keys()))
+ F=TK._field("price_nok"); B=TK._field("pay_what_you_can"); y=TK.set_field(ev,B,["ja"])
+ @test y.price_nok==150 && y.pay_what_you_can===true && TK.field_text(y,B)=="Ja" && TK.field_text(ev,B)=="Nei" && [f.key for f in TK.changed_fields(ev,y)]==["pay_what_you_can"]
+ @test TK.set_field(y,F,"").pay_what_you_can===true && isnothing(TK.set_field(y,F,"").price_nok) && TK.set_field(y,F,"120").pay_what_you_can===true
+ @test TK.copy_fields(ev,y,[B]).pay_what_you_can===true && isnothing(TK.set_field(y,B,["nei"]).pay_what_you_can) && TK.field_text(y,F)=="150"
+ @test TK.set_field(ev,F,"betal det du kan, 100").pay_what_you_can===true                         # the old wording still sets it
+ @test !occursin("pay_what_you_can",TK.event_text(TK.set_field(y,B,["nei"]),TK.new_event_keys())) && occursin("\"pay_what_you_can\": true",TK.event_text(y,TK.new_event_keys()))
  @test_throws ArgumentError TK.set_field(ev,F,"gratis")
  # JSON submissions (KI): the flag is kept; the rules and the submission schema explain it
  j=JSON.json(Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"Sal","address"=>"Gate 1"),

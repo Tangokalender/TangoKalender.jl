@@ -701,15 +701,15 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -717,13 +717,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+  </text>
+  <text y="317">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
     <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="317">
+  <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
     <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
@@ -731,7 +739,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="333">
+  <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -739,7 +747,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="349">
+  <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -747,7 +755,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="365">
+  <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -755,7 +763,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="381">
+  <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -763,7 +771,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="397">
+  <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -771,7 +779,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="413">
+  <text y="429">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
@@ -779,7 +787,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -787,16 +795,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -962,15 +964,15 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -978,13 +980,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+  </text>
+  <text y="317">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
     <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="317">
+  <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
     <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
@@ -992,7 +1002,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="333">
+  <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1000,7 +1010,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="349">
+  <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1008,7 +1018,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="365">
+  <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1016,7 +1026,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="381">
+  <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1024,7 +1034,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="397">
+  <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1032,7 +1042,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="413">
+  <text y="429">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
@@ -1040,7 +1050,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1048,16 +1058,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -1223,15 +1227,15 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -1239,13 +1243,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+  </text>
+  <text y="317">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
     <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="317">
+  <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
     <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
@@ -1253,7 +1265,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="333">
+  <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1261,7 +1273,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="349">
+  <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1269,7 +1281,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="365">
+  <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1277,7 +1289,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="381">
+  <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1285,7 +1297,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="397">
+  <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1293,7 +1305,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="413">
+  <text y="429">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
@@ -1301,7 +1313,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1309,16 +1321,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -1334,7 +1340,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
+    <tspan x="0" textLength="672" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner. Med «Betal det du kan»: et foreslått beløp, eller tomt.</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Velg et felt med ↑/↓ og trykk Enter for å endre det.</tspan>
@@ -1485,15 +1491,15 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -1501,13 +1507,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+  </text>
+  <text y="317">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
     <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="317">
+  <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
     <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
@@ -1515,7 +1529,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="333">
+  <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1523,7 +1537,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="349">
+  <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1531,7 +1545,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="365">
+  <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1539,7 +1553,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="381">
+  <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1547,7 +1561,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="397">
+  <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1555,7 +1569,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="413">
+  <text y="429">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
@@ -1563,7 +1577,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1571,16 +1585,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -1596,7 +1604,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
+    <tspan x="0" textLength="672" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner. Med «Betal det du kan»: et foreslått beløp, eller tomt.</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="400" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Enter lagrer feltet, Tab går videre, Esc avbryter.</tspan>
@@ -1747,15 +1755,15 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -1763,13 +1771,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+  </text>
+  <text y="317">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
     <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="317">
+  <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
     <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
@@ -1777,7 +1793,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="333">
+  <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1785,7 +1801,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="349">
+  <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1793,7 +1809,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="365">
+  <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1801,7 +1817,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="381">
+  <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1809,7 +1825,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="397">
+  <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1817,7 +1833,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="413">
+  <text y="429">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
@@ -1825,7 +1841,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -1833,16 +1849,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -1858,7 +1868,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
+    <tspan x="0" textLength="672" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner. Med «Betal det du kan»: et foreslått beløp, eller tomt.</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="400" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Enter lagrer feltet, Tab går videre, Esc avbryter.</tspan>
@@ -2012,15 +2022,15 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -2028,13 +2038,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+  </text>
+  <text y="317">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
     <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="317">
+  <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
     <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
@@ -2042,7 +2060,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="333">
+  <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2050,7 +2068,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="349">
+  <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2058,7 +2076,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="365">
+  <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2066,7 +2084,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="381">
+  <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2074,7 +2092,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="397">
+  <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2082,7 +2100,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="413">
+  <text y="429">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
@@ -2090,7 +2108,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2098,16 +2116,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -2123,7 +2135,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
+    <tspan x="0" textLength="672" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner. Med «Betal det du kan»: et foreslått beløp, eller tomt.</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="232" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">«Pris» endret. Ctrl-S lagrer.</tspan>
@@ -2275,8 +2287,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="504" textLength="448" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">      ons 18.11  Onsdagsmilonga                         </tspan>
@@ -2284,7 +2296,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
@@ -2293,8 +2305,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
-    <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="504" textLength="448" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">      ons 02.12  Onsdagsmilonga                         </tspan>
@@ -2302,8 +2314,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="317">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
-    <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
+    <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="504" textLength="448" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">      ons 09.12  Onsdagsmilonga                         </tspan>
@@ -2311,8 +2323,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
+    <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="512" textLength="120" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">     … og 1 til</tspan>
@@ -2320,7 +2332,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
+    <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
@@ -2329,7 +2341,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
+    <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
@@ -2337,7 +2349,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
+    <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
@@ -2346,7 +2358,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
+    <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
@@ -2355,13 +2367,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+  </text>
+  <text y="429">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2369,16 +2389,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
@@ -2394,7 +2408,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5fafff">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
+    <tspan x="0" textLength="672" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner. Med «Betal det du kan»: et foreslått beløp, eller tomt.</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="424" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Gjelder endringen flere datoer? Se valgene til høyre.</tspan>
@@ -2544,15 +2558,15 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="269">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
-    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="32" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Betal det du kan</tspan>
+    <tspan x="240" textLength="24" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Nei</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
   <text y="285">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Studentpris</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -2560,13 +2574,21 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
   </text>
   <text y="301">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="32" textLength="64" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurspris</tspan>
+    <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
+    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
+    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
+  </text>
+  <text y="317">
+    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="88" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse</tspan>
     <tspan x="240" textLength="248" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Ukentlig milonga med tradisjon…</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="317">
+  <text y="333">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="80" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tekstspråk</tspan>
     <tspan x="240" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Norsk</tspan>
@@ -2574,7 +2596,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="333">
+  <text y="349">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Tittel (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2582,7 +2604,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="349">
+  <text y="365">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="200" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Beskrivelse (andre språk)</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2590,7 +2612,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="365">
+  <text y="381">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Lenke</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2598,7 +2620,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="381">
+  <text y="397">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Flyer</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2606,7 +2628,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="397">
+  <text y="413">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Video</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2614,7 +2636,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="413">
+  <text y="429">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Serie</tspan>
     <tspan x="240" textLength="112" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">onsdagsmilonga</tspan>
@@ -2622,7 +2644,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="429">
+  <text y="445">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
@@ -2630,16 +2652,10 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
   </text>
-  <text y="445">
+  <text y="461">
     <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="32" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kilde-URL</tspan>
     <tspan x="240" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">–</tspan>
-    <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
-    <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-    <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
-  </text>
-  <text y="461">
-    <tspan x="0" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="488" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
     <tspan x="496" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5f8787">│</tspan>
@@ -2655,7 +2671,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
+    <tspan x="0" textLength="672" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner. Med «Betal det du kan»: et foreslått beløp, eller tomt.</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="728" lengthAdjust="spacingAndGlyphs" fill="#87d787" font-weight="bold" stroke="#87d787" stroke-width="0.4">Lagret: events/2026/10-october/2026-10-28-onsdagsmilonga-2026-10-28.json og 7 senere datoer</tspan>

@@ -1,6 +1,6 @@
 # Issue form (.github/ISSUE_TEMPLATE/nytt-arrangement.yml) → v2 events. The body is untrusted input: parse it as data only.
 const FORM_FIELDS=["Tekstspråk","Tittel","Type","Dato","Starttid","Sluttid","Gjentas","Gjentas til","Unntatt datoer","Sted","Adresse","Arrangør",
- "DJ","Lærere","Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tittel (andre språk)","Beskrivelse (andre språk)","Samtykke"]
+ "DJ","Lærere","Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tittel (andre språk)","Beskrivelse (andre språk)","Samtykke"]
 "Optional text in the other language (English for a Norwegian event, Norwegian for an English one): label => key."
 const OTHER_TEXT_FIELDS=["Tittel (andre språk)"=>"title","Beskrivelse (andre språk)"=>"description"]
 const MAX_WEEKS=53
@@ -14,6 +14,8 @@ function parse_issue_form(body::AbstractString)
  out
 end
 _checked(v)=[strip(m[1]) for m in eachmatch(r"^\s*- \[[xX]\]\s*(.+?)\s*$"m,v)]
+"A ticked checkbox («- [X] …»), or a yes in a spreadsheet cell («Ja», «x», «yes»)."
+_ticked(v)=!isempty(_checked(v)) || lowercase(strip(v)) in ("ja","x","yes","y","1","true","sant")
 function _slug(s)
  s=lowercase(replace(s,"æ"=>"ae","Æ"=>"ae","ø"=>"o","Ø"=>"o","å"=>"a","Å"=>"a"))
  s=strip(replace(Base.Unicode.normalize(s;stripmark=true),r"[^a-z0-9]+"=>"-"),'-')
@@ -110,7 +112,7 @@ function _parse_field(label::AbstractString,s::AbstractString)
  elseif label=="Lenke"
   occursin(r"^https?://\S+$",s) ? (s,nothing) : bad("«Lenke» må være en nettadresse som begynner med https://.")
  elseif label=="Pris (kr)"   # (price, pay_what_you_can)
-  v=_parse_price(s); isnothing(v) ? bad("«Pris (kr)» må være et helt tall eller «betal det du kan», gjerne med et forslag: «betal det du kan, 100» (fikk «$s»).") : (v,nothing)
+  v=_parse_price(s); isnothing(v) ? bad("«Pris (kr)» må være et helt tall (fikk «$s»). Er inngangen frivillig, kryss av for «Betal det du kan»; prisen er da et forslag og kan stå tom.") : (v,nothing)
  elseif label in last.(PRICE_FIELDS)
   v=_parse_int(s); isnothing(v) || v<0 ? bad("«$label» må være et helt tall (fikk «$s»).") : (v,nothing)
  elseif label=="Flyer"
@@ -160,6 +162,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  end
  prices=Dict{String,Any}(k=>val(field) for (k,field) in PRICE_FIELDS)
  entry,pwyc=something(prices["price_nok"],(nothing,false))
+ pwyc=pwyc || _ticked(get_("Betal det du kan"))   # the checkbox; «betal det du kan, 100» in «Pris (kr)» still works
  music=something(val("Musikk"),Any[]); flyer=val("Flyer"); video=val("Video")
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  isempty(errs) || return (JSON.Object{String,Any}[],errs)

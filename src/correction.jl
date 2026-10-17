@@ -1,7 +1,7 @@
 # Correction form (.github/ISSUE_TEMPLATE/rett-arrangement.yml): prefilled «Rett opp» links and applying submitted changes.
 # Semantics: a blank field means "unchanged", `-` clears an optional field.
 const CORRECTION_FIELDS=["Arrangement-ID","Nåværende opplysninger","Gjelder","Status","Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør",
- "DJ","Lærere","Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tekstspråk","Tittel (andre språk)",
+ "DJ","Lærere","Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tekstspråk","Tittel (andre språk)",
  "Beskrivelse (andre språk)","Kommentar","Samtykke"]
 # form field id => form label for the editable fields (and the id), used to detect and display changes
 const CORRECTION_IDS=["arrangement_id"=>"Arrangement-ID","tittel"=>"Tittel","dato"=>"Dato","starttid"=>"Starttid","sluttid"=>"Sluttid",
@@ -24,7 +24,7 @@ function correction_fields(e)
  Dict{String,String}("arrangement_id"=>_s(e["id"]),"tittel"=>_s(get(e,"title",nothing)),"dato"=>first(_s(get(e,"start",nothing)),10),
   "starttid"=>_hhmm(get(e,"start",nothing)),"sluttid"=>_hhmm(get(e,"end",nothing)),"sted"=>_s(get(v,"name",nothing)),
   "adresse"=>_s(get(v,"address",nothing)),"arrangor"=>_s(get(e,"organizer",nothing)),"dj"=>_s(get(e,"dj",nothing)),
-  "laerere"=>join(something(get(e,"teachers",nothing),Any[]),", "),"pris"=>_price_form_text(get(e,"price_nok",nothing),_pwyc(e)),
+  "laerere"=>join(something(get(e,"teachers",nothing),Any[]),", "),"pris"=>_s(get(e,"price_nok",nothing)),
   "studentpris"=>_s(get(e,"student_price_nok",nothing)),"kurspris"=>_s(get(e,"class_price_nok",nothing)),
   "flyer"=>_s(get(e,"flyer_url",nothing)),"video"=>_video_url(get(e,"video",nothing)),"lenke"=>_s(get(e,"link",nothing)),
   "beskrivelse"=>_s(get(e,"description",nothing)),
@@ -57,7 +57,8 @@ _urlenc(s)=join((c<0x80 && (isletter(Char(c)) || isdigit(Char(c)) || Char(c) in 
 function current_summary(e; description=true)
  d=_display(e); f=correction_fields(e)
  lines=["$lbl: $(d[lbl])" for lbl in ("Tittel","Type","Status","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere",
-  "Pris (kr)","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Tekstspråk","Tittel (andre språk)") if !isempty(d[lbl])]
+  "Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Tekstspråk","Tittel (andre språk)")
+  if !isempty(d[lbl]) && !(lbl=="Betal det du kan" && d[lbl]=="Nei")]
  description && !isempty(f["beskrivelse"]) && push!(lines,"Beskrivelse: $(f["beskrivelse"])")
  description && !isempty(f["beskrivelse_annet"]) && push!(lines,"Beskrivelse (andre språk): $(f["beskrivelse_annet"])")
  !isnothing(get(e,"series",nothing)) && push!(lines,"Serie: $(e["series"])")
@@ -79,7 +80,8 @@ function _display(e)
  f=correction_fields(e)
  merge(Dict(lbl=>f[id] for (id,lbl) in CORRECTION_IDS if id!="arrangement_id"),
   Dict("Type"=>_types_label(e),"Musikk"=>join(_music_label.(string.(something(get(e,"music_style",nothing),Any[]))),", "),
-   "Status"=>_s(get(e,"status",nothing))=="cancelled" ? "Avlyst" : "Gjennomføres","Tekstspråk"=>LANG_NAME[_textlang(e)]))
+   "Status"=>_s(get(e,"status",nothing))=="cancelled" ? "Avlyst" : "Gjennomføres","Tekstspråk"=>LANG_NAME[_textlang(e)],
+   "Betal det du kan"=>_pwyc(e) ? "Ja" : "Nei"))
 end
 """
     apply_correction(fields, root; today=Dates.today()) -> (updates, errors, changed)
@@ -104,6 +106,7 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
    continue
   end
   v,e=_parse_field(label,s); isnothing(e) || (err(e); continue)
+  label=="Pris (kr)" && !isnothing(_parse_int(s)) && (v=(v[1],_pwyc(orig)))   # a number changes the amount, not «Betal det du kan»
   label=="Pris (kr)" && v==(get(orig,"price_nok",nothing),_pwyc(orig)) && continue   # same price, other wording
   ch[label]=v
  end
@@ -121,6 +124,12 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
  sl=get_("Tekstspråk")
  if !(sl in ("","Som før"))
   l=_parse_lang(sl); isnothing(l) ? err("«Tekstspråk» må være «Norsk» eller «English».") : l!=_textlang(orig) && (ch["Tekstspråk"]=l)
+ end
+ bd=get_("Betal det du kan")   # «Som før» (or blank) = unchanged; «Ja …» / «Nei …» set it, the price then is a suggestion / a fixed price
+ if startswith(bd,"Ja") || startswith(bd,"Nei")
+  was=(get(orig,"price_nok",nothing),_pwyc(orig))
+  p=haskey(ch,"Pris (kr)") ? something(ch["Pris (kr)"],(nothing,false))[1] : was[1]
+  new=(p,startswith(bd,"Ja")); new==was ? delete!(ch,"Pris (kr)") : (ch["Pris (kr)"]=new)
  end
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  series=get_("Gjelder")==SERIES_SCOPE

@@ -7,7 +7,7 @@
 One field of the event form. `key` is a JSON path (`venue.name`) or a form-only key: `date`, `start_time`, `end`,
 `video`, `other_title`, `other_description` (the text in the language that isn't `lang`). `label` and `help` are
 Norwegian, like the issue forms. `kind` is one of `:text`, `:longtext`, `:int`, `:price` (an entry price or «betal det
-du kan», which also sets `pay_what_you_can`), `:date`, `:time`, `:end`, `:choice`, `:multi`, `:list`, `:url`, `:video`; `choices` are the allowed `(value, label)` pairs of `:choice`/`:multi`, and
+du kan» still sets `pay_what_you_can` too; the field `pay_what_you_can` is a Ja/Nei `:choice`), `:date`, `:time`, `:end`, `:choice`, `:multi`, `:list`, `:url`, `:video`; `choices` are the allowed `(value, label)` pairs of `:choice`/`:multi`, and
 `checks` the `check` keys whose problems belong to the field.
 """
 struct FormField
@@ -35,7 +35,8 @@ function form_fields()
   F("dj","DJ",:text,""),
   F("teachers","Lærere",:list,"Skilt med komma."),
   F("music_style","Musikk",:multi,"Bare hvis arrangøren sier det.";choices=[(m,_MUSIC[m]) for m in sort(collect(keys(_MUSIC)))]),
-  F("price_nok","Pris",:price,"Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).";checks=["price_nok","pay_what_you_can"]),
+  F("price_nok","Pris",:price,"Vanlig inngang, hele kroner. Med «Betal det du kan»: et foreslått beløp, eller tomt.";checks=["price_nok"]),
+  F("pay_what_you_can","Betal det du kan",:choice,"Ja: inngangen er frivillig, og «Pris» er et forslag.";choices=[("ja","Ja"),("nei","Nei")],checks=["pay_what_you_can"]),
   F("student_price_nok","Studentpris",:int,"Hele kroner."),
   F("class_price_nok","Kurspris",:int,"Kurs- eller klassedelen. Pris for et helt kurs: skriv det i beskrivelsen."),
   F("description","Beskrivelse",:longtext,"1–3 korte, nøytrale setninger (nivå, inngang, påmelding)."),
@@ -71,7 +72,7 @@ function field_text(e::Event, f::FormField)
  k=="date" && return first(e.start,10)
  k=="start_time" && (t=_hm_of(e.start); return isnothing(t) ? "" : _hm_text(t))
  k=="end" && return _end_text(e)
- f.kind==:price && return _price_form_text(e.price_nok,e.pay_what_you_can===true)
+ f.kind==:price && return isnothing(e.price_nok) ? "" : string(e.price_nok)
  k=="video" && return isnothing(e.video) ? "" : e.video.platform=="vimeo" ? "https://vimeo.com/$(e.video.id)" : "https://youtu.be/$(e.video.id)"
  f.kind in (:choice,:multi) && return join((l for (v,l) in f.choices if v in field_values(e,f)),", ")
  _text_at(e,k=="other_title" ? "translations.$(_other_lang(e)).title" : k=="other_description" ? "translations.$(_other_lang(e)).description" : k)
@@ -93,6 +94,7 @@ function field_values(e::Event, f::FormField)
  f.key=="music_style" && return copy(something(e.music_style,String[]))
  f.key=="status" && return [something(e.status,"scheduled")]
  f.key=="lang" && return [something(e.lang,"nb")]
+ f.key=="pay_what_you_can" && return [e.pay_what_you_can===true ? "ja" : "nei"]
  String[]
 end
 """
@@ -142,8 +144,10 @@ function set_field(e::Event, f::FormField, s::AbstractString)
   e=set_path(e,["translations",l,part],isempty(s) ? "null" : JSON.json(s))
   return _prune_translations(e)
  elseif f.kind==:price
-  v=isempty(s) ? (nothing,false) : _parse_price(s); isnothing(v) && bad("«$s» er ikke et helt tall eller «betal det du kan».")
-  return _put(_put(e,Val(:price_nok),v[1]),Val(:pay_what_you_can),v[2] ? true : nothing)
+  isempty(s) && return _put(e,Val(:price_nok),nothing)
+  v=_parse_price(s); isnothing(v) && bad("«$s» er ikke et helt tall. Er inngangen frivillig, velg «Betal det du kan»: Ja.")
+  e=_put(e,Val(:price_nok),v[1])          # a number changes the amount only; «betal det du kan, 100» also sets the flag
+  return v[2] ? _put(e,Val(:pay_what_you_can),true) : e
  elseif f.kind==:int
   isempty(s) && return set_path(e,_path(k),"null")
   n=tryparse(Int,replace(s,r"\s|kr\.?$|,-$"=>"")); isnothing(n) && bad("«$s» er ikke et helt tall.")
@@ -163,6 +167,7 @@ function set_field(e::Event, f::FormField, vals::Vector{String})
  v=isempty(vs) ? nothing : vs[1]
  k=="status" && return _put(e,Val(:status),something(v,"scheduled"))
  k=="lang" && return (v=="en" || !isnothing(e.lang)) ? _put(e,Val(:lang),something(v,"nb")) : e   # Norwegian stays implicit
+ k=="pay_what_you_can" && return _put(e,Val(:pay_what_you_can),v=="ja" ? true : nothing)   # left out unless true
  throw(ArgumentError("«$(f.label)» has no choices"))
 end
 _field(k)=only(filter(f->f.key==k,form_fields()))

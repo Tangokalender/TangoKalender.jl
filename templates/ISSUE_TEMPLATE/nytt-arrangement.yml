@@ -120,8 +120,14 @@ body:
     id: pris
     attributes:
       label: Pris (kr)
-      description: Hele kroner, eller «betal det du kan» (gjerne med et forslag – «betal det du kan, 100»).
+      description: Hele kroner. Er inngangen frivillig, kryss av for «Betal det du kan» under – prisen er da et forslag og kan stå tom.
       placeholder: "150"
+  - type: checkboxes
+    id: betal
+    attributes:
+      label: Betal det du kan
+      options:
+        - label: Betal det du kan – inngangen er frivillig, og «Pris (kr)» over er et forslag
   - type: input
     id: studentpris
     attributes:

@@ -101,7 +101,17 @@ body:
     id: pris
     attributes:
       label: Pris (kr)
-      description: Hele kroner, eller «betal det du kan» (gjerne med et forslag – «betal det du kan, 100»).
+      description: Hele kroner. Med «Betal det du kan» er det et forslag.
+  - type: dropdown
+    id: betal
+    attributes:
+      label: Betal det du kan
+      description: Endres bare hvis det er feil. «Ja» gjør prisen over til et forslag.
+      options:
+        - Som før
+        - Ja – betal det du kan
+        - Nei – fast pris
+      default: 0
   - type: input
     id: studentpris
     attributes:
