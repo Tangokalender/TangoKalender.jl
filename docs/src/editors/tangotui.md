@@ -60,6 +60,7 @@ events match, or none, it opens the list searching for them.
 |:--|:--|
 | ↑ ↓, Tab, PgUp PgDn | choose a field |
 | Enter | edit the field; Enter saves it, Tab saves and goes to the next, Esc cancels |
+| in a description | the field opens in a larger window with word wrap: Enter makes a line break, the arrow keys, Home and End move, **Ctrl-S** keeps the text, Esc cancels |
 | in a pick list | ↑ ↓ to move, Space to tick (where several are allowed), Enter to choose |
 | Del | clear the field |
 | Ctrl-S | save the event |
@@ -98,6 +99,8 @@ the event tree fails, none of them are.
 
 ## Repeat an event
 
+![TangoTUI: repeating a weekly course, 10 new dates with the Christmas weeks skipped (invented events)](../assets/tangotui-repeat-demo.svg)
+
 **Ctrl-R** opens a panel that creates copies of an event on many dates: the same rules as
 `tangoedit repeat`, set in fields instead of options. On the right, the dates are listed as you go: each new event
 as a list line, and the dates that are skipped with the reason (already there, or excepted). **Ctrl-S** creates
@@ -135,4 +138,5 @@ git add events && git commit -m "Onsdagsmilonga: ny pris fra 28. oktober"
 git push
 ```
 
-The animation above is made by `bin/make_tui_demo.jl` from TangoTUI's real screens, on invented events.
+The animations are made by `bin/make_tui_demo.jl` and `bin/make_tui_repeat_demo.jl` from TangoTUI's real screens, on
+invented events.
