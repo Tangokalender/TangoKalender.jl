@@ -19,6 +19,17 @@ const TK=TangoKalender
 @tachikoma_app
 
 """
+A multi-line text with word wrap, for the long text fields (description) in a modal: `text` as characters, `cur`
+the number of characters before the cursor, `top` the first visible wrapped line, `width` the wrap width last drawn.
+"""
+mutable struct WrapEditor
+ text::Vector{Char}
+ cur::Int
+ top::Int
+ width::Int
+end
+WrapEditor(s::AbstractString)=(t=collect(s); WrapEditor(t,length(t),0,60))
+"""
 The repeat panel (Ctrl-R, `repeat TERM…`): copies of `template` on the dates of a rule, as `tangoedit repeat`
 (`TK.repeat_from`). The rule's fields are kept as typed (text) or as pick-list indices; `plan` is the last dry run.
 """
@@ -57,7 +68,7 @@ mutable struct Editor <: Model
  event::TK.Event
  cursor::Int
  offset::Int
- mode::Symbol                     # :search, :browse, :text, :pick, :confirm
+ mode::Symbol                     # :search, :browse, :text, :long, :pick, :confirm, :scope, :repeat
  input::TextInput
  pick::Int
  ticked::Vector{Bool}
@@ -85,11 +96,12 @@ mutable struct Editor <: Model
  selskip::Vector{Tuple{String,TK.Event,Vector{String}}}
  then::Symbol
  rep::Union{Nothing,RepeatForm}   # the repeat panel (mode :repeat)
+ long::WrapEditor                 # the long-text modal (mode :long)
 end
 function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree)
  m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,:browse,TextInput(text=""),1,Bool[],"",:info,false,String[],
           Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false,
-          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing)
+          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing,WrapEditor(""))
  isnothing(file) && _new_id!(m)
  m
 end
@@ -156,7 +168,7 @@ _leave!(m::Editor)=m.listing ? _to_list!(m;select=m.file) : (m.quit=true; nothin
 _ctrl(ev::KeyEvent,c::Char)=ev.key===:ctrl && ev.char==c
 _ch(ev::KeyEvent,c::Char)=ev.key===:char && ev.char==c
 function update!(m::Editor, ev::KeyEvent)
- m.mode===:search ? _search_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
+ m.mode===:search ? _search_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:long ? _long_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
  m.mode===:confirm ? _confirm_key!(m,ev) : m.mode===:scope ? _scope_key!(m,ev) : m.mode===:repeat ? _repeat_key!(m,ev) : _browse_key!(m,ev)
  nothing
 end
@@ -184,10 +196,56 @@ function _begin_edit!(m::Editor)
   vals=TK.field_values(m.event,f)
   m.ticked=[v in vals for (v,_) in f.choices]; m.pick=something(findfirst(m.ticked),1); m.mode=:pick
   _say!(m,f.kind===:multi ? "Mellomrom krysser av, Enter lagrer valget, Esc avbryter." : "Velg med ↑/↓ og Enter, Esc avbryter.")
+ elseif f.kind===:longtext
+  m.long=WrapEditor(TK.field_text(m.event,f)); m.mode=:long
+  _say!(m,"Skriv i feltet; Enter gir linjeskift, Ctrl-S lagrer feltet, Esc avbryter.")
  else
   m.input=TextInput(text=TK.field_text(m.event,f),focused=true); m.mode=:text
   _say!(m,"Enter lagrer feltet, Tab går videre, Esc avbryter.")
  end
+end
+"""
+The wrapped lines of `cs` at `width`, as character index ranges (newlines excluded; an empty paragraph is an empty
+range): words move whole to the next line, a word longer than the line is cut.
+"""
+function _wrap_lines(cs::Vector{Char}, width::Int)
+ w=max(width,2); out=UnitRange{Int}[]; n=length(cs); p=1
+ while true
+  q=something(findnext(==('\n'),cs,p),n+1)-1          # paragraph p..q
+  a=p
+  while q-a+1>w
+   sp=findprev(==(' '),cs,a+w-1); b=isnothing(sp) || sp<a ? a+w-1 : sp
+   push!(out,a:b); a=b+1
+  end
+  push!(out,a:q)
+  q>=n && break
+  p=q+2
+ end
+ out
+end
+"The wrapped line the cursor is on (the later one where two touch)."
+_curline(ls,c::Int)=something(findlast(r->first(r)-1<=c,ls),1)
+function _long_key!(m::Editor, ev::KeyEvent)
+ w=m.long; t=w.text; k=ev.key; ls=_wrap_lines(t,w.width); i=_curline(ls,w.cur); col=w.cur-(first(ls[i])-1)
+ soft(j)=j<length(ls) && first(ls[j+1])==last(ls[j])+1          # wrapped, not a line break: its end is the next line's start
+ lastpos(j)=soft(j) ? last(ls[j])-1 : last(ls[j])
+ vert(j)=(j=clamp(j,1,length(ls)); w.cur=min(first(ls[j])-1+col,lastpos(j)))
+ if k===:escape; m.mode=:browse; _say!(m,"Avbrutt.")
+ elseif _ctrl(ev,'s'); _apply!(m,String(t))
+ elseif k===:char; insert!(t,w.cur+1,ev.char); w.cur+=1
+ elseif k===:enter; insert!(t,w.cur+1,'\n'); w.cur+=1
+ elseif k===:backspace; w.cur>0 && (deleteat!(t,w.cur); w.cur-=1)
+ elseif k===:delete; w.cur<length(t) && deleteat!(t,w.cur+1)
+ elseif k===:left; w.cur=max(0,w.cur-1)
+ elseif k===:right; w.cur=min(length(t),w.cur+1)
+ elseif k===:up; vert(i-1)
+ elseif k===:down; vert(i+1)
+ elseif k===:pageup; vert(i-8)
+ elseif k===:pagedown; vert(i+8)
+ elseif k===:home; w.cur=first(ls[i])-1
+ elseif k===:end_key; w.cur=lastpos(i)
+ end
+ nothing
 end
 "Set the current field to `v` (text, or the chosen values); a value that can't be read stays in the editor."
 function _apply!(m::Editor, v)
@@ -501,6 +559,7 @@ function view(m::Editor, frame::Frame)
   length(parts)>1 && _view_card(m,parts[2],buf)
   m.mode===:pick && _view_pick(m,parts[1],buf)
   m.mode===:scope && length(parts)>1 && _view_scope(m,parts[2],buf)
+  m.mode===:long && _view_long(m,body,buf)
  end
  _view_footer(m,rows[3],buf)
 end
@@ -568,6 +627,31 @@ function _view_scope(m::Editor, rect::Rect, buf::Buffer)
  choice("u","Alle senere i utvalget «$(m.selquery)»",m.seltargets,m.selskip)
  add("d  Bare denne datoen",tstyle(:accent,bold=true)); add("Esc  Avbryt (ingenting lagres)",tstyle(:text_dim))
  for (i,(t,st)) in enumerate(lines); y=r.y+i-1; y>bottom(r) && break; set_string!(buf,r.x+1,y,_short(t,r.width-1),st,r); end
+end
+"The long-text modal: the field's text wrapped to the window, the cursor kept in view, and its length."
+function _view_long(m::Editor, under::Rect, buf::Buffer)
+ f=_field(m); w=m.long
+ mw=min(under.width-4,100); mh=min(under.height-2,max(12,under.height*2÷3))
+ (mw<20 || mh<5) && return
+ r=Rect(under.x+(under.width-mw)÷2,under.y+(under.height-mh)÷2,mw,mh)
+ for yy in r.y:bottom(r); set_string!(buf,r.x,yy," "^r.width,tstyle(:text)); end
+ n=length(w.text)
+ blk=Block(title=f.label,title_right="$n tegn",title_right_style=tstyle(:text_dim),border_style=tstyle(:border_focus))
+ render(blk,r,buf); ir=inner_area(blk,r)
+ tr=Rect(ir.x+1,ir.y,ir.width-2,ir.height-2); (tr.width<2 || tr.height<1) && return
+ set_string!(buf,ir.x+1,bottom(ir),_short(f.help,ir.width-2),tstyle(:text_dim),ir)
+ w.width=tr.width-1                                           # room for the cursor after the last character
+ ls=_wrap_lines(w.text,w.width); i=_curline(ls,w.cur)
+ w.top=clamp(w.top,max(0,i-tr.height),i-1)
+ cst=Style(; fg=Color256(0), bg=tstyle(:accent).fg)
+ for (row,li) in enumerate(w.top+1:min(length(ls),w.top+tr.height))
+  y=tr.y+row-1; seg=ls[li]
+  set_string!(buf,tr.x,y,String(w.text[seg]),tstyle(:text),tr)
+  if li==i
+   c=w.cur-(first(seg)-1); ch=w.cur+1<=last(seg) ? string(w.text[w.cur+1]) : " "
+   set_string!(buf,tr.x+c,y,ch,cst,tr)
+  end
+ end
 end
 function _view_pick(m::Editor, under::Rect, buf::Buffer)
  f=_field(m); n=length(f.choices)
@@ -677,6 +761,7 @@ function _view_footer(m::Editor, rect::Rect, buf::Buffer)
  set_string!(buf,x,rect.y+1,_short(m.message,w),st)
  keys=m.mode===:search ? "↑/↓ velg · Enter åpne · Ctrl-A $(m.past ? "bare kommende" : "også tidligere") · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc $(isempty(text(m.query)) ? "avslutt" : "tøm søket")" :
   m.mode===:text ? "Enter lagre feltet · Tab neste · Esc avbryt" :
+  m.mode===:long ? "Enter linjeskift · Ctrl-S lagre feltet · ←/→/↑/↓ flytt · Esc avbryt" :
   m.mode===:pick ? "↑/↓ flytt · Mellomrom kryss av · Enter velg · Esc avbryt" :
   m.mode===:confirm ? "s lagre · f forkast · Esc fortsett" :
   m.mode===:scope ? _scope_keys(m) :

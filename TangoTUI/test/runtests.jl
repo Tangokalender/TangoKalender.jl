@@ -157,6 +157,25 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   o=TangoTUI.Editor(TK.find_events(["series:otra"];root,from=TODAY)[1]...;root,today=TODAY)
   keys!(to!(o,"dj"),:enter,"X",:enter,:ctrl=>'s'); @test o.mode===:scope && isempty(o.seltargets) && !isempty(o.sertargets)
  end
+ @testset "long text (description) in a modal with word wrap" begin
+  W=TangoTUI._wrap_lines; L(t,w)=[String(collect(t)[r]) for r in W(collect(t),w)]
+  @test L("en to tre fire fem",8)==["en to ","tre ","fire fem"] && L("abcdefghij",4)==["abcd","efgh","ij"] && L("a\n\nb",5)==["a","","b"] && L("",5)==[""]
+  root=tree(); m=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root,today=TODAY)
+  d0=m.event.description; keys!(to!(m,"description"),:enter)
+  @test m.mode===:long && has(m,"╭─ Beskrivelse") && has(m,"$(length(d0)) tegn") && has(m,"Ctrl-S lagre feltet")
+  @test has(m,"Kveldsmilonga med show. Del av Kristiania Tango Festival") && has(m,"festivalens side for billetter.")   # wrapped, not cut off
+  keys!(m," Ny setning.",:enter,"Andre linje.")
+  @test String(m.long.text)==d0*" Ny setning.\nAndre linje." && m.event.description==d0                 # nothing applied yet
+  keys!(m,:home,:up,:end_key,:backspace); @test String(m.long.text)==d0*" Ny setning\nAndre linje."   # ↑ to the line above, its end
+  keys!(m,:escape); @test m.mode===:browse && m.event.description==d0                                    # Esc: unchanged
+  keys!(m,:enter,:end_key," Ekstra.",:ctrl=>'s')
+  @test m.mode===:browse && m.event.description==d0*" Ekstra." && has(m,"«Beskrivelse» endret")
+  keys!(m,:ctrl=>'s',"d"); @test TK.read_event(m.file)[1].description==d0*" Ekstra." && isempty(TK.validate_event_tree(root))
+  keys!(to!(m,"other_description"),:enter); @test m.mode===:long && has(m,"Beskrivelse (andre språk)")
+  keys!(m,:escape); keys!(to!(m,"title"),:enter); @test m.mode===:text                                            # short fields stay one line
+  keys!(m,:escape); s=screen(m;w=72,h=24)
+  keys!(to!(m,"description"),:enter); @test all(l->textwidth(l)<=72,screen(m;w=72,h=24)) && has(m,"Beskrivelse";w=72,h=24)
+ end
  @testset "repeat (Ctrl-R): the CLI's rules, dates listed live" begin
   root=tree(); R=TK.Recurrence
   rto!(m,k)=(m.rep.cursor=findfirst(f->f[1]===k,TangoTUI._RFIELDS); m)
