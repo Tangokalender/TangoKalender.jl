@@ -13,7 +13,7 @@ The form itself (fields, allowed values, reading and saving) is in TangoKalender
 `set_field`, `save_form_event`), so another front end can share it.
 """
 module TangoTUI
-using Dates, Tachikoma
+using Dates, Tachikoma, PrecompileTools
 using TangoKalender
 const TK=TangoKalender
 @tachikoma_app
@@ -846,4 +846,5 @@ function editor_for(cmd::AbstractString, terms::Vector{String}; root="events", p
  isempty(terms) || length(m.hits)!=1 || _load!(m,m.events[m.hits[1]])
  m
 end
+include("precompile.jl")
 end

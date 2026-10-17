@@ -39,6 +39,9 @@ julia --project=PATH/TangoTUI -m TangoTUI new series:otra    # a copy of the ser
 julia --project=PATH/TangoTUI -m TangoTUI repeat series:otra # repeat the series' latest event on the dates of a rule
 ```
 
+The first start after installing or updating compiles TangoTUI once, which takes a little while; after that it
+opens in a second or two.
+
 `edit` takes the same search terms as `tangoedit` (`series:otra`, `type:class`, `venue:sentralen`). When several
 events match, or none, it opens the list searching for them.
 
