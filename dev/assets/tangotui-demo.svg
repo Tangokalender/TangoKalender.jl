@@ -191,7 +191,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Skriv for å søke; ↑/↓ og Enter åpner et arrangement.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="720" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Esc avslutt</tspan>
+    <tspan x="0" textLength="848" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc avslutt</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -374,7 +374,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Skriv for å søke; ↑/↓ og Enter åpner et arrangement.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="736" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Esc tøm søket</tspan>
+    <tspan x="0" textLength="864" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc tøm søket</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -557,7 +557,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Skriv for å søke; ↑/↓ og Enter åpner et arrangement.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="736" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Esc tøm søket</tspan>
+    <tspan x="0" textLength="864" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc tøm søket</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -818,7 +818,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Velg et felt med ↑/↓ og trykk Enter for å endre det.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="584" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -1079,7 +1079,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Velg et felt med ↑/↓ og trykk Enter for å endre det.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="584" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -1334,13 +1334,13 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="224" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner.</tspan>
+    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Velg et felt med ↑/↓ og trykk Enter for å endre det.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="584" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -1596,7 +1596,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="224" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner.</tspan>
+    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="400" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Enter lagrer feltet, Tab går videre, Esc avbryter.</tspan>
@@ -1858,7 +1858,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="224" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner.</tspan>
+    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="400" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Enter lagrer feltet, Tab går videre, Esc avbryter.</tspan>
@@ -2123,13 +2123,13 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="224" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner.</tspan>
+    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="232" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">«Pris» endret. Ctrl-S lagrer.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="584" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -2394,7 +2394,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5fafff">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="224" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner.</tspan>
+    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="424" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Gjelder endringen flere datoer? Se valgene til høyre.</tspan>
@@ -2655,13 +2655,13 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="496" textLength="464" lengthAdjust="spacingAndGlyphs" fill="#5f8787">╰────────────────────────────────────────────────────────╯</tspan>
   </text>
   <text y="509">
-    <tspan x="0" textLength="224" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner.</tspan>
+    <tspan x="0" textLength="744" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Vanlig inngang, hele kroner, eller «betal det du kan» (med forslag: «betal det du kan, 100»).</tspan>
   </text>
   <text y="525">
     <tspan x="0" textLength="728" lengthAdjust="spacingAndGlyphs" fill="#87d787" font-weight="bold" stroke="#87d787" stroke-width="0.4">Lagret: events/2026/10-october/2026-10-28-onsdagsmilonga-2026-10-28.json og 7 senere datoer</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="584" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -2844,7 +2844,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="728" lengthAdjust="spacingAndGlyphs" fill="#87d787" font-weight="bold" stroke="#87d787" stroke-width="0.4">Lagret: events/2026/10-october/2026-10-28-onsdagsmilonga-2026-10-28.json og 7 senere datoer</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="736" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Esc tøm søket</tspan>
+    <tspan x="0" textLength="864" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ velg · Enter åpne · Ctrl-A også tidligere · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc tøm søket</tspan>
   </text>
 </g>
 </svg>
