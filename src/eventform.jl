@@ -5,7 +5,8 @@
     FormField
 
 One field of the event form. `key` is a JSON path (`venue.name`) or a form-only key: `date`, `start_time`, `end`,
-`video`, `other_title`, `other_description` (the text in the language that isn't `lang`). `label` and `help` are
+`video`, `other_title`, `other_description` (the text in the language that isn't `lang`), `es_title`, `es_description`
+(`translations.es`). `label` and `help` are
 Norwegian, like the issue forms. `kind` is one of `:text`, `:longtext`, `:int`, `:price` (an entry price or «betal det
 du kan» still sets `pay_what_you_can` too; the field `pay_what_you_can` is a Ja/Nei `:choice`), `:date`, `:time`, `:end`, `:choice`, `:multi`, `:list`, `:url`, `:video`; `choices` are the allowed `(value, label)` pairs of `:choice`/`:multi`, and
 `checks` the `check` keys whose problems belong to the field.
@@ -43,6 +44,8 @@ function form_fields()
   F("lang","Tekstspråk",:choice,"Språket i tittel og beskrivelse.";choices=[("nb","Norsk"),("en","English")]),
   F("other_title","Tittel (andre språk)",:text,"Bare tekst arrangøren selv har på begge språk; aldri egen oversettelse.";checks=["translations"]),
   F("other_description","Beskrivelse (andre språk)",:longtext,"Som over.";checks=["translations"]),
+  F("es_title","Tittel (spansk)",:text,"Bare tekst arrangøren selv har på spansk; aldri egen oversettelse.";checks=["translations"]),
+  F("es_description","Beskrivelse (spansk)",:longtext,"Som over.";checks=["translations"]),
   F("link","Lenke",:url,"Arrangementets egen side (f.eks. Facebook-arrangementet)."),
   F("flyer_url","Flyer",:url,"Lenke til bildet."),
   F("video","Video",:video,"YouTube- eller Vimeo-lenke.";checks=["video"]),
@@ -75,7 +78,8 @@ function field_text(e::Event, f::FormField)
  f.kind==:price && return isnothing(e.price_nok) ? "" : string(e.price_nok)
  k=="video" && return isnothing(e.video) ? "" : e.video.platform=="vimeo" ? "https://vimeo.com/$(e.video.id)" : "https://youtu.be/$(e.video.id)"
  f.kind in (:choice,:multi) && return join((l for (v,l) in f.choices if v in field_values(e,f)),", ")
- _text_at(e,k=="other_title" ? "translations.$(_other_lang(e)).title" : k=="other_description" ? "translations.$(_other_lang(e)).description" : k)
+ _text_at(e,k=="other_title" ? "translations.$(_other_lang(e)).title" : k=="other_description" ? "translations.$(_other_lang(e)).description" :
+  k=="es_title" ? "translations.es.title" : k=="es_description" ? "translations.es.description" : k)
 end
 function _text_at(e::Event, k::String)
  v=JSON.parse(path_json(e,_path(k)))
@@ -139,8 +143,8 @@ function set_field(e::Event, f::FormField, s::AbstractString)
   isempty(s) && return set_path(e,["video"],"null")
   v=_video_from_url(s); isnothing(v) && bad("må være en lenke til YouTube eller Vimeo.")
   return set_path(e,["video"],JSON.json(v))
- elseif k in ("other_title","other_description")
-  l=_other_lang(e); part=k=="other_title" ? "title" : "description"
+ elseif k in ("other_title","other_description","es_title","es_description")
+  l=startswith(k,"es_") ? "es" : _other_lang(e); part=endswith(k,"title") ? "title" : "description"
   e=set_path(e,["translations",l,part],isempty(s) ? "null" : JSON.json(s))
   return _prune_translations(e)
  elseif f.kind==:price

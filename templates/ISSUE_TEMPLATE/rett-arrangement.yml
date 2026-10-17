@@ -166,6 +166,15 @@ body:
     id: beskrivelse_annet
     attributes:
       label: Beskrivelse (andre språk)
+  - type: input
+    id: tittel_es
+    attributes:
+      label: Tittel (spansk)
+      description: Tittelen på spansk, hvis arrangøren har den. - fjerner den.
+  - type: textarea
+    id: beskrivelse_es
+    attributes:
+      label: Beskrivelse (spansk)
   - type: textarea
     id: kommentar
     attributes:

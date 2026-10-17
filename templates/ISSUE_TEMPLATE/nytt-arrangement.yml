@@ -178,6 +178,16 @@ body:
     attributes:
       label: Beskrivelse (andre språk)
       description: Valgfritt – beskrivelsen på det andre språket. Ett språk er nok. / Optional – one language is enough.
+  - type: input
+    id: tittel_es
+    attributes:
+      label: Tittel (spansk)
+      description: Valgfritt – bare hvis arrangøren selv har teksten på spansk, aldri egen oversettelse. / Optional – only if the organiser has the text in Spanish.
+  - type: textarea
+    id: beskrivelse_es
+    attributes:
+      label: Beskrivelse (spansk)
+      description: Valgfritt, som over. / Optional, as above.
   - type: checkboxes
     id: samtykke
     attributes:

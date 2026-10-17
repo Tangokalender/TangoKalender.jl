@@ -1,8 +1,10 @@
 # Issue form (.github/ISSUE_TEMPLATE/nytt-arrangement.yml) → v2 events. The body is untrusted input: parse it as data only.
 const FORM_FIELDS=["Tekstspråk","Tittel","Type","Dato","Starttid","Sluttid","Gjentas","Gjentas til","Unntatt datoer","Sted","Adresse","Arrangør",
- "DJ","Lærere","Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tittel (andre språk)","Beskrivelse (andre språk)","Samtykke"]
+ "DJ","Lærere","Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tittel (andre språk)","Beskrivelse (andre språk)","Tittel (spansk)","Beskrivelse (spansk)","Samtykke"]
 "Optional text in the other language (English for a Norwegian event, Norwegian for an English one): label => key."
 const OTHER_TEXT_FIELDS=["Tittel (andre språk)"=>"title","Beskrivelse (andre språk)"=>"description"]
+"Optional Spanish text (`translations.es`), whatever «Tekstspråk» is: label => key."
+const SPANISH_TEXT_FIELDS=["Tittel (spansk)"=>"title","Beskrivelse (spansk)"=>"description"]
 const MAX_WEEKS=53
 "Split an issue-form body into `heading => value`. GitHub's `_No response_` becomes an empty string."
 function parse_issue_form(body::AbstractString)
@@ -82,10 +84,14 @@ end
 "Language of the title/description from «Tekstspråk» (blank = Norwegian), or `nothing` if unknown."
 _parse_lang(s)=(k=lowercase(strip(s)); k in ("","norsk","nb","no","norwegian","bokmål") ? "nb" : k in ("english","engelsk","en","inglés","ingles") ? "en" : nothing)
 _other_lang(l)=l=="nb" ? "en" : "nb"
-"`translations` for the other-language fields (`nothing` when both are blank)."
+"`translations` for the other-language and the Spanish fields (`nothing` when all are blank)."
 function _translations(lang,f)
- tr=JSON.Object{String,Any}(k=>String(strip(get(f,label,""))) for (label,k) in OTHER_TEXT_FIELDS if !isempty(strip(get(f,label,""))))
- isempty(tr) ? nothing : JSON.Object{String,Any}(_other_lang(lang)=>tr)
+ texts(fields)=JSON.Object{String,Any}(k=>String(strip(get(f,label,""))) for (label,k) in fields if !isempty(strip(get(f,label,""))))
+ out=JSON.Object{String,Any}()
+ for (l,fields) in (_other_lang(lang)=>OTHER_TEXT_FIELDS,"es"=>SPANISH_TEXT_FIELDS)
+  tr=texts(fields); isempty(tr) || (out[l]=tr)
+ end
+ isempty(out) ? nothing : out
 end
 const PRICE_FIELDS=["price_nok"=>"Pris (kr)","student_price_nok"=>"Studentpris (kr)","class_price_nok"=>"Kurspris (kr)"]
 """

@@ -48,7 +48,7 @@ Rules:
 - "link" is the URL of the event page (for example the Facebook event). "flyer_url" and "video_url" (YouTube or Vimeo) only if such links appear in the source.
 - "description": 1–3 short, neutral sentences (level, entry, dress code). No marketing language. Write it in the language of the source if that is Norwegian or English, otherwise in English.
 - "lang" is the language of "title" and "description": "nb" (Norwegian) or "en" (English).
-- "translations" only if the source itself has the text in both languages: {"en": {"title": …, "description": …}} for a Norwegian event (or {"nb": …} for an English one). Never translate yourself.
+- "translations" only if the source itself has the text in another language: {"en": {"title": …, "description": …}} for a Norwegian event (or {"nb": …} for an English one), and "es" for Spanish text, e.g. {"en": {…}, "es": {…}}. Never translate yourself.
 - Use null (or [] for lists) for anything the source does not state. Never guess names, prices, times or addresses.
 - Write people's names (DJ, teachers, organiser) only as they appear in the public event.
 - If a date is already in the calendar (same title or organiser, venue and date), do not output it again. Tell the user that it is already listed and that corrections go through the «Rett opp» link on the event page.

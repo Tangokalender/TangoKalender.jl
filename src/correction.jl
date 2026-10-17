@@ -2,12 +2,13 @@
 # Semantics: a blank field means "unchanged", `-` clears an optional field.
 const CORRECTION_FIELDS=["Arrangement-ID","Nåværende opplysninger","Gjelder","Status","Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør",
  "DJ","Lærere","Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tekstspråk","Tittel (andre språk)",
- "Beskrivelse (andre språk)","Kommentar","Samtykke"]
+ "Beskrivelse (andre språk)","Tittel (spansk)","Beskrivelse (spansk)","Kommentar","Samtykke"]
 # form field id => form label for the editable fields (and the id), used to detect and display changes
 const CORRECTION_IDS=["arrangement_id"=>"Arrangement-ID","tittel"=>"Tittel","dato"=>"Dato","starttid"=>"Starttid","sluttid"=>"Sluttid",
  "sted"=>"Sted","adresse"=>"Adresse","arrangor"=>"Arrangør","dj"=>"DJ","laerere"=>"Lærere","pris"=>"Pris (kr)",
  "studentpris"=>"Studentpris (kr)","kurspris"=>"Kurspris (kr)","flyer"=>"Flyer","video"=>"Video","lenke"=>"Lenke","beskrivelse"=>"Beskrivelse",
- "tittel_annet"=>"Tittel (andre språk)","beskrivelse_annet"=>"Beskrivelse (andre språk)"]
+ "tittel_annet"=>"Tittel (andre språk)","beskrivelse_annet"=>"Beskrivelse (andre språk)","tittel_es"=>"Tittel (spansk)",
+ "beskrivelse_es"=>"Beskrivelse (spansk)"]
 const REQUIRED_LABELS=Set(["Tittel","Dato","Starttid","Sted","Adresse","Arrangør","Lenke"])
 const SERIES_SCOPE="Denne og alle senere datoer i serien"
 const MAX_URL=6000
@@ -28,7 +29,8 @@ function correction_fields(e)
   "studentpris"=>_s(get(e,"student_price_nok",nothing)),"kurspris"=>_s(get(e,"class_price_nok",nothing)),
   "flyer"=>_s(get(e,"flyer_url",nothing)),"video"=>_video_url(get(e,"video",nothing)),"lenke"=>_s(get(e,"link",nothing)),
   "beskrivelse"=>_s(get(e,"description",nothing)),
-  "tittel_annet"=>_translation(e,_other_lang(_textlang(e)),"title"),"beskrivelse_annet"=>_translation(e,_other_lang(_textlang(e)),"description"))
+  "tittel_annet"=>_translation(e,_other_lang(_textlang(e)),"title"),"beskrivelse_annet"=>_translation(e,_other_lang(_textlang(e)),"description"),
+  "tittel_es"=>_translation(e,"es","title"),"beskrivelse_es"=>_translation(e,"es","description"))
 end
 """
 `x` with `pay_what_you_can` set to true (a new key goes in its schema place, after the prices), or removed (`false`).
@@ -57,10 +59,11 @@ _urlenc(s)=join((c<0x80 && (isletter(Char(c)) || isdigit(Char(c)) || Char(c) in 
 function current_summary(e; description=true)
  d=_display(e); f=correction_fields(e)
  lines=["$lbl: $(d[lbl])" for lbl in ("Tittel","Type","Status","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere",
-  "Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Tekstspråk","Tittel (andre språk)")
+  "Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Tekstspråk","Tittel (andre språk)","Tittel (spansk)")
   if !isempty(d[lbl]) && !(lbl=="Betal det du kan" && d[lbl]=="Nei")]
  description && !isempty(f["beskrivelse"]) && push!(lines,"Beskrivelse: $(f["beskrivelse"])")
  description && !isempty(f["beskrivelse_annet"]) && push!(lines,"Beskrivelse (andre språk): $(f["beskrivelse_annet"])")
+ description && !isempty(f["beskrivelse_es"]) && push!(lines,"Beskrivelse (spansk): $(f["beskrivelse_es"])")
  !isnothing(get(e,"series",nothing)) && push!(lines,"Serie: $(e["series"])")
  join(lines,"\n")
 end
@@ -156,6 +159,7 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
    for k in ("title","description"); v=_translation(x,new,k); isempty(v) && continue; _set_translation!(x,new,k,nothing); _set_translation!(x,old,k,v); end
   end
   for (label,k) in OTHER_TEXT_FIELDS; haskey(ch,label) && _set_translation!(x,_other_lang(_textlang(x)),k,ch[label]); end
+  for (label,k) in SPANISH_TEXT_FIELDS; haskey(ch,label) && _set_translation!(x,"es",k,ch[label]); end   # Spanish whatever «Tekstspråk» is
   for (k,field) in PRICE_FIELDS[2:end]; apply!(field,k); end
   if haskey(ch,"Pris (kr)")   # (price, pay_what_you_can), or `nothing` to clear both
    p,pwyc=something(ch["Pris (kr)"],(nothing,false)); x["price_nok"]=p; x=_set_pwyc(x,pwyc)

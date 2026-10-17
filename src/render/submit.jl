@@ -16,7 +16,7 @@ const _COLUMN_HELP=Dict(
   ("Pris (kr), Studentpris (kr), Kurspris (kr)","Hele kroner."),("Betal det du kan","«Ja» hvis inngangen er frivillig; «Pris» er da et forslag og kan stå tom."),("Musikk","Tradisjonell, Alternativ / neo og/eller Levende orkester, skilt med komma."),
   ("Flyer / Video","Lenke til bilde / YouTube eller Vimeo."),("Lenke","Arrangementets nettside eller Facebook-arrangement. *"),
   ("Beskrivelse","Kort tekst."),("Tekstspråk","«Norsk» (standard) eller «English»: språket i Tittel og Beskrivelse."),
-  ("Tittel (andre språk) / Beskrivelse (andre språk)","Valgfritt: tittel og beskrivelse på det andre språket (engelsk hvis teksten er norsk)."),
+  ("Tittel (andre språk) / Beskrivelse (andre språk)","Valgfritt: tittel og beskrivelse på det andre språket (engelsk hvis teksten er norsk)."),("Tittel (spansk) / Beskrivelse (spansk)","Valgfritt: tittel og beskrivelse på spansk, hvis arrangøren har dem."),
   ("Status","Skriv «Avlyst» på datoer som er avlyst.")],
  "en"=>[("Tittel","Title: the name of the event, without the organiser (it has its own column). *"),("Type","One or more, separated by commas: Class, Workshop, Milonga, Practica, Festival, Marathon, Open-air, Other (or the Norwegian Kurs, Maraton, Utetango, Annet) – e.g. “Class, Milonga”. *"),
   ("Dato","Date, one per row: YYYY-MM-DD, DD.MM.YYYY or DD/MM/YYYY. *"),("Starttid / Sluttid","Start / end time, HH:MM (2030 works too). An end after midnight is fine (e.g. 01:00). Start time *"),
@@ -24,7 +24,7 @@ const _COLUMN_HELP=Dict(
   ("Pris (kr), Studentpris (kr), Kurspris (kr)","Price, student price, class price in whole kroner."),("Betal det du kan","Pay what you can: «Ja» if entry is by contribution; «Pris» is then the suggested amount and may be empty."),("Musikk","Music: Traditional, Alternative / neo and/or Live orchestra, separated by commas."),
   ("Flyer / Video","Link to an image / YouTube or Vimeo."),("Lenke","Link: the event's web page or Facebook event. *"),
   ("Beskrivelse","Description: a short text."),("Tekstspråk","Text language: “English” or “Norsk” (the default) – the language of Tittel and Beskrivelse."),
-  ("Tittel (andre språk) / Beskrivelse (andre språk)","Optional: title and description in the other language (Norwegian if your text is English)."),
+  ("Tittel (andre språk) / Beskrivelse (andre språk)","Optional: title and description in the other language (Norwegian if your text is English)."),("Tittel (spansk) / Beskrivelse (spansk)","Optional: title and description in Spanish, if the organiser has them."),
   ("Status","Write “Avlyst” (or “Cancelled”) on cancelled dates.")],
  "es"=>[("Tittel","Título: el nombre del evento, sin el organizador (tiene su propia columna). *"),("Type","Tipo, uno o más separados por comas: Class (clase), Workshop (seminario), Milonga, Practica, Festival, Marathon, Open-air (al aire libre), Other (otro) – p. ej. «Class, Milonga». *"),
   ("Dato","Fecha, una por fila: AAAA-MM-DD, DD.MM.AAAA o DD/MM/AAAA. *"),("Starttid / Sluttid","Hora de inicio / fin, HH:MM (también vale 2030). Si termina después de medianoche, está bien (p. ej. 01:00). Inicio *"),
@@ -32,7 +32,7 @@ const _COLUMN_HELP=Dict(
   ("Pris (kr), Studentpris (kr), Kurspris (kr)","Precio, precio para estudiantes, precio de la clase, en coronas enteras."),("Betal det du kan","A la gorra: «Ja» si la entrada es a voluntad; «Pris» es entonces el monto sugerido y puede quedar vacío."),("Musikk","Música: Traditional, Alternative / neo y/o Live orchestra, separados por comas."),
   ("Flyer / Video","Enlace a una imagen / a YouTube o Vimeo."),("Lenke","Enlace: la página del evento o el evento de Facebook. *"),
   ("Beskrivelse","Descripción: un texto corto."),("Tekstspråk","Idioma del texto: «English» o «Norsk» (predeterminado), el idioma de Tittel y Beskrivelse. Por ahora el texto de los eventos va en noruego o inglés."),
-  ("Tittel (andre språk) / Beskrivelse (andre språk)","Opcional: título y descripción en el otro idioma."),
+  ("Tittel (andre språk) / Beskrivelse (andre språk)","Opcional: título y descripción en el otro idioma."),("Tittel (spansk) / Beskrivelse (spansk)","Opcional: título y descripción en castellano, si la organización los tiene."),
   ("Status","Escribí «Avlyst» (o «Cancelled») en las fechas canceladas.")])
 "Norwegian form labels explained for English and Spanish visitors (the GitHub forms are in Norwegian)."
 const _GLOSSARY=Dict(
@@ -42,7 +42,7 @@ const _GLOSSARY=Dict(
   ("Gjentas til / Unntatt datoer","Repeats until / except on these dates"),("Sted / Adresse","Venue / address"),("Arrangør","Organiser"),
   ("Lærere","Teachers"),("Pris / Studentpris / Kurspris (kr)","Price / student price / class price in kroner"),
   ("Musikk","Music: Tradisjonell = traditional, Alternativ / neo, Levende orkester = live orchestra"),("Lenke","Link to the event page"),
-  ("Beskrivelse","Description"),("Tittel / Beskrivelse (andre språk)","Optional title / description in the other language"),
+  ("Beskrivelse","Description"),("Tittel / Beskrivelse (andre språk)","Optional title / description in the other language"),("Tittel / Beskrivelse (spansk)","Optional title / description in Spanish"),
   ("Samtykke","Consent: the people named have agreed to be listed")],
  "es"=>[("Tekstspråk","Idioma del texto: elegí English si escribís el título y la descripción en inglés"),("Tittel","Título"),
   ("Type","Kurs = clase, Workshop = seminario, Milonga, Practica, Festival, Maraton = maratón, Utetango = al aire libre, Annet = otro"),
@@ -50,7 +50,7 @@ const _GLOSSARY=Dict(
   ("Gjentas til / Unntatt datoer","Se repite hasta / excepto estas fechas"),("Sted / Adresse","Lugar / dirección"),("Arrangør","Organiza"),
   ("Lærere","Profesores"),("Pris / Studentpris / Kurspris (kr)","Precio / estudiantes / clase, en coronas"),
   ("Musikk","Música: Tradisjonell = tradicional, Alternativ / neo, Levende orkester = orquesta en vivo"),("Lenke","Enlace a la página del evento"),
-  ("Beskrivelse","Descripción"),("Tittel / Beskrivelse (andre språk)","Título / descripción opcional en el otro idioma"),
+  ("Beskrivelse","Descripción"),("Tittel / Beskrivelse (andre språk)","Título / descripción opcional en el otro idioma"),("Tittel / Beskrivelse (spansk)","Título / descripción opcional en castellano"),
   ("Samtykke","Consentimiento: las personas mencionadas aceptaron figurar")])
 "Per-language text of legg-til.html (a function: it interpolates URLs and the example table)."
 function _add_text()

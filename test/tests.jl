@@ -980,6 +980,39 @@ end
   @test isempty(er) && u[1][2]["lang"]=="en" && u[1][2]["translations"]==Dict("nb"=>Dict("title"=>"Evening milonga")) && ("Tekstspråk","Norsk","English") in ch
   @test occursin("Tittel (andre språk): Evening milonga",TK.current_summary(x)) && occursin("Tekstspråk: Norsk",TK.current_summary(x))
  end
+ # Spanish alternative text («Tittel/Beskrivelse (spansk)») besides the other language, in every route
+ fs=merge(f,Dict("Tekstspråk"=>"","Tittel"=>"Fredagsmilonga","Tittel (andre språk)"=>"Friday milonga","Tittel (spansk)"=>" Milonga del viernes ",
+  "Beskrivelse (spansk)"=>"Linda noche."))
+ e=only(first(TK.events_from_form(fs;today=T)))
+ @test e["lang"]=="nb" && e["translations"]==Dict("en"=>Dict("title"=>"Friday milonga"),"es"=>Dict("title"=>"Milonga del viernes","description"=>"Linda noche.")) && isempty(validate_event(e))
+ @test only(first(TK.events_from_form(merge(f,Dict("Tittel (spansk)"=>"Milonga del viernes"));today=T)))["translations"]==
+  Dict("nb"=>Dict("title"=>"Fredagsmilonga"),"es"=>Dict("title"=>"Milonga del viernes"))          # an English event: nb + es
+ @test [TK._with_lang(()->first(TK._text(e,"title")),l) for l in ("nb","en","es")]==["Fredagsmilonga","Friday milonga","Milonga del viernes"]
+ h=render_events_html([merge(e,Dict("id"=>"s-2026-11-13"))];view="compact",site=true,lang="es")
+ @test occursin("Milonga del viernes",h) && occursin("milonga del viernes",h) && occursin("friday milonga",h) && occursin("fredagsmilonga",h)   # shown + searchable
+ tab="Tittel\tType\tDato\tStarttid\tSted\tAdresse\tArrangør\tLenke\tTitle (Spanish)\tDescripción\nNatt\tMilonga\t2026-11-13\t20:00\tS\tA\tK\thttps://x.org\tNoche\tBaile.\n"
+ ev,er=TK.events_from_table(tab;today=T); @test isempty(er) && only(ev)["translations"]==Dict("es"=>Dict("title"=>"Noche","description"=>"Baile."))
+ @test "Tittel (spansk)" in TK.TABLE_COLUMNS && TK.parse_table(replace(TK.table_template_csv(),"﻿"=>""))[1]==TK.TABLE_COLUMNS
+ ev,er=TK.events_from_json(replace(j,"\"en\":{\"title\":\"x\"}"=>"\"es\":{\"title\":\"Noche\"}");today=T)
+ @test isempty(er) && only(ev)["translations"]==Dict("nb"=>Dict("title"=>"Natt"),"es"=>Dict("title"=>"Noche"))
+ mktempdir() do root
+  x=E(id="x-2026-10-24",lang="nb",translations=Dict("en"=>Dict("title"=>"Evening milonga")),organizer="K",link="https://x.org"); save_event_tree([x],root)
+  base=Dict("Arrangement-ID"=>"x-2026-10-24","Samtykke"=>"- [X] ok")
+  u,er,ch=TK.apply_correction(merge(base,Dict("Tittel (spansk)"=>"Milonga de la tarde","Beskrivelse (spansk)"=>"Linda.")),root;today=T); y=u[1][2]
+  @test isempty(er) && y["translations"]==Dict("en"=>Dict("title"=>"Evening milonga"),"es"=>Dict("title"=>"Milonga de la tarde","description"=>"Linda."))
+  @test ("Tittel (spansk)","","Milonga de la tarde") in ch && occursin("Tittel (spansk): Milonga de la tarde",TK.current_summary(y)) && occursin("Beskrivelse (spansk): Linda.",TK.current_summary(y))
+  save_event_tree([y],root)
+  @test any(occursin("Ingen endringer",m) for m in TK.apply_correction(merge(base,Dict("Tittel (spansk)"=>"Milonga de la tarde")),root;today=T)[2])
+  u,er,_=TK.apply_correction(merge(base,Dict("Tittel (spansk)"=>"-","Beskrivelse (spansk)"=>"-")),root;today=T)
+  @test isempty(er) && u[1][2]["translations"]==Dict("en"=>Dict("title"=>"Evening milonga"))      # Spanish removed, English kept
+  u,er,_=TK.apply_correction(merge(base,Dict("Tekstspråk"=>"English")),root;today=T)             # nb↔en relabel leaves es alone
+  @test isempty(er) && u[1][2]["translations"]==Dict("nb"=>Dict("title"=>"Evening milonga"),"es"=>Dict("title"=>"Milonga de la tarde","description"=>"Linda."))
+ end
+ # the editors' form (TangoTUI)
+ ev=TK.Event(id="x-2026-11-14",title="Kveldsmilonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
+ S=TK._field("es_title"); D=TK._field("es_description"); y=TK.set_field(TK.set_field(ev,S,"Milonga de la noche"),D,"Linda.")
+ @test y.translations.es.title=="Milonga de la noche" && TK.field_text(y,S)=="Milonga de la noche" && TK.field_text(y,D)=="Linda." && D.kind===:longtext
+ @test isnothing(TK.set_field(TK.set_field(y,S,""),D,"").translations) && [f.key for f in TK.changed_fields(ev,y)]==["es_title","es_description"]
 end
 @testset "maps: venue cache, geocoding, event map, «Kart» view" begin
  TK=TangoKalender; T=Date(2026,10,5)

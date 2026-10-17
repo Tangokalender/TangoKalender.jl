@@ -5,7 +5,8 @@
 # Each data row becomes one dated event; rows with the same title share a `series`.
 # English headings are accepted as aliases («Title», «Date», «Organiser» …), and type/music values in any language.
 const TABLE_COLUMNS=["Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere","Pris (kr)","Betal det du kan",
- "Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Status","Tekstspråk","Tittel (andre språk)","Beskrivelse (andre språk)"]
+ "Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Status","Tekstspråk","Tittel (andre språk)","Beskrivelse (andre språk)",
+ "Tittel (spansk)","Beskrivelse (spansk)"]
 const MAX_TABLE_ROWS=60
 _colkey(s)=replace(lowercase(strip(s)),r"\s*\(kr\)\s*$"=>"",r"\s+"=>" ")
 const _COLUMN_BY_KEY=merge(Dict(_colkey(c)=>c for c in TABLE_COLUMNS),
@@ -17,7 +18,9 @@ const _COLUMN_BY_KEY=merge(Dict(_colkey(c)=>c for c in TABLE_COLUMNS),
       "organiser"=>"Arrangør","organizer"=>"Arrangør","teachers"=>"Lærere","price"=>"Pris (kr)","student price"=>"Studentpris (kr)",
       "class price"=>"Kurspris (kr)","music"=>"Musikk","link"=>"Lenke","description"=>"Beskrivelse","language"=>"Tekstspråk",
       "text language"=>"Tekstspråk","title (other language)"=>"Tittel (andre språk)","description (other language)"=>"Beskrivelse (andre språk)",
-      "title (english)"=>"Tittel (andre språk)","description (english)"=>"Beskrivelse (andre språk)"))
+      "title (english)"=>"Tittel (andre språk)","description (english)"=>"Beskrivelse (andre språk)",
+      "title (spanish)"=>"Tittel (spansk)","description (spanish)"=>"Beskrivelse (spansk)","tittel (spansk)"=>"Tittel (spansk)",
+      "título"=>"Tittel (spansk)","titulo"=>"Tittel (spansk)","descripción"=>"Beskrivelse (spansk)","descripcion"=>"Beskrivelse (spansk)"))
 """
     parse_table(text) -> Vector{Vector{String}}
 
@@ -109,7 +112,8 @@ function table_template_csv()
   ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 $(site_city())","Tangoklubben","DJ A","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.","","Norsk","","Milonga every Friday."],
   ["","","2027-01-15","","","","","","DJ B","","","","","","","","","","","","",""],
   ["","","2027-01-22","","","","","","","","","","","","","","","","Avlyst","","",""]]
- i=findfirst(==("Betal det du kan"),TABLE_COLUMNS); for r in rows[2:end]; insert!(r,i,""); end   # the examples have fixed prices
+ i=findfirst(==("Betal det du kan"),TABLE_COLUMNS)
+ for r in rows[2:end]; insert!(r,i,""); append!(r,fill("",length(TABLE_COLUMNS)-length(r))); end   # fixed prices; no Spanish text
  q(c)=occursin(r"[;\"\n]",c) ? "\""*replace(c,"\""=>"\"\"")*"\"" : c
  "﻿"*join((join(q.(r),";") for r in rows),"\r\n")*"\r\n"
 end
