@@ -25,9 +25,15 @@ function _date(s)
  m=match(r"^\s*(\d{1,2})[./](\d{1,2})[./](\d{4})\s*$",s); isnothing(m) || return tryparse(Date,"$(m[3])-$(lpad(m[2],2,'0'))-$(lpad(m[1],2,'0'))")
  nothing
 end
+"Clock times as people type them: «20:30», «20.30», «2030», «930», «20», optionally after «kl.» (any case)."
+const TIME_RE=r"^\s*(?:kl\.?\s*)?([0-9]{1,2})(?:[:.]?([0-9]{2}))?\s*$"i
+"""
+A clock time as `"HH:MM"`, or `nothing`: «20:30», «20.30», «2030», «930», «20» (whole hours), optionally after «kl.».
+24:00 only with `allow24` (an end time).
+"""
 function _time(s;allow24=false)
- m=match(r"^\s*(\d{1,2})[:.](\d{2})\s*$",s); isnothing(m) && return nothing
- h,mi=parse(Int,m[1]),parse(Int,m[2]); t="$(lpad(h,2,'0')):$(m[2])"
+ m=match(TIME_RE,s); isnothing(m) && return nothing
+ h,mi=parse(Int,m[1]),isnothing(m[2]) ? 0 : parse(Int,m[2]); t="$(lpad(h,2,'0')):$(lpad(mi,2,'0'))"
  (h<24 && mi<60) || (allow24 && t=="24:00") ? t : nothing
 end
 _parse_int(s)=tryparse(Int,replace(strip(s),r"(?i)\s*(kr|nok|,-)\s*$"=>"",r"\s"=>""))
@@ -100,7 +106,7 @@ function _parse_field(label::AbstractString,s::AbstractString)
  elseif label in ("Dato","Gjentas til")
   d=_date(s); isnothing(d) ? bad("«$label» må være en dato, ÅÅÅÅ-MM-DD eller DD.MM.ÅÅÅÅ (fikk «$s»).") : (d,nothing)
  elseif label in ("Starttid","Sluttid")
-  t=_time(s;allow24=label=="Sluttid"); isnothing(t) ? bad("«$label» må være på formen TT:MM (fikk «$s»).") : (t,nothing)
+  t=_time(s;allow24=label=="Sluttid"); isnothing(t) ? bad("«$label» må være et klokkeslett, f.eks. 20:30 eller 2030 (fikk «$s»).") : (t,nothing)
  elseif label=="Lenke"
   occursin(r"^https?://\S+$",s) ? (s,nothing) : bad("«Lenke» må være en nettadresse som begynner med https://.")
  elseif label=="Pris (kr)"   # (price, pay_what_you_can)

@@ -51,10 +51,10 @@ function form_fields()
 end
 _path(k::AbstractString)=String.(split(k,'.'))
 _other_lang(e::Event)=something(e.lang,"nb")=="en" ? "nb" : "en"
-"`(h, m)` from «20:15», «20.15» or «9:00»; 24:00 only with `allow24`; `nothing` if invalid."
+"`(h, m)` from «20:15», «20.15», «2015», «915», «20» or «kl. 20:15» (`TIME_RE`); 24:00 only with `allow24`; `nothing` if invalid."
 function _form_hm(s::AbstractString; allow24::Bool=false)
- m=match(r"^\s*([0-9]{1,2})[:.]([0-9]{2})\s*$",s); isnothing(m) && return nothing
- h=parse(Int,something(m[1])); mi=parse(Int,something(m[2]))
+ m=match(TIME_RE,s); isnothing(m) && return nothing
+ h=parse(Int,something(m[1])); mi=isnothing(m[2]) ? 0 : parse(Int,something(m[2]))
  (0<=h<=23 && 0<=mi<=59) || (allow24 && h==24 && mi==0) ? (h,mi) : nothing
 end
 _hm_of(stamp)=(m=match(r"T([0-9]{2}):([0-9]{2})",something(stamp,"")); isnothing(m) ? nothing : (parse(Int,something(m[1])),parse(Int,something(m[2]))))

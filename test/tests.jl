@@ -194,6 +194,18 @@ end
  @test !occursin("Class And Social",h)
 end
 @testset "issue form" begin
+ # clock times as people type them (issue: «1700» was refused)
+ let T=TangoKalender._time, F=TangoKalender._form_hm
+  @test T("17:00")=="17:00" && T("17.00")=="17:00" && T("1700")=="17:00" && T("930")=="09:30" && T("9:30")=="09:30"
+  @test T("17")=="17:00" && T(" kl. 1730 ")=="17:30" && T("Kl 9")=="09:00" && T("0030")=="00:30"
+  @test all(isnothing,T.(["2460","2500","17:7","17000","kveld","17:00:00","1-7",""])) && isnothing(T("2400")) && T("2400";allow24=true)=="24:00"
+  @test F("1700")==(17,0) && F("930")==(9,30) && F("20")==(20,0) && F("kl. 20.15")==(20,15) && isnothing(F("2460")) && F("2400";allow24=true)==(24,0)
+  f=Dict("Tittel"=>"Kveldsmilonga","Type"=>"- [X] Milonga","Dato"=>"2026-11-13","Starttid"=>"2000","Sluttid"=>"0130","Sted"=>"S","Adresse"=>"A",
+   "Arrangør"=>"K","Lenke"=>"https://x.org","Samtykke"=>"- [X] ok")
+  ev,er=TangoKalender.events_from_form(f;today=Date(2026,10,1)); e=only(ev)
+  @test isempty(er) && e["start"]=="2026-11-13T20:00:00+01:00" && e["end"]=="2026-11-14T01:30:00+01:00"
+  @test occursin("f.eks. 20:30 eller 2030",only(TangoKalender.events_from_form(merge(f,Dict("Starttid"=>"kveld"));today=Date(2026,10,1))[2]))
+ end
  ISSUES=joinpath(@__DIR__,"fixtures","issues"); T=Date(2026,10,1)
  form(f)=TangoKalender.parse_issue_form(read(joinpath(ISSUES,"$f.md"),String))
  f=form("single"); @test f["Gjentas til"]=="" && f["Tittel"]=="Milonga på Torget"
