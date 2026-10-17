@@ -49,3 +49,7 @@ are what the intake parser reads. Never edit them by hand: change the templates 
 - **«Instantiate» fails:** the pinned tag doesn't exist, or `Manifest.toml` wasn't updated after changing the pin.
 - **The intake run failed on an issue:** edit the issue (any change) to start a fresh run; re-running the old run
   reuses the old commit.
+- **Two submissions for the same event close together:** when the first one's pull request is merged while the
+  second is still running, the intake reads the second form again on the new `main` and carries on. If the form
+  no longer applies (the first one already made the same change), or the pull request can't be opened for
+  another reason, the issue gets a ⚠️ comment and the `trenger-retting` label instead of «✅ Takk».

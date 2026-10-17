@@ -66,14 +66,27 @@ jobs:
           { cat "$RUNNER_TEMP/report.md"; printf '\nCloses #%s\n' "$NUMBER"; } > "$RUNNER_TEMP/pr-body.md"
       # main may have moved since checkout (e.g. a merged Dependabot PR). A PR branch built on the old
       # main would carry outdated workflow files, and GitHub refuses that push from GITHUB_TOKEN.
+      # When main changed the same event files meanwhile (another submission for the same event was merged
+      # during this run), the changes can't be put back: read the form again on the latest main instead.
       - name: Move changes onto the latest main
+        id: move
         if: steps.convert.outcome == 'success'
+        env:
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          NUMBER: ${{ github.event.issue.number }}
+          JULIA_PKG_USE_CLI_GIT: 'true'
         run: |
           [ -n "$(git status --porcelain -- events venues.json)" ] || exit 0
           git stash push --include-untracked -- events venues.json
           git fetch --depth=1 origin +refs/heads/main:refs/remotes/origin/main
           git reset --hard origin/main
-          git stash pop
+          git stash pop && exit 0
+          echo "::notice::main changed the same files during this run; reading the form again on the latest main"
+          git reset --hard origin/main && git clean -fd -- events && git stash drop
+          julia --project=. -e 'using Pkg; Pkg.instantiate()'
+          julia --project=. -m TangoKalender from-issue "$RUNNER_TEMP/issue.md" --issue-url="$ISSUE_URL" --report="$RUNNER_TEMP/report.md"
+          julia --project=. -m TangoKalender geocode events || true
+          { cat "$RUNNER_TEMP/report.md"; printf '\nCloses #%s\n' "$NUMBER"; } > "$RUNNER_TEMP/pr-body.md"
       - name: Open or update pull request
         id: pr
         if: steps.convert.outcome == 'success'
@@ -95,6 +108,7 @@ jobs:
           NUMBER: ${{ github.event.issue.number }}
           OUTCOME: ${{ steps.convert.outcome }}
           PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          PR_OUTCOME: ${{ steps.pr.outcome }}   # skipped when «Move changes onto the latest main» failed
           TITLE: ${{ steps.convert.outputs.issue_title }}
           NEEDS_FIX: ${{ inputs.needs-fix-label }}
         run: |
@@ -102,6 +116,11 @@ jobs:
           [ -f "$report" ] || echo "⚠️ Noe gikk galt under behandlingen av skjemaet. En redaktør ser på det." > "$report"
           if [ "$OUTCOME" = success ] && [ -n "$PR_URL" ]; then
             printf '\nForslag til endring: %s\n' "$PR_URL" >> "$report"
+          elif [ "$OUTCOME" = success ] && [ "$PR_OUTCOME" != success ]; then   # read, but the pull request failed: say so, never «✅ Takk»
+            { printf '⚠️ Skjemaet ble lest, men forslaget kunne ikke lagres som en endring (ingen pull request). '
+              printf 'En redaktør ser på det. Du kan prøve igjen ved å redigere saken (for eksempel legge til et mellomrom i et felt).\n\n'
+              printf '<details><summary>Det som ble lest</summary>\n\n'; cat "$report"; printf '\n</details>\n'; } > "$report.tmp"
+            mv "$report.tmp" "$report"; OUTCOME=failure
           fi
           gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$report"
           if [ "$OUTCOME" = success ]; then
