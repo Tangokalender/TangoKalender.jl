@@ -52,6 +52,7 @@ TangoKalender.edit_main
 repeat_events
 TangoKalender.repeat_main
 TangoKalender.repeat_template
+TangoKalender.repeat_from
 TangoKalender.repeat_event
 TangoKalender.Recurrence
 TangoKalender.recurrence_dates

@@ -194,6 +194,29 @@ const _NO_DATE=Date(0)
 function _repeat_events(terms, rule::Recurrence, ondates::Vector{Date}, root::String, count::Int, until::Date, start::Date, except::Vector{Tuple{Date,Date}},
                         es::Vector{Tuple{Vector{String},String}}, today::Date, dry_run::Bool, tree_check::C) where {C}
  (_,t,ks),group=_repeat_template(terms;root)
+ _repeat_from(t,ks,group,rule,ondates,root,count,until,start,except,es,today,dry_run,tree_check)
+end
+"""
+    repeat_from(t, keys; rule=nothing, dates=Date[], count=nothing, until=nothing, start=nothing, except=[],
+                group=Event[], root="events", today=today(), dry_run=false, tree_check=validate_event_tree) -> NamedTuple
+
+[`repeat_events`](@ref) for a template event `t` you already have (written with key order `keys`), e.g. the event in an
+editor's form, saved or not: copies on the dates of `rule` (a [`Recurrence`](@ref TangoKalender.Recurrence)) or on
+`dates`. `start` defaults to the day after `t`'s date; pass `t`'s own date to include it (an unsaved template).
+`group` is the series `t` was picked from as the latest, for the note (empty: no note). Same result as
+`repeat_events`, plus `unused_except`: the `except` ranges that match no date of the rule.
+"""
+function repeat_from(t::Event, ks::Vector{String}; rule::Union{Nothing,Recurrence}=nothing, dates::Vector{Date}=Date[],
+                     count::Union{Nothing,Int}=nothing, until::Union{Nothing,Date}=nothing, start::Union{Nothing,Date}=nothing,
+                     except::Vector{Tuple{Date,Date}}=Tuple{Date,Date}[], group::Vector{Event}=Event[], root::AbstractString="events",
+                     today::Date=Dates.today(), dry_run::Bool=false, tree_check::C=validate_event_tree) where {C}
+ isnothing(rule) && isempty(dates) && throw(ArgumentError("repeat_from needs a rule or dates"))
+ _repeat_from(t,ks,group,something(rule,Recurrence(:week,1,0,0)),isnothing(rule) ? dates : Date[],String(root),something(count,0),
+              something(until,_NO_DATE),something(start,_NO_DATE),except,Tuple{Vector{String},String}[],today,dry_run,tree_check)
+end
+function _repeat_from(t::Event, ks::Vector{String}, group::Vector{Event}, rule::Recurrence, ondates::Vector{Date}, root::String, count::Int,
+                      until::Date, start::Date, except::Vector{Tuple{Date,Date}}, es::Vector{Tuple{Vector{String},String}}, today::Date,
+                      dry_run::Bool, tree_check::C) where {C}
  note=template_note(t,group)
  anchor=something(_ymd(t.start),today)
  count==0 && until==_NO_DATE && (until=today+Month(6))
@@ -224,9 +247,30 @@ function _repeat_events(terms, rule::Recurrence, ondates::Vector{Date}, root::St
   ups=Tuple{Union{Nothing,String},String,String}[(nothing,f,event_text(e,keys_)) for (f,e) in out]
   written,errs=_write_files!(ups,root; check=tree_check)
  end
- (template=t,keys=keys_,events=out,exists,excepted,written,errors=errs,note)
+ unused=filter(r->!any(d->r[1]<=d<=r[2],excepted),except)   # --except ranges that match no date of the rule
+ (template=t,keys=keys_,events=out,exists,excepted,written,errors=errs,note,unused_except=unused)
 end
 const _WEEKDAY_EN=("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+_event_weekday(e::Event)=(d=_ymd(e.start); isnothing(d) ? 0 : dayofweek(d))
+"""
+    _template_oddity(t, group) -> (odd_weekday, odd_title, typical)
+
+Whether `t`, the latest of its series `group`, is on another weekday or has another title than most of the series
+(a holiday special), and the latest typical event to copy instead; `typical` is `nothing` when `t` is typical, the
+series is too short (under 3) or no typical event is left. Front ends word their own note from it.
+"""
+function _template_oddity(t::Event, group::Vector{Event})
+ none=(false,false,nothing)
+ length(group)<3 && return none
+ title(e::Event)=something(e.title,"")
+ wc,wm=_most(Int[_event_weekday(e) for e in group]); tc,tm=_most(String[title(e) for e in group])
+ odd_wd=get(wc,_event_weekday(t),0)<wm; odd_title=get(tc,title(t),0)<tm
+ (odd_wd || odd_title) || return none
+ typical=filter(e->wc[_event_weekday(e)]==wm && tc[title(e)]==tm && e.id!=t.id,group)
+ isempty(typical) && (typical=filter(e->wc[_event_weekday(e)]==wm && e.id!=t.id,group))
+ isempty(typical) && return none
+ (odd_wd,odd_title,typical[end])
+end
 _most(xs::Vector{T}) where {T}=(c=Dict{T,Int}(); for x in xs; c[x]=get(c,x,0)+1; end; m=maximum(values(c)); (c,m))
 """
     template_note(t, group) -> String
@@ -236,16 +280,10 @@ on another weekday or with another title than most of them, such as a Sunday Chr
 It names the latest typical event to copy instead. Empty when `t` is typical or wasn't picked from a series.
 """
 function template_note(t::Event, group::Vector{Event})
- length(group)<3 && return ""
- wd(e::Event)=(d=_ymd(e.start); isnothing(d) ? 0 : dayofweek(d))
+ odd_wd,odd_title,v=_template_oddity(t,group)
+ isnothing(v) && return ""
+ u=v::Event; wd(e::Event)=_event_weekday(e); parts=String[]
  title(e::Event)=something(e.title,"")
- wc,wm=_most(Int[wd(e) for e in group]); tc,tm=_most(String[title(e) for e in group])
- odd_wd=wc[wd(t)]<wm; odd_title=tc[title(t)]<tm
- (odd_wd || odd_title) || return ""
- typical=filter(e->wc[wd(e)]==wm && tc[title(e)]==tm && e.id!=t.id,group)
- isempty(typical) && (typical=filter(e->wc[wd(e)]==wm && e.id!=t.id,group))
- isempty(typical) && return ""
- u=typical[end]; parts=String[]
  odd_wd && wd(t)>0 && push!(parts,_WEEKDAY_EN[wd(t)]); odd_title && push!(parts,"\"$(title(t))\"")
  uparts=String[]; odd_wd && wd(u)>0 && push!(uparts,_WEEKDAY_EN[wd(u)]); odd_title && push!(uparts,"\"$(title(u))\"")
  "Note: copying the latest event of the series, $(t.id) ($(join(parts,", "))), but most of the series is " *
@@ -350,8 +388,8 @@ function repeat_main(args::AbstractVector{<:AbstractString}; io::IO=stdout, err:
  end
  skipped=sort!(vcat([(d,"already there") for d in res.exists],[(d,"--except") for d in res.excepted]))
  isempty(skipped) || show_([Seg[("  $(_ymd_str(d)): skipped ($why)",:shadow)] for (d,why) in skipped])
- for (a,b) in except
-  any(d->a<=d<=b,res.excepted) || println(err,"Warning: --except $(_ymd_str(a))$(a==b ? "" : ".."*_ymd_str(b)) matches no date of the rule.")
+ for (a,b) in res.unused_except
+  println(err,"Warning: --except $(_ymd_str(a))$(a==b ? "" : ".."*_ymd_str(b)) matches no date of the rule.")
  end
  if !isempty(res.errors)
   foreach(m->println(err,m),res.errors); println(err,"Nothing written: $(length(res.errors)) problem(s)."); return 1

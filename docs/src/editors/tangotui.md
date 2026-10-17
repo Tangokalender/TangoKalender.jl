@@ -18,6 +18,8 @@ TangoTUI edits **one event at a time** in a form, so you needn't know field name
 - A preview card shows the event as the site will, with changes highlighted and the old value struck through.
 - When you save a change to a date that has **later dates**, it asks whether the change applies to them too, but
   never to another organiser's events.
+- **Ctrl-R** repeats an event on the dates of a rule, with every option of
+  [`tangoedit repeat`](@ref "Bulk edits with tangoedit"), and lists the dates it will create as you set the rule.
 
 For changes to many events in one go, or without Julia, use [`tangoedit`](@ref "Bulk edits with tangoedit").
 
@@ -34,6 +36,7 @@ julia --project=PATH/TangoTUI -m TangoTUI --all              # … including pas
 julia --project=PATH/TangoTUI -m TangoTUI edit otra-2026-11-02     # straight to one event
 julia --project=PATH/TangoTUI -m TangoTUI new                # a blank form
 julia --project=PATH/TangoTUI -m TangoTUI new series:otra    # a copy of the series' latest event, on a new date
+julia --project=PATH/TangoTUI -m TangoTUI repeat series:otra # repeat the series' latest event on the dates of a rule
 ```
 
 `edit` takes the same search terms as `tangoedit` (`series:otra`, `type:class`, `venue:sentralen`). When several
@@ -48,6 +51,7 @@ events match, or none, it opens the list searching for them.
 | Ctrl-A | also show past events (press again for upcoming only) |
 | Ctrl-N | a new, blank event |
 | Ctrl-K | a copy of the selected event on a new date (the date field opens first) |
+| Ctrl-R | repeat the selected event on the dates of a rule (see [below](@ref "Repeat an event")) |
 | Esc | clear the search; on an empty search, quit |
 
 ## The form
@@ -59,6 +63,7 @@ events match, or none, it opens the list searching for them.
 | in a pick list | ↑ ↓ to move, Space to tick (where several are allowed), Enter to choose |
 | Del | clear the field |
 | Ctrl-S | save the event |
+| Ctrl-R | repeat the event **as it stands in the form** (see [below](@ref "Repeat an event")) |
 | Esc | back to the list (asks first if there are unsaved changes) |
 
 A field that breaks a rule of the [event format](@ref events) is marked `!` in red, with the reason below the form;
@@ -90,6 +95,34 @@ that had their own value (for example a special price) that would be overwritten
 **Guardrail:** only events with the **same organiser** as the event you edit are changed. Events by other organisers
 in the series or the search are left alone and listed as skipped. All files are written together: if the check of
 the event tree fails, none of them are.
+
+## Repeat an event
+
+**Ctrl-R** opens a panel that creates copies of an event on many dates: the same rules as
+`tangoedit repeat`, set in fields instead of options. On the right, the dates are listed as you go: each new event
+as a list line, and the dates that are skipped with the reason (already there, or excepted). **Ctrl-S** creates
+them; **Esc** cancels and nothing is written.
+
+The template is the event **as it stands in the form**: to give every copy a new DJ or price, change it in the form
+first, then press Ctrl-R (the event itself is only changed if you also save it). From the list, Ctrl-R repeats the
+selected event; `repeat TERM…` starts with the latest event of a series, like `tangoedit repeat`. When that latest
+event is unlike the rest of its series (another weekday or title, e.g. a Christmas special), the panel says so and
+names a typical one.
+
+| Field | | `tangoedit repeat` |
+|:--|:--|:--|
+| Regel | Ukentlig, Månedlig or Bestemte datoer | `--every=week`/`month`, or `--on=DATE,…` |
+| Hver | 1 = every, 2 = every other, 3 = every third … | `--every=2weeks`, `3months` |
+| Dag i måneden, Ukedag | monthly: the template's day of the month, or the 1st–5th or last … 5th-last weekday | `--on=2nd-thursday`, `last-friday`, `2nd-last-sunday` |
+| Datoer | Bestemte datoer: dates on any weekday, comma-separated (`2026-12-27, 03.01.2027`) | `--on=2026-12-27,2027-01-03` |
+| Antall | how many new events (excepted dates don't count) | `--count=N` |
+| Til og med | the last possible date; empty and without Antall: 6 months ahead | `--until=DATE` |
+| Fra og med | the first possible date (default: the day after the template); the rhythm stays the template's | `--start=DATE` |
+| Unntatt | dates or ranges to skip: `2026-12-24, 2026-12-21..2027-01-03` | `--except=…` |
+
+Fields that don't apply to the chosen rule are dimmed. Dates that already have the event, or any event of its series,
+are skipped, so repeating again is safe. A new event that hasn't been saved yet (after Ctrl-N or Ctrl-K) is created on
+its own date too. All files are written together, checked like any other save.
 
 ## After saving
 

@@ -1230,6 +1230,22 @@ end
   @test read(only(filter(contains("11-05"),r.written)),String)==TK.event_text(TK.repeat_event(r.template,Date(2026,11,5);today),r.keys)
   @test_throws ArgumentError repeat_events(["kurs","solo"],TK.Recurrence(:week,1,0,0);root=d,count=1)     # nothing matches
   @test_throws ArgumentError repeat_events(["2026-10-1"],TK.Recurrence(:week,1,0,0);root=d,count=1)       # two series
+  # repeat_from: a template you already have (an editor's form), saved or not
+  (_,t,ks),g=TK._repeat_template(["series:kurs"];root=d)
+  r=TK.repeat_from(t,ks;rule=TK.Recurrence(:week,1,0,0),count=2,group=g,root=d,today,dry_run=true)
+  @test t.id=="kurs-2026-11-05" && [e.id for (_,e) in r.events]==["kurs-2026-11-12","kurs-2026-11-19"] && isempty(r.note)   # the day after the template
+  # a holiday special as the latest of a Friday series: oddity (for the editors' own note) and the CLI's note
+  fr(i,st;ti="Fredagsmilonga")=Event(id="f$i",title=ti,start=st)
+  grp=[fr(1,"2026-10-02"),fr(2,"2026-10-09"),fr(3,"2026-10-16"),fr(4,"2026-12-27";ti="Julemilonga")]
+  @test TK._template_oddity(grp[4],grp)==(true,true,grp[3]) && TK._template_oddity(grp[3],grp[1:3])==(false,false,nothing)
+  @test occursin("repeat f3",TK.template_note(grp[4],grp)) && TK._template_oddity(grp[4],grp[3:4])==(false,false,nothing)
+  u=TK._put(t,Val(:start),"2026-12-03T19:00:00+01:00"); u=TK._put(u,Val(:end_),"2026-12-03T21:00:00+01:00"); u=TK._put(u,Val(:dj),"DJ Ny")
+  r=TK.repeat_from(u,ks;rule=TK.Recurrence(:week,2,0,0),count=2,start=Date(2026,12,3),except=[(Date(2026,12,17),Date(2026,12,17)),(Date(2027,6,1),Date(2027,6,1))],root=d,today,dry_run=true)
+  @test [e.id for (_,e) in r.events]==["kurs-2026-12-03","kurs-2026-12-31"] && r.excepted==[Date(2026,12,17)] && all(e.dj=="DJ Ny" for (_,e) in r.events)
+  @test r.unused_except==[(Date(2027,6,1),Date(2027,6,1))]                                                 # an unsaved template: its own date included
+  r=TK.repeat_from(t,ks;dates=[Date(2026,11,5),Date(2026,12,24)],root=d,today,dry_run=true)
+  @test [e.id for (_,e) in r.events]==["kurs-2026-12-24"] && r.exists==[Date(2026,11,5)]
+  @test_throws ArgumentError TK.repeat_from(t,ks;root=d)                                                    # needs a rule or dates
   save_event_tree([ev("kurs-x-2026-10-20","2026-10-20T19:00:00+02:00";series="kurs-x")],d)
   @test TK.repeat_template(["series:kurs"];root=d)[2].id=="kurs-2026-11-05"                                # exact series wins over kurs-x
   @test_throws ArgumentError TK.repeat_template(["kurs"];root=d)

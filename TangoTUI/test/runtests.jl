@@ -157,6 +157,59 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   o=TangoTUI.Editor(TK.find_events(["series:otra"];root,from=TODAY)[1]...;root,today=TODAY)
   keys!(to!(o,"dj"),:enter,"X",:enter,:ctrl=>'s'); @test o.mode===:scope && isempty(o.seltargets) && !isempty(o.sertargets)
  end
+ @testset "repeat (Ctrl-R): the CLI's rules, dates listed live" begin
+  root=tree(); R=TK.Recurrence
+  rto!(m,k)=(m.rep.cursor=findfirst(f->f[1]===k,TangoTUI._RFIELDS); m)
+  ids(p)=[e.id for (_,e) in p.events]
+  cli(rule;kw...)=ids(TK.repeat_events(["series:esa"],rule;root,today=TODAY,dry_run=true,kw...))
+  nfiles()=length(TK.event_files(root))
+  # from the list: the selected event, the series' latest; the default is weekly for 6 months, as the CLI
+  m=TangoTUI.search_editor(;root,today=TODAY); keys!(m,"series:esa"); m.pick=length(m.hits); keys!(m,:ctrl=>'r')
+  @test m.mode===:repeat && m.rep.template.id=="esa-2026-11-24" && has(m,"Gjenta «Milonga ESA»") && has(m,"Ctrl-S lag arrangementene")
+  @test ids(m.rep.plan)==cli(R(:week,1,0,0)) && has(m,"$(length(m.rep.plan.events)) nye arrangementer") && has(m,"(6 måneder: 2027-04-13)")
+  # count and dates to skip: skipped dates are listed with the reason and don't count
+  keys!(rto!(m,:count),:enter,"6",:enter); keys!(rto!(m,:except),:enter,"2026-12-29..05.01.2027",:enter)
+  ex=TK.parse_except("2026-12-29..2027-01-05")
+  @test ids(m.rep.plan)==cli(R(:week,1,0,0);count=6,except=ex) && has(m,"6 nye arrangementer · 2 hoppes over") && has(m,"tir 29.12.26  hoppes over (unntatt)")
+  # every N: «2» is every other week
+  keys!(rto!(m,:every),:enter,"2",:enter); @test ids(m.rep.plan)==cli(R(:week,2,0,0);count=6,except=ex) && has(m,"2 (annenhver uke)")
+  # monthly on the last Friday; ↑/↓ skip the fields that don't apply
+  keys!(rto!(m,:every),:backspace); keys!(rto!(m,:rule),:enter,:down,:enter)
+  @test TangoTUI._rapplies(m.rep,:nth) && !TangoTUI._rapplies(m.rep,:weekday) && !TangoTUI._rapplies(m.rep,:dates)
+  keys!(rto!(m,:nth),:enter); m.rep.pick=findfirst(==((-1,"siste")),TangoTUI._NTH); keys!(m,:enter)
+  keys!(rto!(m,:weekday),:enter); m.rep.pick=5; keys!(m,:enter); keys!(rto!(m,:count),:backspace,:enter,"3",:enter)
+  @test ids(m.rep.plan)==cli(R(:month,1,TK.parse_on("last-friday")...);count=3,except=ex)==["esa-2026-11-27","esa-2026-12-25","esa-2027-01-29"]
+  @test has(m,"siste") && has(m,"fredag") && has(m,"treffer ingen dato i regelen")             # the except range is unused now
+  keys!(rto!(m,:rule),:down); @test m.rep.cursor==findfirst(f->f[1]===:every,TangoTUI._RFIELDS)
+  # until instead of count; both: refused, like the CLI
+  keys!(rto!(m,:until),:enter,"2027-03-31",:enter)
+  @test has(m,"Velg enten «Antall» eller «Til og med»") && (keys!(m,:ctrl=>'s'); m.mode===:repeat && m.level===:error)
+  keys!(rto!(m,:count),:backspace); @test ids(m.rep.plan)==cli(R(:month,1,-1,5);until=Date(2027,3,31),except=ex)
+  keys!(rto!(m,:start),:enter,"6",:enter); @test has(m,"Fra og med: «6» er ikke en dato")
+  keys!(rto!(m,:start),:backspace); keys!(rto!(m,:until),:backspace)
+  # given dates, any weekday; one already there
+  keys!(rto!(m,:rule),:enter); m.rep.pick=3; keys!(m,:enter); keys!(rto!(m,:dates),:enter,"2026-12-27, 03.01.2027, 2026-10-20",:enter)
+  @test ids(m.rep.plan)==ids(TK.repeat_events(["series:esa"],[Date(2026,12,27),Date(2027,1,3),Date(2026,10,20)];root,except=ex,today=TODAY,dry_run=true))
+  @test has(m,"1 nytt arrangement · 2 hoppes over") && has(m,"hoppes over (finnes fra før)")
+  # Esc: nothing written, back to the list
+  n0=nfiles(); keys!(m,:escape); @test m.mode===:search && nfiles()==n0 && isnothing(m.rep)
+  # from the form: the event as it stands there (a new DJ) is the template; the original stays as it was
+  keys!(m,:enter); f0=m.file; dj0=m.event.dj; keys!(to!(m,"dj"),:enter); m.input=TextInput(text="",focused=true); keys!(m,"DJ Gjentatt",:enter,:ctrl=>'r')
+  @test m.mode===:repeat && m.rep.template.dj=="DJ Gjentatt" && isempty(m.rep.group)
+  keys!(rto!(m,:count),:enter,"2",:enter,:ctrl=>'s')
+  @test m.level===:ok && startswith(m.message,"Laget 2 arrangementer") && m.mode===:browse && length(m.saved)==2
+  @test all(f->TK.read_event(f)[1].dj=="DJ Gjentatt",m.saved) && TK.read_event(f0)[1].dj==dj0 && isempty(TK.validate_event_tree(root))
+  # an unsaved copy (Ctrl-K) is created on its own date too; then back to the list
+  m=TangoTUI.search_editor(;root,today=TODAY); keys!(m,"series:otra"); m.pick=length(m.hits); keys!(m,:ctrl=>'k')
+  m.input=TextInput(text="2027-08-02",focused=true); keys!(m,:enter,:ctrl=>'r'); keys!(rto!(m,:count),:enter,"2",:enter)
+  @test m.rep.template.start[1:10]=="2027-08-02" && first(ids(m.rep.plan))==m.rep.template.id && length(m.rep.plan.events)==2
+  keys!(m,:ctrl=>'s'); @test m.mode===:search && m.level===:ok && length(m.saved)==2 && isempty(TK.validate_event_tree(root))
+  # an invalid form can't be repeated; `repeat TERM…` opens the panel on the series' latest
+  keys!(m,:ctrl=>'n',:ctrl=>'r'); @test m.mode===:browse && startswith(m.message,"Kan ikke gjenta")
+  r=TangoTUI.editor_for("repeat",["series:esa"];root,today=TODAY); @test r.mode===:repeat && r.rep.back===:search
+  keys!(r,:escape); @test r.mode===:search
+  @test_throws ArgumentError TangoTUI.editor_for("repeat",String[];root,today=TODAY)
+ end
  @testset "relative --root, as in a data repository" begin
   cd(dirname(tree())) do
    m=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root="events",today=TODAY)

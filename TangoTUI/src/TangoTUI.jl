@@ -18,6 +18,33 @@ using TangoKalender
 const TK=TangoKalender
 @tachikoma_app
 
+"""
+The repeat panel (Ctrl-R, `repeat TERM…`): copies of `template` on the dates of a rule, as `tangoedit repeat`
+(`TK.repeat_from`). The rule's fields are kept as typed (text) or as pick-list indices; `plan` is the last dry run.
+"""
+mutable struct RepeatForm
+ template::TK.Event
+ keys::Vector{String}
+ group::Vector{TK.Event}          # the series the template is the latest of (for the holiday-special note), else empty
+ saved::Bool                      # the template is in the tree: copies start the day after it; unsaved, on its own date
+ back::Symbol                     # where Esc and a finished run go: :browse (the form) or :search (the list)
+ rule::Int                        # 1 weekly, 2 monthly, 3 given dates
+ every::String
+ nth::Int                         # index into _NTH
+ weekday::Int                     # 1 = Monday
+ dates::String
+ count::String
+ until::String
+ start::String
+ except::String
+ cursor::Int
+ editing::Symbol                  # :none, :text, :pick
+ input::TextInput
+ pick::Int
+ plan::Any                        # the NamedTuple from TK.repeat_from(…; dry_run=true), or nothing
+ args::Any                        # the rule as read from the fields (keywords for TK.repeat_from), or nothing
+ problem::String                  # a field that can't be read, in Norwegian
+end
 "The editor's state: the event before and after the edits, the form cursor and the current mode."
 mutable struct Editor <: Model
  fields::Vector{TK.FormField}
@@ -57,11 +84,12 @@ mutable struct Editor <: Model
  seltargets::Vector{Tuple{String,TK.Event,Vector{String}}}
  selskip::Vector{Tuple{String,TK.Event,Vector{String}}}
  then::Symbol
+ rep::Union{Nothing,RepeatForm}   # the repeat panel (mode :repeat)
 end
 function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree)
  m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,:browse,TextInput(text=""),1,Bool[],"",:info,false,String[],
           Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false,
-          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay)
+          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing)
  isnothing(file) && _new_id!(m)
  m
 end
@@ -129,7 +157,7 @@ _ctrl(ev::KeyEvent,c::Char)=ev.key===:ctrl && ev.char==c
 _ch(ev::KeyEvent,c::Char)=ev.key===:char && ev.char==c
 function update!(m::Editor, ev::KeyEvent)
  m.mode===:search ? _search_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
- m.mode===:confirm ? _confirm_key!(m,ev) : m.mode===:scope ? _scope_key!(m,ev) : _browse_key!(m,ev)
+ m.mode===:confirm ? _confirm_key!(m,ev) : m.mode===:scope ? _scope_key!(m,ev) : m.mode===:repeat ? _repeat_key!(m,ev) : _browse_key!(m,ev)
  nothing
 end
 _move!(m::Editor,d::Int)=(m.cursor=clamp(m.cursor+d,1,length(m.fields)); nothing)
@@ -145,6 +173,7 @@ function _browse_key!(m::Editor, ev::KeyEvent)
  elseif k===:enter || k===:right || _ch(ev,' '); _begin_edit!(m)
  elseif k===:delete || k===:backspace; _apply!(m,_field(m).kind in (:choice,:multi) ? String[] : "")
  elseif _ctrl(ev,'s'); _save!(m)
+ elseif _ctrl(ev,'r'); _repeat_form!(m)
  elseif k===:escape || _ch(ev,'q') || k===:ctrl_c
   _dirty(m) ? (m.mode=:confirm; _say!(m,"Ulagrede endringer: lagre (s), forkast (f) eller fortsett å redigere (Esc)?",:error)) : _leave!(m)
  end
@@ -203,6 +232,7 @@ function _search_key!(m::Editor, ev::KeyEvent)
  elseif _ctrl(ev,'a'); m.past=!m.past; _filter!(m); _say!(m,m.past ? "Viser også tidligere arrangementer." : "Viser bare kommende arrangementer.")
  elseif _ctrl(ev,'n'); _blank!(m)
  elseif _ctrl(ev,'k'); n>0 ? _copy!(m,sel()) : _say!(m,"Velg et arrangement å kopiere.",:error)
+ elseif _ctrl(ev,'r'); n>0 ? _repeat!(m,sel()[2],sel()[3];saved=true,back=:search,group=_series_group(m,sel()[2])) : _say!(m,"Velg et arrangement å gjenta.",:error)
  elseif k===:escape; isempty(text(m.query)) ? (m.quit=true) : (set_text!(m.query,""); _filter!(m))
  elseif k===:ctrl_c; m.quit=true
  else
@@ -269,6 +299,174 @@ function _write!(m::Editor, later)
  true
 end
 
+# ── Repeat (Ctrl-R): copies on the dates of a rule, with a live list of the dates ──
+const _RULES=["Ukentlig","Månedlig","Bestemte datoer"]
+const _NTH=[(0,""),(1,"1."),(2,"2."),(3,"3."),(4,"4."),(5,"5."),(-1,"siste"),(-2,"nest siste"),(-3,"3. siste"),(-4,"4. siste"),(-5,"5. siste")]
+const _UKEDAGER=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"]
+# (key, label, kind, help): the panel's fields, in order
+const _RFIELDS=[
+ (:rule,"Regel",:pick,"Ukentlig og månedlig følger malens ukedag og dato; «Bestemte datoer» tar en liste med datoer."),
+ (:every,"Hver",:text,"1 = hver uke/måned, 2 = annenhver, 3 = hver tredje … (i takt med malens dato)."),
+ (:nth,"Dag i måneden",:pick,"Malens dato i måneden, eller N-te / N-te siste ukedag (måneder uten den hoppes over)."),
+ (:weekday,"Ukedag",:pick,"Ukedagen for «Dag i måneden»."),
+ (:dates,"Datoer",:text,"Datoer skilt med komma, hvilken som helst ukedag: 2026-12-27, 03.01.2027."),
+ (:count,"Antall",:text,"Antall nye arrangementer (unntatte datoer teller ikke). Tomt: «Til og med» bestemmer."),
+ (:until,"Til og med",:text,"Siste mulige dato. Tomt og uten antall: 6 måneder fram."),
+ (:start,"Fra og med",:text,"Første mulige dato (tomt: dagen etter malen). Rytmen følger fortsatt malen."),
+ (:except,"Unntatt",:text,"Hopp over datoer: 2026-12-24, eller perioder 2026-12-21..2027-01-03, skilt med komma."),
+]
+"Whether field `k` applies to the chosen rule (others are dimmed and skipped)."
+function _rapplies(r::RepeatForm,k::Symbol)
+ k in (:rule,:except) && return true
+ r.rule==3 && return k===:dates
+ k===:dates && return false
+ k===:nth && return r.rule==2
+ k===:weekday && return r.rule==2 && _NTH[r.nth][1]!=0
+ true
+end
+_tday(r::RepeatForm)=something(TK._ymd(r.template.start),Date(2000,1,1))
+_nthlabel(r::RepeatForm,i::Int)=i==1 ? "samme dato ($(day(_tday(r))).)" : _NTH[i][2]
+function _rchoices(r::RepeatForm,k::Symbol)
+ k===:rule ? _RULES : k===:weekday ? _UKEDAGER : [_nthlabel(r,i) for i in eachindex(_NTH)]
+end
+_rpicked(r::RepeatForm,k::Symbol)=k===:rule ? r.rule : k===:weekday ? r.weekday : r.nth
+function _rtext(r::RepeatForm,k::Symbol)
+ k===:every ? r.every : k===:dates ? r.dates : k===:count ? r.count : k===:until ? r.until : k===:start ? r.start : r.except
+end
+function _rset!(r::RepeatForm,k::Symbol,v)
+ k===:rule ? (r.rule=v) : k===:nth ? (r.nth=v) : k===:weekday ? (r.weekday=v) : k===:every ? (r.every=v) : k===:dates ? (r.dates=v) :
+ k===:count ? (r.count=v) : k===:until ? (r.until=v) : k===:start ? (r.start=v) : (r.except=v)
+ nothing
+end
+"The value as shown in the panel (with what an empty field means)."
+function _rshow(m::Editor,r::RepeatForm,k::Symbol)
+ kind=_RFIELDS[findfirst(f->f[1]===k,_RFIELDS)][3]
+ kind===:pick && return k===:nth ? _nthlabel(r,r.nth) : _rchoices(r,k)[_rpicked(r,k)]
+ v=strip(_rtext(r,k)); !isempty(v) && return k===:every ? "$v"*_every_hint(v,r.rule) : String(v)
+ k===:every ? "1 (hver gang)" : k===:until ? (isempty(strip(r.count)) ? "– (6 måneder: $(TK._ymd_str(m.today+Month(6))))" : "–") :
+  k===:start ? "– ($(r.saved ? "dagen etter malen" : "malens dato"))" : "–"
+end
+function _every_hint(v,rule)
+ n=tryparse(Int,v); unit=rule==2 ? "måned" : "uke"
+ isnothing(n) ? "" : n==1 ? " (hver $unit)" : n==2 ? " (annenhver $unit)" : " (hver $n. $unit)"
+end
+"Dates in `s` (comma or space separated, YYYY-MM-DD or DD.MM.YYYY), or a Norwegian error."
+function _rdates(s::AbstractString)
+ ds=Date[]
+ for x in split(s,[',',' ',';'];keepempty=false)
+  d=TK._date(x); isnothing(d) && return "«$x» er ikke en dato (2026-12-27 eller 27.12.2026)"; push!(ds,d)
+ end
+ ds
+end
+_rdate(s::AbstractString,label)=(d=TK._date(s); isnothing(d) ? "$label: «$(strip(s))» er ikke en dato (2026-12-27 eller 27.12.2026)" : d)
+"The series events when `e` is the latest of its series (as `repeat TERM` picks it), for the holiday-special note."
+function _series_group(m::Editor,e::TK.Event)
+ isnothing(e.series) && return TK.Event[]
+ g=TK.Event[x for (_,x,_) in m.events if x.series==e.series]
+ !isempty(g) && last(g).id==e.id ? g : TK.Event[]
+end
+"Open the repeat panel for template `t` (keys `ks`)."
+function _repeat!(m::Editor,t::TK.Event,ks::Vector{String}; saved::Bool, back::Symbol, group::Vector{TK.Event}=TK.Event[])
+ d=something(TK._ymd(t.start),m.today)
+ m.rep=RepeatForm(t,ks,group,saved,back,1,"",1,dayofweek(d),"","","","","",1,:none,TextInput(text=""),1,nothing,nothing,"")
+ m.mode=:repeat; _replan!(m)
+ _say!(m,"Gjenta $(t.id): velg regel og periode; datoene vises til høyre. Ctrl-S lager dem.")
+end
+"Ctrl-R in the form: the event as it stands in the form is the template (changed fields included)."
+function _repeat_form!(m::Editor)
+ ps=TK.check(m.event)
+ isempty(ps) || return _say!(m,"Kan ikke gjenta før skjemaet er gyldig: $(first(ps))",:error)
+ _repeat!(m,m.event,m.keys;saved=!_isnew(m),back=:browse,group=_isnew(m) || _dirty(m) ? TK.Event[] : _series_group(m,m.event))
+end
+"Read the fields and run the repeat as a dry run; a field that can't be read goes to `problem`."
+function _replan!(m::Editor)
+ r=m.rep; r.plan=nothing; r.args=nothing; r.problem=""
+ fail(s)=(r.problem=s; nothing)
+ n=1; if !isempty(strip(r.every)); x=tryparse(Int,strip(r.every)); (isnothing(x) || x<1) && return fail("Hver: skriv et helt tall, minst 1"); n=x; end
+ count=nothing; if r.rule!=3 && !isempty(strip(r.count)); x=tryparse(Int,strip(r.count)); (isnothing(x) || x<1) && return fail("Antall: skriv et helt tall, minst 1"); count=x; end
+ until=nothing; if r.rule!=3 && !isempty(strip(r.until)); x=_rdate(r.until,"Til og med"); x isa String && return fail(x); until=x; end
+ start=nothing; if r.rule!=3 && !isempty(strip(r.start)); x=_rdate(r.start,"Fra og med"); x isa String && return fail(x); start=x; end
+ !isnothing(count) && !isnothing(until) && return fail("Velg enten «Antall» eller «Til og med», ikke begge.")
+ r.saved || !isnothing(start) || r.rule==3 || (start=_tday(r))   # an unsaved template: its own date is one of the copies
+ iso=replace(r.except,r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b"=>s->(d=TK._date(s); isnothing(d) ? s : TK._ymd_str(d)))
+ except=try TK.parse_except(replace(iso,' '=>"")) catch err
+  err isa ArgumentError || rethrow(); return fail("Unntatt: skriv datoer (2026-12-24) eller perioder (2026-12-21..2027-01-03), skilt med komma")
+ end
+ dates=Date[]
+ if r.rule==3
+  x=_rdates(r.dates); x isa String && return fail("Datoer: $x"); dates=x
+  isempty(dates) && return fail("Skriv inn datoene i «Datoer».")
+ end
+ rule=r.rule==3 ? nothing : TK.Recurrence(r.rule==1 ? :week : :month,n,r.rule==2 ? _NTH[r.nth][1] : 0,r.weekday)
+ r.args=(;rule,dates,count,until,start,except)
+ r.plan=try TK.repeat_from(r.template,r.keys;r.args...,root=m.root,today=m.today,dry_run=true)
+ catch err
+  err isa ArgumentError || rethrow(); return fail(err.msg isa String ? err.msg : "kan ikke gjenta")
+ end
+ nothing
+end
+"Norwegian note when the template is the latest of its series but unlike most of it (a holiday special)."
+function _rnote(r::RepeatForm)
+ ow,ot,u=TK._template_oddity(r.template,r.group); isnothing(u) && return ""
+ what=join([x for x in (ow ? "en annen ukedag" : "",ot ? "en annen tittel" : "") if !isempty(x)]," og ")
+ "Merk: malen er den siste i serien, men har $what enn de fleste. Vanlig: $(u.id) – velg den i listen og trykk Ctrl-R for å kopiere den i stedet."
+end
+_rmove!(r::RepeatForm,d::Int)=(i=r.cursor; for _ in 1:length(_RFIELDS); i=mod1(i+d,length(_RFIELDS)); _rapplies(r,_RFIELDS[i][1]) && break; end; r.cursor=i; nothing)
+function _repeat_key!(m::Editor,ev::KeyEvent)
+ r=m.rep; (k,label,kind,_)=_RFIELDS[r.cursor]; key=ev.key
+ if r.editing===:text
+  if key===:escape; r.editing=:none
+  elseif key in (:enter,:tab,:backtab)
+   _rset!(r,k,text(r.input)); r.editing=:none; _replan!(m)
+   key===:tab ? _rmove!(r,1) : key===:backtab ? _rmove!(r,-1) : nothing
+  else handle_key!(r.input,ev) end
+ elseif r.editing===:pick
+  n=length(_rchoices(r,k))
+  if key===:escape; r.editing=:none
+  elseif key===:up; r.pick=mod1(r.pick-1,n)
+  elseif key===:down || key===:tab; r.pick=mod1(r.pick+1,n)
+  elseif key===:enter || _ch(ev,' '); _rset!(r,k,r.pick); r.editing=:none; _replan!(m)
+  end
+ elseif key===:up || key===:backtab; _rmove!(r,-1)
+ elseif key===:down || key===:tab; _rmove!(r,1)
+ elseif key===:enter || key===:right || _ch(ev,' ')
+  if kind===:pick; r.pick=_rpicked(r,k); r.editing=:pick
+  else r.input=TextInput(text=_rtext(r,k),focused=true); r.editing=:text end
+ elseif key===:delete || key===:backspace
+  kind===:text ? _rset!(r,k,"") : _rset!(r,k,k===:weekday ? dayofweek(_tday(r)) : 1); _replan!(m)
+ elseif _ctrl(ev,'s'); _run_repeat!(m)
+ elseif key===:escape || key===:ctrl_c; _repeat_back!(m); _say!(m,"Ingenting laget.")
+ end
+ nothing
+end
+function _repeat_back!(m::Editor)
+ back=m.rep.back; m.rep=nothing
+ back===:search ? _to_list!(m) : (m.mode=:browse; nothing)
+end
+"Ctrl-S in the panel: write the copies (all or nothing, checked like `tangoedit repeat`)."
+function _run_repeat!(m::Editor)
+ r=m.rep; _replan!(m)
+ isempty(r.problem) || return _say!(m,r.problem,:error)
+ p=r.plan; isempty(p.errors) || return _say!(m,"Ikke laget: $(first(p.errors))",:error)
+ isempty(p.events) && return _say!(m,"Ingen nye datoer å lage.",:error)
+ res=TK.repeat_from(r.template,r.keys;r.args...,root=m.root,today=m.today,tree_check=m.tree_check)
+ isempty(res.errors) || return _say!(m,"Ikke laget: $(first(res.errors))",:error)
+ for f in res.written; f in m.saved || push!(m.saved,f); end
+ ds=[TK._ymd(e.start) for (_,e) in res.events]
+ msg="Laget $(length(res.written)) arrangement$(length(res.written)==1 ? "" : "er"): $(_dmy(first(ds)))"*(length(ds)>1 ? " – $(_dmy(last(ds)))" : "")
+ unsaved=!r.saved; back=r.back; m.rep=nothing
+ _say!(m,msg,:ok)
+ if back===:search || (unsaved && m.listing); _to_list!(m)
+ elseif unsaved; m.quit=true        # `new TERM` + Ctrl-R: the form's event is now one of the copies
+ else m.mode=:browse end
+end
+_dmy(d)=isnothing(d) ? "" : "$(TK._two(day(d))).$(TK._two(month(d))).$(year(d))"
+function _repeat_keys(r::RepeatForm)
+ r.editing===:text ? "Enter lagre feltet · Tab neste · Esc avbryt" :
+ r.editing===:pick ? "↑/↓ flytt · Enter velg · Esc avbryt" :
+ "↑/↓ felt · Enter endre · Del tøm · Ctrl-S lag arrangementene · Esc avbryt"
+end
+
 # ── View ──
 const _LABEL_W=26
 "Tachikoma styles for the terminal card's faces (render/term.jl)."
@@ -285,6 +483,7 @@ function view(m::Editor, frame::Frame)
  rows=split_layout(Layout(Vertical,[Fixed(1),Fill(),Fixed(3)]),area)
  length(rows)<3 && return
  head=m.mode===:search ? "tangoedit · finn et arrangement" :
+  m.mode===:repeat ? "tangoedit · gjenta $(m.rep.template.id)" :
   _isnew(m) ? "tangoedit · nytt arrangement · $(m.event.id)" : "tangoedit · $(_rel(m,m.file))"
  set_string!(buf,rows[1].x,rows[1].y,_short(head,rows[1].width),tstyle(:title,bold=true))
  if m.mode===:search
@@ -293,6 +492,11 @@ function view(m::Editor, frame::Frame)
   body=rows[2]
   wide=body.width>=110
   parts=split_layout(Layout(wide ? Horizontal : Vertical,wide ? [Percent(52),Fill()] : [Fill(),Percent(45)]),body)
+  if m.mode===:repeat
+   _view_repeat(m,parts[1],buf); length(parts)>1 && _view_plan(m,parts[2],buf)
+   m.rep.editing===:pick && _view_rpick(m.rep,parts[1],buf)
+   _view_footer(m,rows[3],buf); return
+  end
   _view_fields(m,parts[1],buf)
   length(parts)>1 && _view_card(m,parts[2],buf)
   m.mode===:pick && _view_pick(m,parts[1],buf)
@@ -377,6 +581,71 @@ function _view_pick(m::Editor, under::Rect, buf::Buffer)
   set_string!(buf,r.x+2,r.y+i,(i==m.pick ? "› " : "  ")*box*l,i==m.pick ? tstyle(:accent,bold=true) : tstyle(:text),r)
  end
 end
+"The repeat panel's fields (left): the rule, dimmed where it doesn't apply."
+function _view_repeat(m::Editor, rect::Rect, buf::Buffer)
+ r=m.rep
+ blk=Block(title="Gjenta «$(r.template.title)»",border_style=tstyle(:border_focus)); render(blk,rect,buf); ir=inner_area(blk,rect)
+ ir.height<=0 && return
+ for (i,(k,label,_,_)) in enumerate(_RFIELDS)
+  y=ir.y+i-1; y>bottom(ir) && break
+  on=_rapplies(r,k); cur=i==r.cursor
+  set_string!(buf,ir.x,y,cur ? "›" : " ",tstyle(:accent,bold=true),ir)
+  set_string!(buf,ir.x+3,y,_short(label,_LABEL_W-1),cur ? tstyle(:accent,bold=true) : on ? tstyle(:text_dim) : tstyle(:text_dim,strikethrough=true),ir)
+  vx=ir.x+3+_LABEL_W; vw=right(ir)-vx+1
+  if cur && r.editing===:text; render(r.input,Rect(vx,y,max(vw,1),1),buf)
+  else
+   v=on ? _rshow(m,r,k) : "–"
+   empty=!on || startswith(v,"–")
+   set_string!(buf,vx,y,_short(v,vw),empty ? tstyle(:text_dim) : tstyle(:text),ir)
+  end
+ end
+ y=ir.y+length(_RFIELDS)+1
+ y<=bottom(ir) && set_string!(buf,ir.x+1,y,_short("Kopiene får verdiene i malen (skjemaet), nye id-er og status «planlagt».",ir.width-1),tstyle(:text_dim),ir)
+end
+function _view_rpick(r::RepeatForm, under::Rect, buf::Buffer)
+ k=_RFIELDS[r.cursor][1]; cs=_rchoices(r,k); n=length(cs)
+ w=min(under.width-4,max(26,maximum(textwidth,cs)+10)); h=n+2
+ y=clamp(under.y+r.cursor+1,under.y,max(under.y,bottom(under)-h+1))
+ rr=Rect(under.x+_LABEL_W÷2,y,w,h)
+ for yy in rr.y:bottom(rr); set_string!(buf,rr.x,yy," "^rr.width,tstyle(:text)); end
+ render(Block(title=_RFIELDS[r.cursor][2],border_style=tstyle(:border_focus)),rr,buf)
+ for (i,l) in enumerate(cs)
+  set_string!(buf,rr.x+2,rr.y+i,(i==r.pick ? "› " : "  ")*(i==r.pick ? "(•) " : "( ) ")*l,i==r.pick ? tstyle(:accent,bold=true) : tstyle(:text),rr)
+ end
+end
+"The dates the rule gives (right): new ones as list lines, skipped ones dimmed with the reason; problems in red."
+function _view_plan(m::Editor, rect::Rect, buf::Buffer)
+ r=m.rep
+ for yy in rect.y:bottom(rect); set_string!(buf,rect.x,yy," "^rect.width,tstyle(:text)); end
+ blk=Block(title="Datoer"); render(blk,rect,buf); ir=inner_area(blk,rect)
+ ir.width<10 && return
+ lines=Vector{Tuple{String,Style}}[]
+ add(segs...)=push!(lines,collect(Tuple{String,Style},segs))
+ add(("Mal: ",tstyle(:text_dim)),[(t,_style(f)) for (t,f) in TK.line_segs(r.template;width=ir.width-5)]...)
+ note=_rnote(r); isempty(note) || add((note,tstyle(:warning)))
+ add()
+ p=r.plan
+ if !isempty(r.problem); add((r.problem,tstyle(:error,bold=true)))
+ elseif !isnothing(p)
+  n=length(p.events); skip=length(p.exists)+length(p.excepted)
+  add(("$n $(n==1 ? "nytt arrangement" : "nye arrangementer")"*(skip>0 ? " · $skip hoppes over" : ""),tstyle(:accent,bold=true)))
+  for (a,b) in p.unused_except; add(("Unntatt $(_dmy(a))$(a==b ? "" : "–"*_dmy(b)) treffer ingen dato i regelen.",tstyle(:warning))); end
+  for e in p.errors; add(("• "*e,tstyle(:error))); end
+  rows=sort!(vcat([(something(TK._ymd(e.start),m.today),1,e) for (_,e) in p.events],
+                  [(d,2,nothing) for d in p.exists],[(d,3,nothing) for d in p.excepted]);by=x->(x[1],x[2]))
+  room=bottom(ir)-ir.y+1-length(lines)
+  for (i,(d,kind,e)) in enumerate(rows)
+   if i==room && length(rows)>room; add(("… og $(length(rows)-room+1) til",tstyle(:text_dim))); break; end
+   if kind==1; add(("+ ",tstyle(:success,bold=true)),[(t,_style(f)) for (t,f) in TK.line_segs(e::TK.Event;width=ir.width-2)]...)
+   else add(("· $(TK._wd3(d)) $(TK._two(day(d))).$(TK._two(month(d))).$(TK._two(year(d)%100))  hoppes over ($(kind==2 ? "finnes fra før" : "unntatt"))",tstyle(:text_dim))) end
+  end
+ end
+ for (i,l) in enumerate(lines)
+  y=ir.y+i-1; y>bottom(ir) && break
+  x=ir.x
+  for (t,st) in l; x>right(ir) && break; set_string!(buf,x,y,_short(t,right(ir)-x+1),st,ir); x+=textwidth(t); end
+ end
+end
 function _view_list(m::Editor, rect::Rect, buf::Buffer)
  rect.height<3 && return
  set_string!(buf,rect.x,rect.y,"Søk: ",tstyle(:accent,bold=true))
@@ -401,17 +670,19 @@ function _view_list(m::Editor, rect::Rect, buf::Buffer)
 end
 function _view_footer(m::Editor, rect::Rect, buf::Buffer)
  x=rect.x; w=rect.width
- help=m.mode===:search ? "Alle ordene må passe: tittel, sted, arrangør, DJ, lærer, dato, ukedag, id, serie … («type:class», «venue:sentralen» søker i ett felt)." : _field(m).help
+ help=m.mode===:search ? "Alle ordene må passe: tittel, sted, arrangør, DJ, lærer, dato, ukedag, id, serie … («type:class», «venue:sentralen» søker i ett felt)." :
+  m.mode===:repeat ? _RFIELDS[m.rep.cursor][4] : _field(m).help
  set_string!(buf,x,rect.y,_short(help,w),tstyle(:text_dim))
  st=m.level===:error ? tstyle(:error,bold=true) : m.level===:ok ? tstyle(:success,bold=true) : tstyle(:text)
  set_string!(buf,x,rect.y+1,_short(m.message,w),st)
- keys=m.mode===:search ? "↑/↓ velg · Enter åpne · Ctrl-A $(m.past ? "bare kommende" : "også tidligere") · Ctrl-N nytt · Ctrl-K kopier · Esc $(isempty(text(m.query)) ? "avslutt" : "tøm søket")" :
+ keys=m.mode===:search ? "↑/↓ velg · Enter åpne · Ctrl-A $(m.past ? "bare kommende" : "også tidligere") · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc $(isempty(text(m.query)) ? "avslutt" : "tøm søket")" :
   m.mode===:text ? "Enter lagre feltet · Tab neste · Esc avbryt" :
   m.mode===:pick ? "↑/↓ flytt · Mellomrom kryss av · Enter velg · Esc avbryt" :
   m.mode===:confirm ? "s lagre · f forkast · Esc fortsett" :
   m.mode===:scope ? _scope_keys(m) :
-  "↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
- render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(m.mode!==:search && _isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
+  m.mode===:repeat ? _repeat_keys(m.rep) :
+  "↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
+ render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(m.mode ∉ (:search,:repeat) && _isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
 end
 
 # ── Command line ──
@@ -422,15 +693,20 @@ Usage (in a data repository):
   julia --project=PATH/TangoTUI -m TangoTUI [--all] [--root=events]        # search the events, pick one
   julia --project=PATH/TangoTUI -m TangoTUI [edit] TERM… [--all] [--root=events]
   julia --project=PATH/TangoTUI -m TangoTUI new [TERM…] [--root=events]
+  julia --project=PATH/TangoTUI -m TangoTUI repeat TERM… [--root=events]
 
 (none)  a list of the upcoming events: type to search (every word must match, as on the web page), ↑/↓ and
-        Enter to open one. Ctrl-A also shows past events, Ctrl-N starts a new event, Ctrl-K copies the selected.
+        Enter to open one. Ctrl-A also shows past events, Ctrl-N starts a new event, Ctrl-K copies the selected,
+        Ctrl-R repeats it on the dates of a rule.
 edit    the event that matches TERM… (as `tangoedit`: TERM, KEY:TEXT); several or none: the list, searching TERM….
 new     a blank form; with TERM…, a copy of the matching event (the latest of its series) on a new date.
+repeat  copies of the matching event (the latest of its series) on the dates of a rule, as `tangoedit repeat`:
+        every N weeks or months, the Nth (last) weekday of the month, or given dates; a number of copies or an end
+        date, a start date and dates to skip. The dates are listed as you set the rule; Ctrl-S creates them.
 --all   include past events.
 
 In the form: ↑/↓ choose a field, Enter edit it (a pick list where only some values are allowed), Del clear it,
-Ctrl-S save, Esc back to the list. Saving writes the file (moved if the date changed); commit it with git afterwards.
+Ctrl-S save, Ctrl-R repeat the event as it stands in the form, Esc back to the list. Saving writes the file (moved if the date changed); commit it with git afterwards.
 """
 function (@main)(args::Vector{String})
  site=try TK._cli_site("") catch err
@@ -441,7 +717,7 @@ end
 function _run(args::Vector{String}; today::Date=Dates.today())
  cmd="edit"; root="events"; past=false; terms=String[]
  for (i,a) in enumerate(args)
-  if i==1 && a in ("edit","new","search"); cmd=a
+  if i==1 && a in ("edit","new","search","repeat"); cmd=a
   elseif a in ("-h","--help"); print(USAGE); return 0
   elseif startswith(a,"--root="); root=a[8:end]
   elseif a=="--all"; past=true
@@ -461,7 +737,8 @@ end
 """
     editor_for(cmd, terms; root="events", past=false, today=today()) -> Editor
 
-The editor for `new` (blank, or a copy of `repeat_template(terms)` on `today`, with the date field open) or `edit`
+The editor for `new` (blank, or a copy of `repeat_template(terms)` on `today`, with the date field open), `repeat`
+(the list, with the repeat panel open on `repeat_template(terms)`; Esc goes to the list) or `edit`
 (the one matching event; with several or none, or without terms, the list searching `terms`). Esc in an opened
 event goes back to the list. Throws `ArgumentError` when `new TERM…` matches nothing.
 """
@@ -471,6 +748,13 @@ function editor_for(cmd::AbstractString, terms::Vector{String}; root="events", p
   isempty(terms) && return Editor(nothing,TK.new_event(;today),TK.new_event_keys();root,today,tree_check)
   m=Editor(nothing,TK.new_event(;today),TK.new_event_keys();root,today,tree_check)
   _copy!(m,TK.repeat_template(terms;root))
+  return m
+ end
+ if cmd=="repeat"
+  isempty(terms) && throw(ArgumentError("repeat needs a search term for the event to repeat"))
+  (_,t,ks),g=TK._repeat_template(terms;root)
+  m=search_editor(;root,today,tree_check)
+  _repeat!(m,t,ks;saved=true,back=:search,group=g)
   return m
  end
  m=search_editor(;query=join(terms," "),past,root,today,tree_check)
