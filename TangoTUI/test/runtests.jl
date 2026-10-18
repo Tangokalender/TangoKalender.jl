@@ -229,6 +229,29 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   keys!(r,:escape); @test r.mode===:search
   @test_throws ArgumentError TangoTUI.editor_for("repeat",String[];root,today=TODAY)
  end
+ @testset "Ctrl-L: this date's values to the later dates of the series" begin
+  root=tree(); m=TangoTUI.search_editor(;root,today=TODAY)
+  keys!(m,"series:otra"); m.pick=findfirst(i->m.events[i][2].id=="otra-milonga-2026-10-26",m.hits); keys!(m,:enter)
+  f0=m.file; e0=m.before
+  later=TK.later_in_series(f0,e0;root); earlier=[x for x in TK.find_events(["series:otra"];root,from=nothing) if x[2].start<e0.start]
+  # a correction for this date only (as an organiser who forgot «this and all later dates»)
+  keys!(to!(m,"price_nok"),:enter); m.input=TextInput(text="180",focused=true); keys!(m,:enter,:ctrl=>'s',"d")
+  @test m.level===:ok && TK.read_event(f0)[1].price_nok==180 && all(x->isnothing(TK.read_event(x[1])[1].price_nok),later)   # later: no price yet
+  keys!(m,:ctrl=>'l')
+  @test m.mode===:spread && has(m,"Til senere datoer i serien «otra-milonga»") && has(m,"Gjelder $(length(later)) senere datoer")
+  i=findfirst(x->x[1].key=="price_nok",m.spread); @test m.sticked[i] && has(m,"[x] Pris") && has(m,"alle $(length(later)) har «–»")
+  j=findfirst(x->x[1].key=="dj",m.spread); @test isnothing(j) || !m.sticked[j]                     # dates with their own DJ: not ticked
+  @test all(x->x[1].key!="date",m.spread)
+  keys!(m,:escape); @test m.mode===:browse && all(x->isnothing(TK.read_event(x[1])[1].price_nok),later)  # Esc: nothing written
+  keys!(m,:ctrl=>'l',:enter)
+  @test m.level===:ok && occursin("og $(length(later)) senere datoer",m.message) && all(x->TK.read_event(x[1])[1].price_nok==180,later)
+  @test all(x->TK.read_event(x[1])[1].dj==x[2].dj,later) && all(x->TK.read_event(x[1])[1].price_nok==x[2].price_nok,earlier)   # only the ticked field, only later
+  @test isempty(TK.validate_event_tree(root))
+  keys!(m,:ctrl=>'l'); @test m.mode===:browse && occursin("allerede de samme",m.message)            # nothing left to copy
+  keys!(to!(m,"dj"),:enter); m.input=TextInput(text="X",focused=true); keys!(m,:enter,:ctrl=>'l')
+  @test m.mode===:browse && occursin("Lagre endringene først",m.message)                           # unsaved changes: save first
+  n=TangoTUI.editor_for("new",String[];root,today=TODAY); keys!(n,:ctrl=>'l'); @test occursin("Lagre arrangementet først",n.message)
+ end
  @testset "relative --root, as in a data repository" begin
   cd(dirname(tree())) do
    m=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root="events",today=TODAY)

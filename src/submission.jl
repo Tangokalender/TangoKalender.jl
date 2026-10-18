@@ -148,6 +148,14 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   at=multi ? "[$(k-1)] " : ""
   st=_local(x["start"]); isnothing(st) && (err("$(at)«start» er ikke en gyldig dato."); continue)
   d,t=st; d<today && err("$(at)«start» ($d) har allerede vært.")
+  for (k2,long) in (("title",false),("description",true))   # no all-caps or creatively capitalised text, in any language
+   tv=_none(get(x,k2,nothing)); tv isa AbstractString && (m=_caps_problem(k2,tv;long); isnothing(m) || err(at*m))
+   tr=get(x,"translations",nothing); tr isa AbstractDict || continue
+   for (l,tt) in tr
+    tt isa AbstractDict || continue
+    tv=_none(get(tt,k2,nothing)); tv isa AbstractString && (m=_caps_problem("translations.$l.$k2",tv;long); isnothing(m) || err(at*m))
+   end
+  end
   en=_local(get(x,"end",nothing))
   stamp_end=if isnothing(en) nothing
    elseif isnothing(en[2]) string(en[1])

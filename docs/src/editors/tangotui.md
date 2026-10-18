@@ -68,6 +68,7 @@ events match, or none, it opens the list searching for them.
 | Del | clear the field |
 | Ctrl-S | save the event |
 | Ctrl-R | repeat the event **as it stands in the form** (see [below](@ref "Repeat an event")) |
+| Ctrl-L | copy this date's values to the **later dates** of its series (see [below](@ref "Fix later dates after a one-date correction")) |
 | Esc | back to the list (asks first if there are unsaved changes) |
 
 A field that breaks a rule of the [event format](@ref events) is marked `!` in red, with the reason below the form;
@@ -99,6 +100,20 @@ that had their own value (for example a special price) that would be overwritten
 **Guardrail:** only events with the **same organiser** as the event you edit are changed. Events by other organisers
 in the series or the search are left alone and listed as skipped. All files are written together: if the check of
 the event tree fails, none of them are.
+
+## Fix later dates after a one-date correction
+
+Organisers sometimes correct one date with «Rett opp» but forget to choose «Denne og alle senere datoer i
+serien», so only that date changes. Open the corrected date and press **Ctrl-L**: a panel lists the fields in which
+the later dates of the series differ from this one, with this date's value and theirs.
+
+- A field is ticked already when **all** later dates still share one value, the old one: the typical trace of such a
+  correction. Fields where the later dates vary (a DJ per date) and Status are not ticked.
+- **Space** ticks or unticks, **Enter** writes the ticked fields to every later date of the series, **Esc** cancels.
+- Times are set on each date with the right summer or winter time, earlier dates are never touched, and the
+  [guardrail](@ref "The same change on several dates") applies: only events with the same organiser change.
+
+Save your own changes to the event first (Ctrl-S); Ctrl-L only copies what is already saved.
 
 ## Repeat an event
 

@@ -23,6 +23,7 @@ function _workload(dir,weekly,today)
  m.cursor=findfirst(f->f.key=="types",m.fields); keys!(m,:enter," ",:down,:enter); draw(m)
  m.cursor=findfirst(f->f.key=="description",m.fields); keys!(m,:enter," Mer.",:enter,"Linje.",:up,:end_key); draw(m); keys!(m,:ctrl=>'s')
  keys!(m,:ctrl=>'s'); draw(m); keys!(m,"d"); draw(m)          # save: the «later dates» question, then this date only
+ keys!(m,:ctrl=>'l'); draw(m); keys!(m,:enter); draw(m)        # Ctrl-L: that change to the later dates after all
  keys!(m,:ctrl=>'r',:down,:down,:enter,"2",:enter); draw(m); keys!(m,:ctrl=>'s'); draw(m)   # repeat 2 copies
  keys!(m,:ctrl=>'k'); draw(m); keys!(m,:escape,:escape); draw(m)
  draw(editor_for("edit",["tirsdagskurs"];root,today)); draw(editor_for("repeat",["tirsdagskurs"];root,today))

@@ -111,6 +111,9 @@ editor shows them at the field (`field_problems`), and saving refuses them.
 """
 function set_field(e::Event, f::FormField, s::AbstractString)
  s=String(strip(s)); k=f.key; bad(m)=throw(ArgumentError("«$(f.label)»: $m"))
+ if k in ("title","other_title","es_title","description","other_description","es_description") && !isempty(s)   # the capitals check
+  m=_caps_problem(f.label,s;long=endswith(k,"description")); isnothing(m) || throw(ArgumentError(m))
+ end
  f.kind in (:choice,:multi) && return set_field(e,f,String[v for (v,l) in f.choices if any(x->lowercase(strip(x)) in (lowercase(v),lowercase(l)),split(s,','))])
  if k=="date"
   d=_date(s); isnothing(d) && bad("«$s» er ikke en dato (ÅÅÅÅ-MM-DD).")
@@ -292,6 +295,25 @@ event without one only matches others without one) may be changed. `other` are t
 split_by_organizer(e::Event, xs)=(filter(x->_org(x[2])==_org(e),xs),filter(x->_org(x[2])!=_org(e),xs))
 "Whether `x` has the same value as `e` in field `f` (used to warn before overwriting a date's own value)."
 same_field(x::Event,e::Event,f::FormField)=_fieldvalue(x,f)==_fieldvalue(e,f)
+"""
+    series_differences(e, later; fields=form_fields()) -> [(field, n, shared)]
+
+The fields in which the events `later` (`(file, event, keys)`, e.g. `later_in_series`) differ from `e`, in form order
+(never the date): `n` of them differ, and `shared` is the one value they all have when they agree, else `nothing`.
+A field where every later date still has one other value is the typical trace of a correction made for one date
+only, when it was meant for the whole series.
+"""
+function series_differences(e::Event, later; fields::Vector{FormField}=form_fields())
+ out=Tuple{FormField,Int,Union{Nothing,String}}[]
+ isempty(later) && return out
+ for f in fields
+  f.key=="date" && continue
+  n=count(x->!same_field(x[2],e,f),later); n==0 && continue
+  vals=unique(_fieldvalue(x[2],f) for x in later)
+  push!(out,(f,n,length(vals)==1 && n==length(later) ? field_text(later[1][2],f) : nothing))
+ end
+ out
+end
 """
     event_search_text(e) -> String
 

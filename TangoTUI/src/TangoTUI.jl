@@ -68,7 +68,7 @@ mutable struct Editor <: Model
  event::TK.Event
  cursor::Int
  offset::Int
- mode::Symbol                     # :search, :browse, :text, :long, :pick, :confirm, :scope, :repeat
+ mode::Symbol                     # :search, :browse, :text, :long, :pick, :confirm, :scope, :repeat, :spread
  input::TextInput
  pick::Int
  ticked::Vector{Bool}
@@ -97,11 +97,16 @@ mutable struct Editor <: Model
  then::Symbol
  rep::Union{Nothing,RepeatForm}   # the repeat panel (mode :repeat)
  long::WrapEditor                 # the long-text modal (mode :long)
+ # copying this date's values to the later dates of its series (Ctrl-L, mode :spread): the fields that differ
+ # (`TK.series_differences`), which are ticked, and the cursor; the targets are `sertargets`/`serskip`
+ spread::Vector{Tuple{TK.FormField,Int,Union{Nothing,String}}}
+ sticked::Vector{Bool}
+ spick::Int
 end
 function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree)
  m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,:browse,TextInput(text=""),1,Bool[],"",:info,false,String[],
           Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false,
-          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing,WrapEditor(""))
+          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing,WrapEditor(""),Tuple{TK.FormField,Int,Union{Nothing,String}}[],Bool[],1)
  isnothing(file) && _new_id!(m)
  m
 end
@@ -169,7 +174,8 @@ _ctrl(ev::KeyEvent,c::Char)=ev.key===:ctrl && ev.char==c
 _ch(ev::KeyEvent,c::Char)=ev.key===:char && ev.char==c
 function update!(m::Editor, ev::KeyEvent)
  m.mode===:search ? _search_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:long ? _long_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
- m.mode===:confirm ? _confirm_key!(m,ev) : m.mode===:scope ? _scope_key!(m,ev) : m.mode===:repeat ? _repeat_key!(m,ev) : _browse_key!(m,ev)
+ m.mode===:confirm ? _confirm_key!(m,ev) : m.mode===:scope ? _scope_key!(m,ev) : m.mode===:repeat ? _repeat_key!(m,ev) :
+ m.mode===:spread ? _spread_key!(m,ev) : _browse_key!(m,ev)
  nothing
 end
 _move!(m::Editor,d::Int)=(m.cursor=clamp(m.cursor+d,1,length(m.fields)); nothing)
@@ -186,6 +192,7 @@ function _browse_key!(m::Editor, ev::KeyEvent)
  elseif k===:delete || k===:backspace; _apply!(m,_field(m).kind in (:choice,:multi) ? String[] : "")
  elseif _ctrl(ev,'s'); _save!(m)
  elseif _ctrl(ev,'r'); _repeat_form!(m)
+ elseif _ctrl(ev,'l'); _spread!(m)
  elseif k===:escape || _ch(ev,'q') || k===:ctrl_c
   _dirty(m) ? (m.mode=:confirm; _say!(m,"Ulagrede endringer: lagre (s), forkast (f) eller fortsett å redigere (Esc)?",:error)) : _leave!(m)
  end
@@ -356,6 +363,40 @@ function _write!(m::Editor, later)
  m.then===:leave && _leave!(m)
  true
 end
+
+# ── This date's values to the later dates (Ctrl-L): when a correction was made for one date but meant for the series ──
+"""
+Open the panel that copies fields of this (saved) event to the later dates of its series: the fields where they
+differ, pre-ticked where every later date still has one other value (the old one), never Status; within the
+organiser guardrail.
+"""
+function _spread!(m::Editor)
+ _isnew(m) && return _say!(m,"Lagre arrangementet først.",:error)
+ _dirty(m) && return _say!(m,"Lagre endringene først (Ctrl-S): da spør TangoTUI om de også gjelder senere datoer.",:error)
+ isnothing(m.event.series) && return _say!(m,"Arrangementet er ikke del av en serie.",:error)
+ later=TK.later_in_series(m.file,m.event;root=m.root)
+ isempty(later) && return _say!(m,"Ingen senere datoer i serien «$(m.event.series)».",:error)
+ m.sertargets,m.serskip=TK.split_by_organizer(m.event,later)
+ isempty(m.sertargets) && return _say!(m,"De senere datoene har en annen arrangør; ingenting å endre.",:error)
+ m.spread=TK.series_differences(m.event,m.sertargets)
+ isempty(m.spread) && return _say!(m,"Alle senere datoer har allerede de samme verdiene som denne.",:ok)
+ m.sticked=[!isnothing(sh) && f.key!="status" for (f,_,sh) in m.spread]; m.spick=1; m.mode=:spread
+ _say!(m,"Kryss av feltene som skal gjelde alle senere datoer, og trykk Enter.")
+end
+function _spread_key!(m::Editor, ev::KeyEvent)
+ n=length(m.spread); k=ev.key
+ if k===:up; m.spick=mod1(m.spick-1,n)
+ elseif k===:down || k===:tab; m.spick=mod1(m.spick+1,n)
+ elseif _ch(ev,' '); m.sticked[m.spick]=!m.sticked[m.spick]
+ elseif k===:enter || _ctrl(ev,'s')
+  m.scope=[f for ((f,_,_),t) in zip(m.spread,m.sticked) if t]
+  isempty(m.scope) && return _say!(m,"Kryss av minst ett felt (Mellomrom), eller avbryt med Esc.",:error)
+  m.then=:stay; _write!(m,m.sertargets)
+ elseif k===:escape || k===:ctrl_c; m.mode=:browse; _say!(m,"Ingenting endret.")
+ end
+ nothing
+end
+_spread_keys()="↑/↓ felt · Mellomrom kryss av · Enter kopier til senere datoer · Esc avbryt"
 
 # ── Repeat (Ctrl-R): copies on the dates of a rule, with a live list of the dates ──
 const _RULES=["Ukentlig","Månedlig","Bestemte datoer"]
@@ -559,6 +600,7 @@ function view(m::Editor, frame::Frame)
   length(parts)>1 && _view_card(m,parts[2],buf)
   m.mode===:pick && _view_pick(m,parts[1],buf)
   m.mode===:scope && length(parts)>1 && _view_scope(m,parts[2],buf)
+  m.mode===:spread && length(parts)>1 && _view_spread(m,parts[2],buf)
   m.mode===:long && _view_long(m,body,buf)
  end
  _view_footer(m,rows[3],buf)
@@ -602,6 +644,28 @@ function _view_card(m::Editor, rect::Rect, buf::Buffer)
    x+=textwidth(t)
   end
  end
+end
+"The Ctrl-L panel: the fields that differ on later dates (ticked ones are copied), the dates, and the guardrail's skips."
+function _view_spread(m::Editor, rect::Rect, buf::Buffer)
+ for yy in rect.y:bottom(rect); set_string!(buf,rect.x,yy," "^rect.width,tstyle(:text)); end
+ blk=Block(title="Til senere datoer i serien «$(something(m.event.series,""))»",border_style=tstyle(:border_focus)); render(blk,rect,buf); r=inner_area(blk,rect)
+ lines=Tuple{String,Style}[]; add(t,st=tstyle(:text))=push!(lines,(t,st))
+ nt=length(m.sertargets)
+ add("Felt der senere datoer er annerledes enn denne:",tstyle(:text_dim))
+ for (i,(f,n,sh)) in enumerate(m.spread)
+  v=TK.field_text(m.event,f); v=isempty(v) ? "–" : replace(v,'\n'=>" ⏎ ")
+  others=isnothing(sh) ? "$n av $nt har andre verdier" : "alle $nt har «$(_short(isempty(sh) ? "–" : replace(sh,'\n'=>" "),24))»"
+  add((i==m.spick ? "› " : "  ")*(m.sticked[i] ? "[x] " : "[ ] ")*rpad(_short(f.label,18),19)*_short(v,28)*"   ($others)",
+      i==m.spick ? tstyle(:accent,bold=true) : m.sticked[i] ? tstyle(:text) : tstyle(:text_dim))
+ end
+ add("")
+ short(x)=(e=x[2]; d=TK._ymd(e.start); (isnothing(d) ? e.start : "$(TK._wd3(d)) $(TK._two(day(d))).$(TK._two(month(d)))")*"  "*e.title)
+ add("Gjelder $nt senere dato$(nt==1 ? "" : "er"):",tstyle(:accent,bold=true))
+ for x in first(m.sertargets,6); add("   "*short(x)); end
+ nt>6 && add("   … og $(nt-6) til",tstyle(:text_dim))
+ isempty(m.serskip) || add("Hoppes over, annen arrangør: $(length(m.serskip)) ("*join(unique(something(x[2].organizer,"uten arrangør") for x in m.serskip),", ")*")",tstyle(:error))
+ add(""); add("Avkrysset der alle senere datoer har den samme, gamle verdien.",tstyle(:text_dim))
+ for (i,(t,st)) in enumerate(lines); y=r.y+i-1; y>bottom(r) && break; set_string!(buf,r.x+1,y,_short(t,r.width-1),st,r); end
 end
 "The scope question: the changed fields, each choice with its dates, and the events the guardrail leaves out."
 function _view_scope(m::Editor, rect::Rect, buf::Buffer)
@@ -766,7 +830,8 @@ function _view_footer(m::Editor, rect::Rect, buf::Buffer)
   m.mode===:confirm ? "s lagre · f forkast · Esc fortsett" :
   m.mode===:scope ? _scope_keys(m) :
   m.mode===:repeat ? _repeat_keys(m.rep) :
-  "↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
+  m.mode===:spread ? _spread_keys() :
+  "↑/↓ felt · Enter endre · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
  render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(m.mode ∉ (:search,:repeat) && _isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
 end
 

@@ -1008,6 +1008,13 @@ end
   u,er,_=TK.apply_correction(merge(base,Dict("Tekstspråk"=>"English")),root;today=T)             # nb↔en relabel leaves es alone
   @test isempty(er) && u[1][2]["translations"]==Dict("nb"=>Dict("title"=>"Evening milonga"),"es"=>Dict("title"=>"Milonga de la tarde","description"=>"Linda."))
  end
+ # series_differences: what a correction made for one date (but meant for the series) left behind on the later dates
+ let ev(d,p,dj)=TK.Event(id="m-$d",title="Milonga",types=["milonga"],series="m",start="$(d)T20:00:00+01:00",price_nok=p,dj=dj)
+  fixed=ev("2026-11-06",150,"A"); later=[("f$i",ev(d,120,dj),String[]) for (i,(d,dj)) in enumerate([("2026-11-13","B"),("2026-11-20","C"),("2026-11-27","A")])]
+  df=TK.series_differences(fixed,later)
+  @test [(f.key,n,sh) for (f,n,sh) in df]==[("dj",2,nothing),("price_nok",3,"120")]               # the date is never one
+  @test isempty(TK.series_differences(fixed,Tuple{String,TK.Event,Vector{String}}[])) && isempty(TK.series_differences(fixed,[("f",ev("2026-11-13",150,"A"),String[])]))
+ end
  # the editors' form (TangoTUI)
  ev=TK.Event(id="x-2026-11-14",title="Kveldsmilonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
  S=TK._field("es_title"); D=TK._field("es_description"); y=TK.set_field(TK.set_field(ev,S,"Milonga de la noche"),D,"Linda.")
@@ -1530,4 +1537,40 @@ end
   "organizer"=>"Org","link"=>"https://example.org","price_nok"=>100,"pay_what_you_can"=>true))
  ev2,er=TK.events_from_json(j;today=T); @test isempty(er) && only(ev2)["pay_what_you_can"]===true && only(ev2)["price_nok"]==100
  @test occursin("\"pay_what_you_can\": true",TK.llm_rules()) && haskey(TK.submission_schema()["definitions"]["event"]["properties"],"pay_what_you_can")
+end
+@testset "capitals: no all-caps titles, no creative mixed case" begin
+ TK=TangoKalender; T=Date(2026,10,1); C=TK._caps_problem
+ @test all(TK._word_ok,["milonga","Milonga","TangoAkutten","OnsdagsPractica","ESA","KTW","CCTM","DJs","Á","Ñandú"])
+ @test !any(TK._word_ok,["MiLonga","TaNgo","ThIS","iS","WhAtImeAN","MILONGA","TangO","McDonald"])
+ for t in ["Milonga ESA","TangoAkutten","KTW 2027","DJ-kveld med Ana","Practica LOCA","Noche Loca!","Tangoworkshop: Vals – Feeling the Flow","Milonga del viernes"]
+  @test isnothing(C("Tittel",t))
+ end
+ @test C("Tittel","NOCHE LOCA!")=="«Tittel» har for mange store bokstaver. Skriv for eksempel «Noche Loca!» – forkortelser som ESA og DJ er greit."
+ @test occursin("for mange store bokstaver",C("Tittel","ThIS iS WhAtImeAN")) && occursin("«Milonga»",C("Tittel","MILONGA"))
+ @test occursin("blander store og små bokstaver uvanlig («TaNgo», «MiLonga»)",C("Tittel","TaNgo MiLonga")) && occursin("«Tango Milonga»",C("Tittel","TaNgo MiLonga"))
+ @test occursin("for mange store bokstaver",C("Beskrivelse","SE INSTAGRAM FOR MER INFO OM KVELDEN!";long=true))
+ @test isnothing(C("Beskrivelse","Se https://www.instagram.com/LOCATANGO og @LOCA_TANGO, #TANGOOSLO.";long=true))   # links, handles, tags
+ @test isnothing(C("Beskrivelse","MiLonga med DJ ESA.";long=true))                                    # descriptions: only the share
+ @test all(e->isnothing(C("Tittel",e["title"])),load_events(TREE))                                    # every title in the test copy of the Oslo data
+ # the routes: form (and so the spreadsheet), JSON, corrections, the editors' form
+ f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
+ _,er=TK.events_from_form(merge(f,Dict("Tittel"=>"NOCHE LOCA!","Tittel (spansk)"=>"NoChE lOcA","Beskrivelse"=>"KOM OG DANS MED OSS I KVELD!"));today=T)
+ @test any(occursin("«Tittel» har for mange",m) for m in er) && any(occursin("«Tittel (spansk)»",m) for m in er) && any(occursin("«Beskrivelse» har for mange",m) for m in er)
+ tab="Tittel\tType\tDato\tStarttid\tSted\tAdresse\tArrangør\tLenke\nMilonga\tMilonga\t2026-11-14\t20:00\tS\tGate 1\tOrg\thttps://x.org\nMILONGA LOCA\t\t2026-11-21\t\t\t\t\t\n"
+ _,er=TK.events_from_table(tab;today=T); @test length(er)==1 && occursin("Rad 3",only(er)) && occursin("«Milonga Loca»",only(er))
+ j=JSON.json([Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"S","address"=>"A"),"organizer"=>"O","link"=>"https://x.org"),
+              Dict("title"=>"MILONGA","types"=>["milonga"],"start"=>"2026-11-21T20:00","venue"=>Dict("name"=>"S","address"=>"A"),"organizer"=>"O","link"=>"https://x.org",
+                   "translations"=>Dict("en"=>Dict("title"=>"ThIS iS iT")))])
+ _,er=TK.events_from_json(j;today=T); @test any(startswith(m,"[1] «title»") for m in er) && any(occursin("«translations.en.title»",m) for m in er) && !any(startswith(m,"[0]") for m in er)   # numbered from 0, as the route's other messages
+ mktempdir() do root
+  x=merge(only(first(TK.events_from_form(f;today=T))),Dict("id"=>"x-2026-11-14","title"=>"OLD SHOUTING TITLE")); save_event_tree([x],root)
+  fix(d)=TK.apply_correction(merge(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok"),d),root;today=T)
+  u,er,_=fix(Dict("DJ"=>"Ny DJ")); @test isempty(er) && u[1][2]["title"]=="OLD SHOUTING TITLE"       # an unchanged title isn't checked
+  _,er,_=fix(Dict("Tittel"=>"NEW SHOUTING")); @test any(occursin("«Tittel» har for mange",m) for m in er)
+  u,er,_=fix(Dict("Tittel"=>"Old Shouting Title")); @test isempty(er) && u[1][2]["title"]=="Old Shouting Title"   # and fixing it is fine
+ end
+ ev=TK.Event(id="x-2026-11-14",title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
+ @test_throws ArgumentError TK.set_field(ev,TK._field("title"),"MILONGA LOCA")
+ @test_throws ArgumentError TK.set_field(ev,TK._field("es_title"),"MiLoNgA")
+ @test TK.set_field(ev,TK._field("title"),"Milonga ESA").title=="Milonga ESA"
 end
