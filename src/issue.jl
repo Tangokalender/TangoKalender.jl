@@ -72,11 +72,19 @@ function _caps_problem(label::AbstractString, text::AbstractString; long::Bool=f
  odd=long ? String[] : [String(w) for w in words if !_word_ok(w)]
  (shouting || !isempty(odd)) || return nothing
  fix(w)=(cs=collect(lowercase(w)); string(uppercase(cs[1]),cs[2:end]...))
- sug=replace(text,r"\p{L}+"=>w->(!_word_ok(w) || (shouting && all(isuppercase,w) && length(w)>3)) ? fix(w) : w)
+ n=Ref(0)                                                          # the word's position: the first one is capitalised
+ function respell(w)
+  n[]+=1
+  shouting && lowercase(w) in _SMALL_WORDS && return n[]==1 ? fix(w) : lowercase(w)   # «de», «og», «the» …
+  !_word_ok(w) || (shouting && all(isuppercase,w) && length(w)>3) ? fix(w) : w
+ end
+ sug=replace(text,r"\p{L}+"=>respell)
  why=shouting ? "har for mange store bokstaver" : "blander store og små bokstaver uvanlig ($(join(("«$w»" for w in first(odd,3)),", ")))"
  long ? "«$label» $why. Skriv vanlig tekst; forkortelser som ESA og DJ er greit." :
   "«$label» $why. Skriv for eksempel «$(strip(sug))» – forkortelser som ESA og DJ er greit."
 end
+"Short words that go to lower case in the suggested spelling of a shouting title (Norwegian, English, Spanish)."
+const _SMALL_WORDS=Set(["og","i","på","med","for","til","av","om","the","of","and","in","on","at","to","a","de","del","la","las","el","los","y","en","con","al"])
 "Text fields checked by `_caps_problem` in the forms: label => is a description."
 const CAPS_FIELDS=["Tittel"=>false,"Tittel (andre språk)"=>false,"Tittel (spansk)"=>false,
  "Beskrivelse"=>true,"Beskrivelse (andre språk)"=>true,"Beskrivelse (spansk)"=>true]

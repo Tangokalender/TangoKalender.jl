@@ -1547,6 +1547,7 @@ end
  end
  @test C("Tittel","NOCHE LOCA!")=="«Tittel» har for mange store bokstaver. Skriv for eksempel «Noche Loca!» – forkortelser som ESA og DJ er greit."
  @test occursin("for mange store bokstaver",C("Tittel","ThIS iS WhAtImeAN")) && occursin("«Milonga»",C("Tittel","MILONGA"))
+ @test occursin("«Noche de Tango»",C("Tittel","NOCHE DE TANGO")) && occursin("«De la Milonga y el Tango»",C("Tittel","DE LA MILONGA Y EL TANGO"))
  @test occursin("blander store og små bokstaver uvanlig («TaNgo», «MiLonga»)",C("Tittel","TaNgo MiLonga")) && occursin("«Tango Milonga»",C("Tittel","TaNgo MiLonga"))
  @test occursin("for mange store bokstaver",C("Beskrivelse","SE INSTAGRAM FOR MER INFO OM KVELDEN!";long=true))
  @test isnothing(C("Beskrivelse","Se https://www.instagram.com/LOCATANGO og @LOCA_TANGO, #TANGOOSLO.";long=true))   # links, handles, tags
