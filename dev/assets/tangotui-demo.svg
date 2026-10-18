@@ -822,7 +822,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Velg et felt med ↑/↓ og trykk Enter for å endre det.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="848" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -1087,7 +1087,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Velg et felt med ↑/↓ og trykk Enter for å endre det.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="848" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -1352,7 +1352,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="416" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">Velg et felt med ↑/↓ og trykk Enter for å endre det.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="848" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -2153,7 +2153,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="232" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">«Pris» endret. Ctrl-S lagrer.</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="848" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
@@ -2693,7 +2693,7 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="0" textLength="728" lengthAdjust="spacingAndGlyphs" fill="#87d787" font-weight="bold" stroke="#87d787" stroke-width="0.4">Lagret: events/2026/10-october/2026-10-28-onsdagsmilonga-2026-10-28.json og 7 senere datoer</tspan>
   </text>
   <text y="541">
-    <tspan x="0" textLength="712" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Del tøm · Ctrl-S lagre · Ctrl-R gjenta · Esc tilbake til listen</tspan>
+    <tspan x="0" textLength="848" lengthAdjust="spacingAndGlyphs" fill="#afffff"> ↑/↓ felt · Enter endre · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc tilbake til listen</tspan>
   </text>
 </g>
 <g visibility="hidden">
