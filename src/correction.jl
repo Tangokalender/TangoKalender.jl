@@ -1,10 +1,10 @@
 # Correction form (.github/ISSUE_TEMPLATE/rett-arrangement.yml): prefilled «Rett opp» links and applying submitted changes.
 # Semantics: a blank field means "unchanged", `-` clears an optional field.
-const CORRECTION_FIELDS=["Arrangement-ID","Nåværende opplysninger","Gjelder","Status","Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør",
+const CORRECTION_FIELDS=["Arrangement-ID","Nåværende opplysninger","Gjelder","Status","Tittel","Type","Dato","Sluttdato","Starttid","Sluttid","Sted","Adresse","Arrangør",
  "DJ","Lærere","Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tekstspråk","Tittel (andre språk)",
  "Beskrivelse (andre språk)","Tittel (spansk)","Beskrivelse (spansk)","Kommentar","Samtykke"]
 # form field id => form label for the editable fields (and the id), used to detect and display changes
-const CORRECTION_IDS=["arrangement_id"=>"Arrangement-ID","tittel"=>"Tittel","dato"=>"Dato","starttid"=>"Starttid","sluttid"=>"Sluttid",
+const CORRECTION_IDS=["arrangement_id"=>"Arrangement-ID","tittel"=>"Tittel","dato"=>"Dato","sluttdato"=>"Sluttdato","starttid"=>"Starttid","sluttid"=>"Sluttid",
  "sted"=>"Sted","adresse"=>"Adresse","arrangor"=>"Arrangør","dj"=>"DJ","laerere"=>"Lærere","pris"=>"Pris (kr)",
  "studentpris"=>"Studentpris (kr)","kurspris"=>"Kurspris (kr)","flyer"=>"Flyer","video"=>"Video","lenke"=>"Lenke","beskrivelse"=>"Beskrivelse",
  "tittel_annet"=>"Tittel (andre språk)","beskrivelse_annet"=>"Beskrivelse (andre språk)","tittel_es"=>"Tittel (spansk)",
@@ -23,6 +23,7 @@ end
 function correction_fields(e)
  v=get(e,"venue",nothing); v isa AbstractDict || (v=Dict{String,Any}())
  Dict{String,String}("arrangement_id"=>_s(e["id"]),"tittel"=>_s(get(e,"title",nothing)),"dato"=>first(_s(get(e,"start",nothing)),10),
+  "sluttdato"=>(ld=_end_day(e); ld==first(_s(get(e,"start",nothing)),10) ? "" : ld),   # the last day of an event over several days
   "starttid"=>_hhmm(get(e,"start",nothing)),"sluttid"=>_hhmm(get(e,"end",nothing)),"sted"=>_s(get(v,"name",nothing)),
   "adresse"=>_s(get(v,"address",nothing)),"arrangor"=>_s(get(e,"organizer",nothing)),"dj"=>_s(get(e,"dj",nothing)),
   "laerere"=>join(something(get(e,"teachers",nothing),Any[]),", "),"pris"=>_s(get(e,"price_nok",nothing)),
@@ -58,7 +59,7 @@ _urlenc(s)=join((c<0x80 && (isletter(Char(c)) || isdigit(Char(c)) || Char(c) in 
 "Read-only summary of the current values for the «Nåværende opplysninger» box."
 function current_summary(e; description=true)
  d=_display(e); f=correction_fields(e)
- lines=["$lbl: $(d[lbl])" for lbl in ("Tittel","Type","Status","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere",
+ lines=["$lbl: $(d[lbl])" for lbl in ("Tittel","Type","Status","Dato","Sluttdato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere",
   "Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Tekstspråk","Tittel (andre språk)","Tittel (spansk)")
   if !isempty(d[lbl]) && !(lbl=="Betal det du kan" && d[lbl]=="Nei")]
  description && !isempty(f["beskrivelse"]) && push!(lines,"Beskrivelse: $(f["beskrivelse"])")
@@ -139,6 +140,7 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  series=get_("Gjelder")==SERIES_SCOPE
  haskey(ch,"Dato") && series && err("«Dato» kan bare endres for én dato om gangen – velg «Bare denne datoen».")
+ haskey(ch,"Sluttdato") && series && err("«Sluttdato» kan bare endres for én dato om gangen – velg «Bare denne datoen».")
  haskey(ch,"Dato") && ch["Dato"]<today && err("«Dato» ($(ch["Dato"])) har allerede vært.")
  isempty(errs) && isempty(ch) && err("Ingen endringer funnet. Endre feltene som er feil (tomt felt = ingen endring).")
  isempty(errs) || return none
@@ -170,13 +172,22 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
    v=get(x,"venue",nothing); v isa AbstractDict || (v=JSON.Object{String,Any}("name"=>nothing,"address"=>nothing,"city"=>site_city()))
    haskey(ch,"Sted") && (v["name"]=ch["Sted"]); haskey(ch,"Adresse") && (v["address"]=ch["Adresse"]); x["venue"]=v
   end
-  if haskey(ch,"Dato") || haskey(ch,"Starttid") || haskey(ch,"Sluttid")
+  if haskey(ch,"Dato") || haskey(ch,"Starttid") || haskey(ch,"Sluttid") || haskey(ch,"Sluttdato")
    olds=Date(first(_s(e["start"]),10)); d=get(ch,"Dato",olds)
    h=_hhmm(e["start"]); s_=get(ch,"Starttid",isempty(h) ? nothing : h)
    en=_s(get(e,"end",nothing)); offset=isempty(en) ? 0 : Dates.value(Date(first(en,10))-olds)
    et=haskey(ch,"Sluttid") ? ch["Sluttid"] : (isempty(_hhmm(en)) ? nothing : _hhmm(en))
    x["start"]=_stamp(d,s_)
-   x["end"]=if isnothing(et)
+   x["end"]=if haskey(ch,"Sluttdato")   # the last day given: several days from the (new) date, or `-` = one day
+    ld=ch["Sluttdato"]
+    if isnothing(ld) || ld==d
+     isnothing(et) ? nothing : isnothing(s_) ? (err("«Sluttid» krever «Starttid»."); nothing) : _end_stamp(d,s_,et)
+    elseif ld<d; err("«Sluttdato» ($ld) er før «Dato» ($d)."); nothing
+    elseif ld>d+Day(MAX_DAYS); err("«Sluttdato» kan være høyst $MAX_DAYS dager etter «Dato»."); nothing
+    elseif isnothing(et); string(ld)
+    elseif isnothing(s_); err("«Sluttid» krever «Starttid»: fyll ut begge, eller fjern sluttiden med -."); nothing
+    else _end_stamp(ld,s_,et) end
+   elseif isnothing(et)
     haskey(ch,"Sluttid") || isempty(en) ? nothing : string(Date(first(en,10))+(d-olds))   # date-only end moves with the date
    elseif offset>=2 || isnothing(s_)
     _stamp(d+Day(offset),et)

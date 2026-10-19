@@ -55,17 +55,22 @@ body:
     validations:
       required: true
   - type: input
+    id: sluttdato
+    attributes:
+      label: Sluttdato
+      description: Bare for arrangementer over flere dager (festivaler, maratoner) – siste dag, ÅÅÅÅ-MM-DD. Ellers tom.
+      placeholder: "2026-11-16"
+  - type: input
     id: starttid
     attributes:
       label: Starttid
+      description: Må fylles ut, unntatt for arrangementer over flere dager (med «Sluttdato») – da kan den stå tom.
       placeholder: "20:30"
-    validations:
-      required: true
   - type: input
     id: sluttid
     attributes:
       label: Sluttid
-      description: Etter midnatt er greit (f.eks. 01:00).
+      description: Etter midnatt er greit (f.eks. 01:00). Med «Sluttdato» er det tiden siste dag.
       placeholder: "23:30"
   - type: dropdown
     id: gjentas

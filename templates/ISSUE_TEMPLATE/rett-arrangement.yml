@@ -67,6 +67,11 @@ body:
       label: Dato
       description: ÅÅÅÅ-MM-DD. Kan bare endres for én dato om gangen.
   - type: input
+    id: sluttdato
+    attributes:
+      label: Sluttdato
+      description: Siste dag for et arrangement over flere dager (festival), ÅÅÅÅ-MM-DD. - gjør det til én dag.
+  - type: input
     id: starttid
     attributes:
       label: Starttid

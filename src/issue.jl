@@ -1,11 +1,13 @@
 # Issue form (.github/ISSUE_TEMPLATE/nytt-arrangement.yml) → v2 events. The body is untrusted input: parse it as data only.
-const FORM_FIELDS=["Tekstspråk","Tittel","Type","Dato","Starttid","Sluttid","Gjentas","Gjentas til","Unntatt datoer","Sted","Adresse","Arrangør",
+const FORM_FIELDS=["Tekstspråk","Tittel","Type","Dato","Sluttdato","Starttid","Sluttid","Gjentas","Gjentas til","Unntatt datoer","Sted","Adresse","Arrangør",
  "DJ","Lærere","Pris (kr)","Betal det du kan","Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Tittel (andre språk)","Beskrivelse (andre språk)","Tittel (spansk)","Beskrivelse (spansk)","Samtykke"]
 "Optional text in the other language (English for a Norwegian event, Norwegian for an English one): label => key."
 const OTHER_TEXT_FIELDS=["Tittel (andre språk)"=>"title","Beskrivelse (andre språk)"=>"description"]
 "Optional Spanish text (`translations.es`), whatever «Tekstspråk» is: label => key."
 const SPANISH_TEXT_FIELDS=["Tittel (spansk)"=>"title","Beskrivelse (spansk)"=>"description"]
 const MAX_WEEKS=53
+"The longest event over several days the forms accept («Sluttdato» at most this many days after «Dato»)."
+const MAX_DAYS=31
 "Split an issue-form body into `heading => value`. GitHub's `_No response_` becomes an empty string."
 function parse_issue_form(body::AbstractString)
  out=Dict{String,String}()
@@ -159,7 +161,7 @@ function _parse_field(label::AbstractString,s::AbstractString)
    isnothing(t) ? (return bad("Ukjent «Type»: $k.")) : (t in ts || push!(ts,t))
   end
   isempty(ts) ? bad("Velg minst én «Type».") : (sort!(ts,by=t->findfirst(==(t),TYPE_ORDER)),nothing)
- elseif label in ("Dato","Gjentas til")
+ elseif label in ("Dato","Sluttdato","Gjentas til")
   d=_date(s); isnothing(d) ? bad("«$label» må være en dato, ÅÅÅÅ-MM-DD eller DD.MM.ÅÅÅÅ (fikk «$s»).") : (d,nothing)
  elseif label in ("Starttid","Sluttid")
   t=_time(s;allow24=label=="Sluttid"); isnothing(t) ? bad("«$label» må være et klokkeslett, f.eks. 20:30 eller 2030 (fikk «$s»).") : (t,nothing)
@@ -196,12 +198,22 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  get_(k)=String(strip(get(f,k,"")))
  req(k)=(v=get_(k); isempty(v) && err("«$k» må fylles ut."); v)
  val(k;required=false)=(s=required ? req(k) : get_(k); isempty(s) ? nothing : ((v,e)=_parse_field(k,s); isnothing(e) || err(e); v))
- title=req("Tittel"); typ=val("Type";required=true); date=val("Dato";required=true); st=val("Starttid";required=true)
+ title=req("Tittel"); typ=val("Type";required=true); date=val("Dato";required=true)
+ # «Sluttdato»: the last day of an event over several days (a festival); «Starttid» may then be empty (dates only)
+ lastday=val("Sluttdato"); multi=!isnothing(lastday) && !isnothing(date) && lastday>date
+ if !isnothing(lastday) && !isnothing(date)
+  lastday<date && err("«Sluttdato» ($lastday) er før «Dato» ($date).")
+  lastday>date+Day(MAX_DAYS) && err("«Sluttdato» kan være høyst $MAX_DAYS dager etter «Dato».")
+ end
+ st=val("Starttid")
+ isnothing(st) && !multi && isempty(get_("Starttid")) && err("«Starttid» må fylles ut (den kan bare stå tom for arrangementer over flere dager, med «Sluttdato»).")
  venue=req("Sted"); address=req("Adresse"); org=req("Arrangør"); link=val("Lenke";required=true)
  lang=_parse_lang(get_("Tekstspråk")); isnothing(lang) && (err("«Tekstspråk» må være «Norsk» eller «English» (fikk «$(get_("Tekstspråk"))»)."); lang="nb")
  !isnothing(date) && date<today && err("«Dato» ($date) har allerede vært.")
  et=val("Sluttid")
+ multi && isnothing(st) && !isnothing(et) && err("«Sluttid» krever «Starttid»: fyll ut begge, eller la begge stå tomme for et arrangement med bare datoer.")
  weekly=get_("Gjentas")=="Ukentlig"; until=nothing; except=Date[]
+ weekly && multi && err("«Sluttdato» kan ikke brukes sammen med «Gjentas: Ukentlig». Send heller ett skjema per helg/festival.")
  if weekly
   until=val("Gjentas til";required=true)
   if !isnothing(until) && !isnothing(date)
@@ -225,7 +237,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  isempty(errs) || return (JSON.Object{String,Any}[],errs)
  slug=_slug(title); none(s)=isempty(s) ? nothing : s
  base=JSON.Object{String,Any}("id"=>"$slug-$(Dates.format(date,"yyyy-mm-dd"))","title"=>title,"types"=>typ,"status"=>"scheduled","series"=>weekly ? slug : nothing,
-  "start"=>_stamp(date,st),"end"=>isnothing(et) ? nothing : _end_stamp(date,st,et),
+  "start"=>_stamp(date,st),"end"=>multi ? (isnothing(et) ? string(lastday) : _end_stamp(lastday,st,et)) : isnothing(et) ? nothing : _end_stamp(date,st,et),
   "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>site_city()),"organizer"=>org,"dj"=>none(get_("DJ")),
   "teachers"=>something(val("Lærere"),Any[]),
   "price_nok"=>entry,"student_price_nok"=>prices["student_price_nok"],"class_price_nok"=>prices["class_price_nok"],

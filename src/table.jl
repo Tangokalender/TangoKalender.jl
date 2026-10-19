@@ -4,13 +4,13 @@
 # Further rows: only what differs (typically Dato, DJ); a blank cell means "same as row 2", `-` clears an optional field.
 # Each data row becomes one dated event; rows with the same title share a `series`.
 # English headings are accepted as aliases («Title», «Date», «Organiser» …), and type/music values in any language.
-const TABLE_COLUMNS=["Tittel","Type","Dato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere","Pris (kr)","Betal det du kan",
+const TABLE_COLUMNS=["Tittel","Type","Dato","Sluttdato","Starttid","Sluttid","Sted","Adresse","Arrangør","DJ","Lærere","Pris (kr)","Betal det du kan",
  "Studentpris (kr)","Kurspris (kr)","Musikk","Flyer","Video","Lenke","Beskrivelse","Status","Tekstspråk","Tittel (andre språk)","Beskrivelse (andre språk)",
  "Tittel (spansk)","Beskrivelse (spansk)"]
 const MAX_TABLE_ROWS=60
 _colkey(s)=replace(lowercase(strip(s)),r"\s*\(kr\)\s*$"=>"",r"\s+"=>" ")
 const _COLUMN_BY_KEY=merge(Dict(_colkey(c)=>c for c in TABLE_COLUMNS),
- Dict("arrangor"=>"Arrangør","laerere"=>"Lærere","betal"=>"Betal det du kan","pwyc"=>"Betal det du kan","pay what you can"=>"Betal det du kan","lærer"=>"Lærere","pris"=>"Pris (kr)","studentpris"=>"Studentpris (kr)",
+ Dict("sluttdato"=>"Sluttdato","til dato"=>"Sluttdato","end date"=>"Sluttdato","last day"=>"Sluttdato","fecha final"=>"Sluttdato","arrangor"=>"Arrangør","laerere"=>"Lærere","betal"=>"Betal det du kan","pwyc"=>"Betal det du kan","pay what you can"=>"Betal det du kan","lærer"=>"Lærere","pris"=>"Pris (kr)","studentpris"=>"Studentpris (kr)",
       "kurspris"=>"Kurspris (kr)","tid"=>"Starttid","start"=>"Starttid","slutt"=>"Sluttid","dato"=>"Dato","sted"=>"Sted",
       "språk"=>"Tekstspråk","sprak"=>"Tekstspråk","tekstsprak"=>"Tekstspråk","tittel (engelsk)"=>"Tittel (andre språk)","beskrivelse (engelsk)"=>"Beskrivelse (andre språk)",
       # English headings (the English legg-til page explains the Norwegian ones, but these work too)
@@ -112,8 +112,10 @@ function table_template_csv()
   ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 $(site_city())","Tangoklubben","DJ A","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.","","Norsk","","Milonga every Friday."],
   ["","","2027-01-15","","","","","","DJ B","","","","","","","","","","","","",""],
   ["","","2027-01-22","","","","","","","","","","","","","","","","Avlyst","","",""]]
- i=findfirst(==("Betal det du kan"),TABLE_COLUMNS)
- for r in rows[2:end]; insert!(r,i,""); append!(r,fill("",length(TABLE_COLUMNS)-length(r))); end   # fixed prices; no Spanish text
+ for r in rows[2:end]   # the examples: one day each, fixed prices, no Spanish text
+  insert!(r,findfirst(==("Sluttdato"),TABLE_COLUMNS),""); insert!(r,findfirst(==("Betal det du kan"),TABLE_COLUMNS),"")
+  append!(r,fill("",length(TABLE_COLUMNS)-length(r)))
+ end
  q(c)=occursin(r"[;\"\n]",c) ? "\""*replace(c,"\""=>"\"\"")*"\"" : c
  "﻿"*join((join(q.(r),";") for r in rows),"\r\n")*"\r\n"
 end

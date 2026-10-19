@@ -1575,3 +1575,44 @@ end
  @test_throws ArgumentError TK.set_field(ev,TK._field("es_title"),"MiLoNgA")
  @test TK.set_field(ev,TK._field("title"),"Milonga ESA").title=="Milonga ESA"
 end
+@testset "events over several days: «Sluttdato» in the forms" begin
+ TK=TangoKalender; T=Date(2026,10,1)
+ f=Dict("Tittel"=>"Tangofestival","Type"=>"- [X] Festival","Dato"=>"2026-11-20","Sluttdato"=>"2026-11-22","Sted"=>"Sal","Adresse"=>"Gate 1",
+  "Arrangør"=>"Org","Lenke"=>"https://x.org","Samtykke"=>"- [X] ok")
+ form(d)=TK.events_from_form(merge(f,d);today=T)
+ # dates only: no start time needed
+ ev,er=form(Dict()); e=only(ev)
+ @test isempty(er) && e["start"]=="2026-11-20" && e["end"]=="2026-11-22" && isempty(validate_event(e))
+ h=render_events_html([e];view="compact"); @test count("Tangofestival",h)>=3 && occursin(TK._with_lang(()->TK._t("dayn",3,3),"nb"),h)   # on each day
+ @test occursin("DTSTART;VALUE=DATE:20261120",TK.event_ics(e;today=T)) && occursin("DTEND;VALUE=DATE:20261123",TK.event_ics(e;today=T))   # exclusive end
+ # with times: «Sluttid» is the time on the last day (after midnight = the night after it)
+ @test only(first(form(Dict("Starttid"=>"18:00","Sluttid"=>"23:00"))))["end"]=="2026-11-22T23:00:00+01:00"
+ @test only(first(form(Dict("Starttid"=>"18:00","Sluttid"=>"0200"))))["end"]=="2026-11-23T02:00:00+01:00"
+ @test only(first(form(Dict("Starttid"=>"18:00"))))["start"]=="2026-11-20T18:00:00+01:00" && only(first(form(Dict("Starttid"=>"18:00"))))["end"]=="2026-11-22"
+ # refused
+ msg(d)=join(form(d)[2]," ")
+ @test occursin("«Sluttdato» (2026-11-19) er før «Dato»",msg(Dict("Sluttdato"=>"2026-11-19")))
+ @test occursin("høyst 31 dager",msg(Dict("Sluttdato"=>"2026-12-31")))
+ @test occursin("«Sluttid» krever «Starttid»",msg(Dict("Sluttid"=>"23:00")))
+ @test occursin("Gjentas: Ukentlig",msg(Dict("Starttid"=>"18:00","Gjentas"=>"Ukentlig","Gjentas til"=>"2026-12-20")))
+ @test occursin("«Starttid» må fylles ut",msg(Dict("Sluttdato"=>"")))            # one day: a start time as before
+ @test occursin("«Starttid» må fylles ut",msg(Dict("Sluttdato"=>"2026-11-20")))  # same day = one day
+ @test only(first(form(Dict("Sluttdato"=>"","Starttid"=>"20:00"))))["end"]===nothing
+ # the spreadsheet: a «Sluttdato» column
+ tab="Tittel\tType\tDato\tSluttdato\tSted\tAdresse\tArrangør\tLenke\nFestival A\tFestival\t2026-11-20\t22.11.2026\tSal\tGate 1\tOrg\thttps://x.org\n"
+ ev,er=TK.events_from_table(tab;today=T); @test isempty(er) && only(ev)["end"]=="2026-11-22" && "Sluttdato" in TK.TABLE_COLUMNS
+ @test TK.parse_table(replace(TK.table_template_csv(),"﻿"=>""))[1]==TK.TABLE_COLUMNS
+ # corrections: set, move and remove the last day; not for a whole series
+ mktempdir() do root
+  x=merge(only(first(form(Dict("Sluttdato"=>"","Starttid"=>"18:00","Sluttid"=>"23:00")))),Dict("id"=>"fest-2026-11-20","series"=>"fest")); save_event_tree([x],root)
+  fix(d)=TK.apply_correction(merge(Dict("Arrangement-ID"=>"fest-2026-11-20","Samtykke"=>"- [X] ok"),d),root;today=T)
+  u,er,ch=fix(Dict("Sluttdato"=>"2026-11-22")); y=u[1][2]
+  @test isempty(er) && y["end"]=="2026-11-22T23:00:00+01:00" && ("Sluttdato","","2026-11-22") in ch && occursin("Sluttdato: 2026-11-22",TK.current_summary(y))
+  save_event_tree([y],root)
+  @test TK.correction_fields(y)["sluttdato"]=="2026-11-22" && any(occursin("Ingen endringer",m) for m in fix(Dict("Sluttdato"=>"2026-11-22"))[2])
+  u,er,_=fix(Dict("Sluttdato"=>"-")); @test isempty(er) && u[1][2]["end"]=="2026-11-20T23:00:00+01:00"   # one day again
+  u,er,_=fix(Dict("Dato"=>"2026-11-27","Sluttdato"=>"2026-11-29")); @test isempty(er) && u[1][2]["start"][1:10]=="2026-11-27" && u[1][2]["end"][1:10]=="2026-11-29"
+  @test any(occursin("før «Dato»",m) for m in fix(Dict("Sluttdato"=>"2026-11-19"))[2])
+  @test any(occursin("«Sluttdato» kan bare endres for én dato",m) for m in fix(Dict("Sluttdato"=>"2026-11-23","Gjelder"=>TK.SERIES_SCOPE))[2])
+ end
+end
