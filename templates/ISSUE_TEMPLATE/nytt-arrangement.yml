@@ -28,7 +28,7 @@ body:
     id: tittel
     attributes:
       label: Tittel
-      description: Arrangementets navn, uten arrangøren (den har eget felt), med vanlige store og små bokstaver – ikke STORE BOKSTAVER (forkortelser som ESA og DJ er greit) / The event's name, without the organiser, in normal case
+      description: Arrangementets navn, uten arrangøren (den har eget felt), med vanlige store og små bokstaver – ikke STORE BOKSTAVER (korte ord som ESA er greit) / The event's name, without the organiser, in normal case
       placeholder: f.eks. Milonga Sentimental
     validations:
       required: true

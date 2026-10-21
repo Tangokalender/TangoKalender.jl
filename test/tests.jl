@@ -1545,13 +1545,13 @@ end
  for t in ["Milonga ESA","TangoAkutten","KTW 2027","DJ-kveld med Ana","Practica LOCA","Noche Loca!","Tangoworkshop: Vals – Feeling the Flow","Milonga del viernes"]
   @test isnothing(C("Tittel",t))
  end
- @test C("Tittel","NOCHE LOCA!")=="«Tittel» har for mange store bokstaver. Skriv for eksempel «Noche Loca!» – forkortelser som ESA og DJ er greit."
+ @test C("Tittel","NOCHE LOCA!")=="«Tittel» har for mange store bokstaver. Skriv for eksempel «Noche Loca!» – korte ord som ESA er greit."
  @test occursin("for mange store bokstaver",C("Tittel","ThIS iS WhAtImeAN")) && occursin("«Milonga»",C("Tittel","MILONGA"))
  @test occursin("«Noche de Tango»",C("Tittel","NOCHE DE TANGO")) && occursin("«De la Milonga y el Tango»",C("Tittel","DE LA MILONGA Y EL TANGO"))
  @test occursin("blander store og små bokstaver uvanlig («TaNgo», «MiLonga»)",C("Tittel","TaNgo MiLonga")) && occursin("«Tango Milonga»",C("Tittel","TaNgo MiLonga"))
- @test occursin("for mange store bokstaver",C("Beskrivelse","SE INSTAGRAM FOR MER INFO OM KVELDEN!";long=true))
- @test isnothing(C("Beskrivelse","Se https://www.instagram.com/LOCATANGO og @LOCA_TANGO, #TANGOOSLO.";long=true))   # links, handles, tags
- @test isnothing(C("Beskrivelse","MiLonga med DJ ESA.";long=true))                                    # descriptions: only the share
+ @test occursin("for mange store bokstaver",C("Beskrivelse","SE INSTAGRAM FOR MER INFO OM KVELDEN!";kind=:text))
+ @test isnothing(C("Beskrivelse","Se https://www.instagram.com/LOCATANGO og @LOCA_TANGO, #TANGOOSLO.";kind=:text))   # links, handles, tags
+ @test isnothing(C("Beskrivelse","MiLonga med DJ ESA.";kind=:text))                                    # descriptions: only the share
  @test all(e->isnothing(C("Tittel",e["title"])),load_events(TREE))                                    # every title in the test copy of the Oslo data
  # the routes: form (and so the spreadsheet), JSON, corrections, the editors' form
  f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
@@ -1615,4 +1615,36 @@ end
   @test any(occursin("før «Dato»",m) for m in fix(Dict("Sluttdato"=>"2026-11-19"))[2])
   @test any(occursin("«Sluttdato» kan bare endres for én dato",m) for m in fix(Dict("Sluttdato"=>"2026-11-23","Gjelder"=>TK.SERIES_SCOPE))[2])
  end
+end
+@testset "capitals in organiser, venue, address, DJ and teachers" begin
+ TK=TangoKalender; T=Date(2026,10,1); C=TK._caps_problem
+ # organiser, venue, address: the title rule; DJ and teachers: only the share of capitals (names like «DiStefano»)
+ @test occursin("«Tango Puente»",C("Arrangør","TANGO PUENTE")) && occursin("«Storgata 1, 0155 Oslo»",C("Adresse","STORGATA 1, 0155 OSLO"))
+ @test occursin("«Dance Hub, Adamstuen»",C("Sted","DANCE HUB, ADAMSTUEN"))
+ for (l,v) in (("Adresse","Christian Krohgs gate 60, 0186 OSLO"),("Sted","NVH"),("Sted","Studio64"),("Arrangør","FRI Oslo og Viken"),("Arrangør","Oslo Tango Queer"))
+  @test isnothing(C(l,v))
+ end
+ @test occursin("for mange store bokstaver",C("DJ","ANA GARCIA";kind=:name)) && isnothing(C("DJ","Ana DiStefano";kind=:name)) && isnothing(C("Lærere","Ana DiStefano, Kim LeBlanc";kind=:name))
+ @test !isnothing(C("DJ","Ana DiStefano"))                                                            # with the title rule the inner capital would be refused
+ @test all(e->all(isnothing,(C("Arrangør",something(e["organizer"],"x")),C("Sted",something(get(something(e["venue"],Dict()),"name",nothing),"x")))),load_events(TREE))
+ # the routes
+ f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
+ _,er=TK.events_from_form(merge(f,Dict("Arrangør"=>"TANGO KLUBBEN","Sted"=>"SENTRALEN","Adresse"=>"ØVRE SLOTTSGATE 3","DJ"=>"ANA GARCIA","Lærere"=>"ANA GARCIA, KIM LEE"));today=T)
+ @test all(l->any(m->startswith(m,"«$l»"),er),("Arrangør","Sted","Adresse","DJ","Lærere"))
+ @test isempty(TK.events_from_form(merge(f,Dict("DJ"=>"Ana DiStefano"));today=T)[2])
+ j=JSON.json(Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"SENTRALEN","address"=>"ØVRE SLOTTSGATE 3"),
+  "organizer"=>"TANGO KLUBBEN","link"=>"https://x.org","dj"=>"ANA GARCIA","teachers"=>["KIM LEE OLSEN","Ana DiStefano"]))
+ _,er=TK.events_from_json(j;today=T)
+ @test all(k->any(m->startswith(m,"«$k»"),er),("organizer","venue.name","venue.address","dj","teachers")) && count(m->startswith(m,"«teachers»"),er)==1
+ mktempdir() do root
+  x=merge(only(first(TK.events_from_form(f;today=T))),Dict("id"=>"x-2026-11-14","organizer"=>"OLD SHOUTING CLUB")); save_event_tree([x],root)
+  fix(d)=TK.apply_correction(merge(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok"),d),root;today=T)
+  @test isempty(fix(Dict("DJ"=>"Ny DJ"))[2])                                                             # unchanged fields aren't checked
+  @test any(m->startswith(m,"«Sted» har for mange"),fix(Dict("Sted"=>"NYTT STED"))[2]) && any(m->startswith(m,"«Arrangør»"),fix(Dict("Arrangør"=>"NEW SHOUTING CLUB"))[2])
+ end
+ ev=TK.Event(id="x-2026-11-14",title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
+ @test_throws ArgumentError TK.set_field(ev,TK._field("organizer"),"TANGO KLUBBEN")
+ @test_throws ArgumentError TK.set_field(ev,TK._field("venue.name"),"SENTRALEN")
+ @test_throws ArgumentError TK.set_field(ev,TK._field("dj"),"ANA GARCIA")
+ @test TK.set_field(ev,TK._field("dj"),"Ana DiStefano").dj=="Ana DiStefano" && TK.set_field(ev,TK._field("teachers"),"Ana DiStefano, Kim LeBlanc").teachers==["Ana DiStefano","Kim LeBlanc"]
 end

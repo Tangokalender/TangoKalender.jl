@@ -111,8 +111,10 @@ editor shows them at the field (`field_problems`), and saving refuses them.
 """
 function set_field(e::Event, f::FormField, s::AbstractString)
  s=String(strip(s)); k=f.key; bad(m)=throw(ArgumentError("«$(f.label)»: $m"))
- if k in ("title","other_title","es_title","description","other_description","es_description") && !isempty(s)   # the capitals check
-  m=_caps_problem(f.label,s;long=endswith(k,"description")); isnothing(m) || throw(ArgumentError(m))
+ kind=k in ("title","other_title","es_title","organizer","venue.name","venue.address") ? :title :
+  k in ("description","other_description","es_description") ? :text : k in ("dj","teachers") ? :name : :none
+ if kind!==:none && !isempty(s)   # the capitals check
+  m=_caps_problem(f.label,s;kind); isnothing(m) || throw(ArgumentError(m))
  end
  f.kind in (:choice,:multi) && return set_field(e,f,String[v for (v,l) in f.choices if any(x->lowercase(strip(x)) in (lowercase(v),lowercase(l)),split(s,','))])
  if k=="date"

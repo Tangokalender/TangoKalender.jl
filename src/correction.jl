@@ -110,8 +110,8 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
    continue
   end
   v,e=_parse_field(label,s); isnothing(e) || (err(e); continue)
-  c=findfirst(x->x[1]==label,CAPS_FIELDS)   # a changed title or description: the capitals check (an unchanged one isn't checked)
-  isnothing(c) || (m=_caps_problem(label,s;long=CAPS_FIELDS[c][2]); isnothing(m) || (err(m); continue))
+  c=findfirst(x->x[1]==label,CAPS_FIELDS)   # a changed text field: the capitals check (an unchanged one isn't checked)
+  isnothing(c) || (m=_caps_problem(label,s;kind=CAPS_FIELDS[c][2]); isnothing(m) || (err(m); continue))
   label=="Pris (kr)" && !isnothing(_parse_int(s)) && (v=(v[1],_pwyc(orig)))   # a number changes the amount, not «Betal det du kan»
   label=="Pris (kr)" && v==(get(orig,"price_nok",nothing),_pwyc(orig)) && continue   # same price, other wording
   ch[label]=v

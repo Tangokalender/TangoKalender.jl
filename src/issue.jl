@@ -59,37 +59,43 @@ function _word_ok(w::AbstractString)
  all(diff([caps;length(cs)+1]).>=3)                               # each part: one capital and at least two lower-case letters
 end
 """
-    _caps_problem(label, text; long=false) -> message or nothing
+    _caps_problem(label, text; kind=:title) -> message or nothing
 
-The check against shouting and creative capitalisation, for titles (`long=false`: more than half the letters
-capitals, from 6 letters, or a word of an unusual shape, see `_word_ok`) and descriptions (`long=true`: only the
-share of capitals, from 20 letters, ignoring links, @handles and #tags). The Norwegian message names the field
-and suggests a spelling. Input routes use it; stored events aren't validated against it.
+The check against shouting and creative capitalisation. `kind` is `:title` (titles, organiser, venue, address:
+more than half the letters capitals, from 6 letters, or a word of an unusual shape, see `_word_ok`), `:name`
+(DJ, teachers: only the share of capitals, from 6 letters, since names like «DiStefano» have inner capitals) or
+`:text` (descriptions: only the share of capitals, from 20 letters, ignoring links, @handles and #tags). The
+Norwegian message names the field and suggests a spelling. Input routes use it; stored events aren't validated
+against it.
 """
-function _caps_problem(label::AbstractString, text::AbstractString; long::Bool=false)
+function _caps_problem(label::AbstractString, text::AbstractString; kind::Symbol=:title)
+ long=kind===:text
  t=long ? replace(text,r"https?://\S+|[@#][\w.]+"=>"") : text
  letters=[c for c in t if isletter(c)]
  shouting=length(letters)>=(long ? 20 : 6) && count(isuppercase,letters)>length(letters)/2
  words=[m.match for m in eachmatch(r"\p{L}+",t)]
- odd=long ? String[] : [String(w) for w in words if !_word_ok(w)]
+ odd=kind===:title ? [String(w) for w in words if !_word_ok(w)] : String[]
  (shouting || !isempty(odd)) || return nothing
  fix(w)=(cs=collect(lowercase(w)); string(uppercase(cs[1]),cs[2:end]...))
+ allcaps=!any(islowercase,letters)   # nothing in lower case: no guessing, every word capitalised (small words lower case)
  n=Ref(0)                                                          # the word's position: the first one is capitalised
  function respell(w)
   n[]+=1
   shouting && lowercase(w) in _SMALL_WORDS && return n[]==1 ? fix(w) : lowercase(w)   # «de», «og», «the» …
-  !_word_ok(w) || (shouting && all(isuppercase,w) && length(w)>3) ? fix(w) : w
+  allcaps || !_word_ok(w) || (shouting && all(isuppercase,w) && length(w)>3) ? fix(w) : w
  end
  sug=replace(text,r"\p{L}+"=>respell)
  why=shouting ? "har for mange store bokstaver" : "blander store og små bokstaver uvanlig ($(join(("«$w»" for w in first(odd,3)),", ")))"
- long ? "«$label» $why. Skriv vanlig tekst; forkortelser som ESA og DJ er greit." :
-  "«$label» $why. Skriv for eksempel «$(strip(sug))» – forkortelser som ESA og DJ er greit."
+ long ? "«$label» $why. Skriv vanlig tekst; korte ord som ESA er greit." :
+  kind===:name ? "«$label» $why. Skriv for eksempel «$(strip(sug))»." :
+  "«$label» $why. Skriv for eksempel «$(strip(sug))» – korte ord som ESA er greit."
 end
 "Short words that go to lower case in the suggested spelling of a shouting title (Norwegian, English, Spanish)."
 const _SMALL_WORDS=Set(["og","i","på","med","for","til","av","om","the","of","and","in","on","at","to","a","de","del","la","las","el","los","y","en","con","al"])
-"Text fields checked by `_caps_problem` in the forms: label => is a description."
-const CAPS_FIELDS=["Tittel"=>false,"Tittel (andre språk)"=>false,"Tittel (spansk)"=>false,
- "Beskrivelse"=>true,"Beskrivelse (andre språk)"=>true,"Beskrivelse (spansk)"=>true]
+"Text fields checked by `_caps_problem` in the forms: label => kind (`:title`, `:name`, `:text`)."
+const CAPS_FIELDS=["Tittel"=>:title,"Tittel (andre språk)"=>:title,"Tittel (spansk)"=>:title,
+ "Arrangør"=>:title,"Sted"=>:title,"Adresse"=>:title,"DJ"=>:name,"Lærere"=>:name,
+ "Beskrivelse"=>:text,"Beskrivelse (andre språk)"=>:text,"Beskrivelse (spansk)"=>:text]
 _parse_int(s)=tryparse(Int,replace(strip(s),r"(?i)\s*(kr|nok|,-)\s*$"=>"",r"\s"=>""))
 "Pay-what-you-can wordings accepted in «Pris (kr)», in lower case without accents (Norwegian, English, Spanish)."
 const PWYC_PHRASES=Set(["betal det du kan","betal hva du kan","betal det du vil","betal hva du vil","frivillig bidrag","frivillig betaling",
@@ -230,8 +236,8 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  entry,pwyc=something(prices["price_nok"],(nothing,false))
  pwyc=pwyc || _ticked(get_("Betal det du kan"))   # the checkbox; «betal det du kan, 100» in «Pris (kr)» still works
  music=something(val("Musikk"),Any[]); flyer=val("Flyer"); video=val("Video")
- for (label,long) in CAPS_FIELDS   # no all-caps or creatively capitalised titles and descriptions
-  s=get_(label); isempty(s) || (m=_caps_problem(label,s;long); isnothing(m) || err(m))
+ for (label,kind) in CAPS_FIELDS   # no all-caps or creatively capitalised text
+  s=get_(label); isempty(s) || (m=_caps_problem(label,s;kind); isnothing(m) || err(m))
  end
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  isempty(errs) || return (JSON.Object{String,Any}[],errs)

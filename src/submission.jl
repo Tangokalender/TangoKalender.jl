@@ -148,12 +148,19 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   at=multi ? "[$(k-1)] " : ""
   st=_local(x["start"]); isnothing(st) && (err("$(at)«start» er ikke en gyldig dato."); continue)
   d,t=st; d<today && err("$(at)«start» ($d) har allerede vært.")
+  vn=get(x,"venue",nothing); vn isa AbstractDict || (vn=Dict{String,Any}())
+  for (k2,tv,kind) in (("organizer",get(x,"organizer",nothing),:title),("venue.name",get(vn,"name",nothing),:title),
+                       ("venue.address",get(vn,"address",nothing),:title),("dj",get(x,"dj",nothing),:name),
+                       (("teachers",t,:name) for t in (get(x,"teachers",nothing) isa AbstractVector ? x["teachers"] : []))...)
+   tv=_none(tv); tv isa AbstractString && (m=_caps_problem(k2,tv;kind); isnothing(m) || err(at*m))
+  end
   for (k2,long) in (("title",false),("description",true))   # no all-caps or creatively capitalised text, in any language
-   tv=_none(get(x,k2,nothing)); tv isa AbstractString && (m=_caps_problem(k2,tv;long); isnothing(m) || err(at*m))
+   kind=long ? :text : :title
+   tv=_none(get(x,k2,nothing)); tv isa AbstractString && (m=_caps_problem(k2,tv;kind); isnothing(m) || err(at*m))
    tr=get(x,"translations",nothing); tr isa AbstractDict || continue
    for (l,tt) in tr
     tt isa AbstractDict || continue
-    tv=_none(get(tt,k2,nothing)); tv isa AbstractString && (m=_caps_problem("translations.$l.$k2",tv;long); isnothing(m) || err(at*m))
+    tv=_none(get(tt,k2,nothing)); tv isa AbstractString && (m=_caps_problem("translations.$l.$k2",tv;kind); isnothing(m) || err(at*m))
    end
   end
   en=_local(get(x,"end",nothing))
