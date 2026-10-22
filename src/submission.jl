@@ -20,7 +20,7 @@ const _DESCRIPTIONS=Dict(
  "end"=>"{city} local end time in the same format. If it ends after midnight, use the next day's date. null if not stated.",
  "venue"=>"Where the event takes place.",
  "organizer"=>"Required. The organising group or person named in the source; if none is named, the page or profile that published the event (e.g. the Facebook event host).",
- "dj"=>"DJ name(s) exactly as written in the source, or null.",
+ "dj"=>"DJ name(s) exactly as written in the source, without a \"DJ\" or \"TDJ\" prefix (the field already says DJ), or null.",
  "teachers"=>"Teachers' names exactly as written in the source; [] if none.",
  "music_style"=>"Only if the source states it. Any of: ",   # completed below
  "price_nok"=>"Regular entry price in whole Norwegian kroner (integer), or null.",
@@ -119,7 +119,7 @@ end
 Parse a JSON submission (one event or an array), validate it against the submission schema, and build stored
 v2 events: Oslo offsets recomputed, ids/series/metadata set by the bot. Errors are Norwegian.
 """
-function events_from_json(text::AbstractString; issue_url=nothing, today::Date=Dates.today())
+function events_from_json(text::AbstractString; issue_url=nothing, today::Date=Dates.today(), notes::Vector{String}=String[])
  errs=String[]; err(m)=push!(errs,m); fail()=(JSON.Object{String,Any}[],errs)
  raw=_extract_json(text); isnothing(raw) && (err("Fant ingen JSON i feltet. Lim inn svaret fra KI-assistenten (det som starter med { eller [)."); return fail())
  data=try JSON.parse(raw) catch e; err("JSON-en kan ikke leses: $(first(split(sprint(showerror,e),'\n')))"); return fail() end
@@ -148,6 +148,9 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   at=multi ? "[$(k-1)] " : ""
   st=_local(x["start"]); isnothing(st) && (err("$(at)«start» er ikke en gyldig dato."); continue)
   d,t=st; d<today && err("$(at)«start» ($d) har allerede vært.")
+  if get(x,"dj",nothing) isa AbstractString   # «TDJ Ana» → «Ana», noted
+   x["dj"],djnote=_strip_dj_prefix(x["dj"]); isnothing(djnote) || djnote in notes || push!(notes,djnote)
+  end
   vn=get(x,"venue",nothing); vn isa AbstractDict || (vn=Dict{String,Any}())
   for (k2,tv,kind) in (("organizer",get(x,"organizer",nothing),:title),("venue.name",get(vn,"name",nothing),:title),
                        ("venue.address",get(vn,"address",nothing),:title),("dj",get(x,"dj",nothing),:name),

@@ -46,13 +46,15 @@ Options (from-issue):
   -h, --help           show this help
 """
 _md(s)=replace(string(s),'|'=>"\\|",'\n'=>' ','@'=>"@\u200b")
-function _issue_report(events,files,errs;joined=String[])
+"Things the bot fixed on the way, as a «Merk:» list for the report (empty when there are none)."
+_notes_md(notes)=isempty(notes) ? "" : "**Merk:**\n"*join(("- "*_md(n) for n in notes),"\n")*"\n\n"
+function _issue_report(events,files,errs;joined=String[],notes=String[])
  isempty(errs) || return "❌ Skjemaet har feil som må rettes før arrangementet kan legges til:\n\n"*join(("- "*_md(e) for e in errs),"\n")*
   "\n\nRediger saken (··· → Edit) og lagre, så prøver vi igjen automatisk."
  rows=join(("| $(_md(_date_label(e))) | $(_md(e["title"])) | $(_md(_venue(e)[1])) |" for e in events),"\n")
  "✅ Takk! Skjemaet ble lest uten feil. $(length(events)==1 ? "Dette arrangementet" : "Disse $(length(events)) arrangementene") blir foreslått lagt til:\n\n"*
   "| Dato | Tittel | Sted |\n|---|---|---|\n$rows\n\n"*
-  (isempty(joined) ? "" : "Legges til i den eksisterende $(length(joined)==1 ? "serien" : "seriene") $(join(("`$s`" for s in joined),", ")).\n\n")*"<details><summary>Filer</summary>\n\n"*join(("- `$f`" for f in files),"\n")*
+  (isempty(joined) ? "" : "Legges til i den eksisterende $(length(joined)==1 ? "serien" : "seriene") $(join(("`$s`" for s in joined),", ")).\n\n")*_notes_md(notes)*"<details><summary>Filer</summary>\n\n"*join(("- `$f`" for f in files),"\n")*
   "\n</details>\n\nEn redaktør ser over forslaget før det publiseres."
 end
 "Short date for titles: «2. okt»."
@@ -74,14 +76,15 @@ function _from_issue(body_file,opts)
  today=haskey(opts,"today") ? Date(opts["today"]) : Dates.today()
  form=parse_issue_form(read(body_file,String))
  haskey(form,"Arrangement-ID") && return _from_correction(form,root,today,opts)
+ notes=String[]
  events,errs=if haskey(form,"Tabell")   # «Nytt arrangement (fra tabell)»: cells pasted from a spreadsheet
-  ev,er=events_from_table(form["Tabell"]; issue_url=get(opts,"issue-url",nothing), today)
+  ev,er=events_from_table(form["Tabell"]; issue_url=get(opts,"issue-url",nothing), today, notes)
   isempty(_checked(get(form,"Samtykke",""))) ? (empty(ev),[er;"«Samtykke» må krysses av."]) : (ev,er)
  elseif haskey(form,"JSON")   # «Nytt arrangement (JSON fra KI)»
-  ev,er=events_from_json(form["JSON"]; issue_url=get(opts,"issue-url",nothing), today)
+  ev,er=events_from_json(form["JSON"]; issue_url=get(opts,"issue-url",nothing), today, notes)
   isempty(_checked(get(form,"Samtykke",""))) ? (empty(ev),[er;"«Samtykke» må krysses av."]) : (ev,er)
  else
-  events_from_form(form; issue_url=get(opts,"issue-url",nothing), today)
+  events_from_form(form; issue_url=get(opts,"issue-url",nothing), today, notes)
  end
  joined=isempty(errs) ? join_existing_series!(events,root) : String[]
  paths=[event_path(e;root) for e in events]
@@ -99,29 +102,29 @@ function _from_issue(body_file,opts)
  isempty(errs) || (events=empty(events))
  for (f,m) in (isempty(files) ? Tuple{String,String}[] : validate_event_tree(root)); push!(errs,"$f: $m"); end
  isempty(errs) || (foreach(rm,files); events=empty(events); files=String[])
- code=_finish(opts,_issue_report(events,files,errs;joined),errs)
+ code=_finish(opts,_issue_report(events,files,errs;joined,notes),errs)
  code==0 && (t=_summary_title(events); _write_outputs(opts,"Nytt arrangement: $t","Arrangement: $t"); foreach(println,files))
  code
 end
-function _correction_report(updates,files,changed,errs,comment)
+function _correction_report(updates,files,changed,errs,comment;notes=String[])
  isempty(errs) || return "❌ Rettelsen har feil som må rettes:\n\n"*join(("- "*_md(e) for e in errs),"\n")*
   "\n\nRediger saken (··· → Edit) og lagre, så prøver vi igjen automatisk."
  rows=join(("| $(_md(l)) | $(_md(isempty(a) ? "–" : a)) | $(_md(isempty(b) ? "–" : b)) |" for (l,a,b) in changed),"\n")
  dates=join((_md(_date_label(x)) for (_,x) in updates),", ")
  quote_=isempty(strip(comment)) ? "" : "\n\n**Kommentar:**\n"*join(("> "*_md(l) for l in split(strip(comment),'\n')),"\n")
- "✅ Takk! Rettelsen ble lest uten feil. Disse endringene blir foreslått:\n\n| Felt | Før | Etter |\n|---|---|---|\n$rows\n\n"*
+ "✅ Takk! Rettelsen ble lest uten feil. Disse endringene blir foreslått:\n\n| Felt | Før | Etter |\n|---|---|---|\n$rows\n\n"*_notes_md(notes)*
   "Gjelder $(length(updates)==1 ? "én dato" : "$(length(updates)) datoer"): $dates$quote_\n\n<details><summary>Filer</summary>\n\n"*
   join(("- `$f`" for f in files),"\n")*"\n</details>\n\nEn redaktør ser over forslaget før det publiseres."
 end
 function _from_correction(form,root,today,opts)
- updates,errs,changed=apply_correction(form,root;today)
+ notes=String[]; updates,errs,changed=apply_correction(form,root;today,notes)
  written=String[]
  if isempty(errs)
   files=[(old,event_path(x;root),sprint(io->(JSON.print(io,x,4); write(io,'\n')))) for (old,x) in updates]
   written,errs=_write_files!(files,root; taken=p->"Det finnes allerede et arrangement på $p.")
  end
  isempty(errs) || (updates=empty(updates))
- code=_finish(opts,_correction_report(updates,written,changed,errs,get(form,"Kommentar","")),errs)
+ code=_finish(opts,_correction_report(updates,written,changed,errs,get(form,"Kommentar","");notes),errs)
  if code==0
   x=updates[1][2]; n=length(updates)
   t="$(_one_line(x["title"])) ($(_short_day(x))$(n>1 ? " og $(n-1) senere" : ""))"

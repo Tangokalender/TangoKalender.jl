@@ -93,7 +93,7 @@ end
 `updates` is a vector of `(old_file, new_event)`; `changed` lists `(label, before, after)` for the first target.
 Targets the event with «Arrangement-ID», or it and all later dates in its series («$SERIES_SCOPE»).
 """
-function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dates.today())
+function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dates.today(), notes::Vector{String}=String[])
  errs=String[]; err(m)=push!(errs,m); none=(Tuple{String,JSON.Object{String,Any}}[],errs,Tuple{String,String,String}[])
  get_(k)=String(strip(get(f,k,"")))
  id=get_("Arrangement-ID"); isempty(id) && (err("«Arrangement-ID» mangler – bruk «Rett opp»-lenken på arrangementet."); return none)
@@ -104,7 +104,11 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
  ch=Dict{String,Any}()   # label => new value (`nothing` clears)
  for (fid,label) in CORRECTION_IDS
   fid=="arrangement_id" && continue
-  s=get_(label); (isempty(s) || s==cur[fid]) && continue
+  s=get_(label)
+  if label=="DJ"   # «TDJ Ana» → «Ana», noted
+   s,djnote=_strip_dj_prefix(s); isnothing(djnote) || djnote in notes || push!(notes,djnote)
+  end
+  (isempty(s) || s==cur[fid]) && continue
   if s=="-"
    label in REQUIRED_LABELS ? err("«$label» kan ikke fjernes.") : !isempty(cur[fid]) && (ch[label]=nothing)
    continue

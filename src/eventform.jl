@@ -111,6 +111,7 @@ editor shows them at the field (`field_problems`), and saving refuses them.
 """
 function set_field(e::Event, f::FormField, s::AbstractString)
  s=String(strip(s)); k=f.key; bad(m)=throw(ArgumentError("«$(f.label)»: $m"))
+ k=="dj" && (s=first(_strip_dj_prefix(s)))   # the field is already called DJ: «TDJ Ana» → «Ana»
  kind=k in ("title","other_title","es_title","organizer","venue.name","venue.address") ? :title :
   k in ("description","other_description","es_description") ? :text : k in ("dj","teachers") ? :name : :none
  if kind!==:none && !isempty(s)   # the capitals check

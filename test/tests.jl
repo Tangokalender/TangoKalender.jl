@@ -728,10 +728,10 @@ end
  @test TK.parse_table("A,B\n1,2")==[["A","B"],["1","2"]] && TK.parse_table("A\tB\n\t\n1\t2")==[["A","B"],["1","2"]]   # empty rows dropped
  H="Tittel\tType\tDato\tStarttid\tSluttid\tSted\tAdresse\tArrangør\tDJ\tPris (kr)\tMusikk\tLenke\tStatus\n"
  row(c...)=join(c,"\t")*"\n"
- full=row("Fredagsmilonga","Milonga","16.10.2026","20:00","00:30","Salen","Gata 1, Oslo","Klubben","DJ A","150 kr","Tradisjonell, Alternativ / neo","https://example.org","")
- ev,errs=TK.events_from_table(H*full*row("","","23.10.2026","","","","","","DJ B","","","","")*row("","","2026-10-30","","","","","","-","","","","Avlyst"); today=T)
+ full=row("Fredagsmilonga","Milonga","16.10.2026","20:00","00:30","Salen","Gata 1, Oslo","Klubben","Ana","150 kr","Tradisjonell, Alternativ / neo","https://example.org","")
+ ev,errs=TK.events_from_table(H*full*row("","","23.10.2026","","","","","","Bo","","","","")*row("","","2026-10-30","","","","","","-","","","","Avlyst"); today=T)
  @test isempty(errs) && [e["id"] for e in ev]==["fredagsmilonga-2026-10-$d" for d in ("16","23","30")]
- @test [e["dj"] for e in ev]==["DJ A","DJ B",nothing] && [e["status"] for e in ev]==["scheduled","scheduled","cancelled"]   # defaults, deviation, «-», Avlyst
+ @test [e["dj"] for e in ev]==["Ana","Bo",nothing] && [e["status"] for e in ev]==["scheduled","scheduled","cancelled"]   # defaults, deviation, «-», Avlyst
  @test all(e["series"]=="fredagsmilonga" && e["price_nok"]==150 && e["music_style"]==["traditional","alternative"] && e["source"]=="Innsendt via tabell" for e in ev)
  @test ev[3]["start"]=="2026-10-30T20:00:00+01:00" && ev[1]["end"]=="2026-10-17T00:30:00+02:00"        # clock change, past midnight
  one,_=TK.events_from_table(H*full;today=T); @test isnothing(one[1]["series"])                          # a single row is not a series
@@ -748,7 +748,7 @@ end
  # the downloadable template is valid input (opened in Excel, then copied → same cells)
  csv=TK.table_template_csv(); @test startswith(csv,"\ufeff") && occursin("Arrangør",csv)
  ev3,e3=TK.events_from_table(replace(csv,"\ufeff"=>"");today=Date(2026,12,1))
- @test isempty(e3) && length(ev3)==3 && ev3[3]["status"]=="cancelled" && ev3[2]["dj"]=="DJ B"
+ @test isempty(e3) && length(ev3)==3 && ev3[3]["status"]=="cancelled" && ev3[2]["dj"]=="Bo"
  @test TK.parse_table(replace(csv,"\ufeff"=>""))[1]==TK.TABLE_COLUMNS
  # issue form: the label the parser keys on; CLI round trip through from-issue
  tmpl=read(joinpath(ROOT,"templates","ISSUE_TEMPLATE","nytt-arrangement-tabell.yml"),String)
@@ -756,7 +756,7 @@ end
  @test isempty([l for l in split(tmpl,'\n') if occursin(r"^\s+[a-z_]+: (\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2})",l)])
  mktempdir() do d
   root=joinpath(d,"events"); bf=joinpath(d,"b.md"); rep=joinpath(d,"r.md"); out=joinpath(d,"o")
-  write(bf,"### Tabell\n\n```text\n"*H*full*row("","","23.10.2026","","","","","","DJ B","","","","")*"```\n\n### Samtykke\n\n- [X] Ja")
+  write(bf,"### Tabell\n\n```text\n"*H*full*row("","","23.10.2026","","","","","","Bo","","","","")*"```\n\n### Samtykke\n\n- [X] Ja")
   @test redirect_stdout(()->TK.main(["from-issue",bf,"--root=$root","--report=$rep","--outputs=$out","--today=2026-10-04"]),devnull)==0
   @test length(load_events(root))==2 && isempty(validate_event_tree(root)) && occursin("2 datoer fra 16. okt",read(out,String))
  end
@@ -1647,4 +1647,28 @@ end
  @test_throws ArgumentError TK.set_field(ev,TK._field("venue.name"),"SENTRALEN")
  @test_throws ArgumentError TK.set_field(ev,TK._field("dj"),"ANA GARCIA")
  @test TK.set_field(ev,TK._field("dj"),"Ana DiStefano").dj=="Ana DiStefano" && TK.set_field(ev,TK._field("teachers"),"Ana DiStefano, Kim LeBlanc").teachers==["Ana DiStefano","Kim LeBlanc"]
+end
+@testset "DJ: a «DJ»/«TDJ» prefix is removed, with a note" begin
+ TK=TangoKalender; T=Date(2026,10,1); P(s)=first(TK._strip_dj_prefix(s))
+ @test P("DJ Ana")==P("TDJ Ana")==P("Tdj: Ana")==P("dj-Ana")==P("T.DJ – Ana")==P("  tDJ   Ana Garcia ")[1:3]=="Ana" && P("  tDJ   Ana Garcia ")=="Ana Garcia"
+ @test P("Djordje")=="Djordje" && P("DJ")=="DJ" && P("Ana og DJ Bo")=="Ana og DJ Bo" && isnothing(last(TK._strip_dj_prefix("Ana")))   # a name, nothing left, or later in the text
+ f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
+ notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("DJ"=>"TDJ ANA GARCIA"));today=T,notes)
+ @test any(occursin("«DJ» har for mange",m) for m in er) && occursin("«Ana Garcia»",only(er))          # the capitals check sees the name without the prefix
+ notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("DJ"=>"Tdj Ana"));today=T,notes)
+ @test isempty(er) && only(ev)["dj"]=="Ana" && only(notes)=="«DJ»: «Tdj Ana» er lagret som «Ana» – feltet heter allerede DJ, så «DJ»/«TDJ» foran navnet trengs ikke."
+ r=TK._issue_report(ev,["f.json"],String[];notes); @test occursin("**Merk:**\n- «DJ»: «Tdj Ana» er lagret som «Ana»",r)
+ @test !occursin("Merk",TK._issue_report(ev,["f.json"],String[]))
+ notes=String[]; tab="Tittel\tType\tDato\tStarttid\tSted\tAdresse\tArrangør\tLenke\tDJ\nMilonga\tMilonga\t2026-11-14\t20:00\tS\tGate 1\tOrg\thttps://x.org\tDJ Ana\n\t\t2026-11-21\t\t\t\t\t\t\n"
+ ev,er=TK.events_from_table(tab;today=T,notes); @test isempty(er) && all(e->e["dj"]=="Ana",ev) && length(notes)==1     # one note for the repeated row
+ notes=String[]; j=JSON.json(Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"S","address"=>"A"),"organizer"=>"O","link"=>"https://x.org","dj"=>"TDJ Bo"))
+ ev,er=TK.events_from_json(j;today=T,notes); @test isempty(er) && only(ev)["dj"]=="Bo" && length(notes)==1
+ mktempdir() do root
+  x=merge(only(first(TK.events_from_form(f;today=T))),Dict("id"=>"x-2026-11-14","dj"=>"Ana")); save_event_tree([x],root)
+  fix(d;notes=String[])=TK.apply_correction(merge(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok"),d),root;today=T,notes)
+  n=String[]; u,er,_=fix(Dict("DJ"=>"DJ Bo");notes=n); @test isempty(er) && u[1][2]["dj"]=="Bo" && length(n)==1
+  n=String[]; @test any(occursin("Ingen endringer",m) for m in fix(Dict("DJ"=>"TDJ Ana");notes=n)[2])  # the same DJ with a prefix is no change
+ end
+ ev=TK.Event(id="x-2026-11-14",title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
+ @test TK.set_field(ev,TK._field("dj"),"TDJ Ana").dj=="Ana"
 end

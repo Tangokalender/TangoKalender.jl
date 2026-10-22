@@ -92,6 +92,18 @@ function _caps_problem(label::AbstractString, text::AbstractString; kind::Symbol
 end
 "Short words that go to lower case in the suggested spelling of a shouting title (Norwegian, English, Spanish)."
 const _SMALL_WORDS=Set(["og","i","på","med","for","til","av","om","the","of","and","in","on","at","to","a","de","del","la","las","el","los","y","en","con","al"])
+"""
+    _strip_dj_prefix(s) -> (name, note or nothing)
+
+«DJ Ana», «TDJ Ana», «Tdj: Ana», «T.DJ - Ana» → «Ana»: the field is already called DJ. Only a standalone word
+(«Djordje» stays), and only when a name is left. `note` is the Norwegian line for the bot's report.
+"""
+function _strip_dj_prefix(s::AbstractString)
+ m=match(r"^\s*(?:t\.?\s?dj|dj)\b\s*[:.\-–]?\s*(\S.*)$"is,s)
+ isnothing(m) && return (String(strip(s)),nothing)
+ name=String(strip(m[1]))
+ (name,"«DJ»: «$(strip(s))» er lagret som «$name» – feltet heter allerede DJ, så «DJ»/«TDJ» foran navnet trengs ikke.")
+end
 "Text fields checked by `_caps_problem` in the forms: label => kind (`:title`, `:name`, `:text`)."
 const CAPS_FIELDS=["Tittel"=>:title,"Tittel (andre språk)"=>:title,"Tittel (spansk)"=>:title,
  "Arrangør"=>:title,"Sted"=>:title,"Adresse"=>:title,"DJ"=>:name,"Lærere"=>:name,
@@ -194,12 +206,13 @@ function _parse_field(label::AbstractString,s::AbstractString)
  end
 end
 """
-    events_from_form(fields; issue_url=nothing, today=Dates.today()) -> (events, errors)
+    events_from_form(fields; issue_url=nothing, today=Dates.today(), notes=String[]) -> (events, errors)
 
 Turn parsed form fields into dated v2 events (one per week for «Gjentas: Ukentlig»).
-`errors` are Norwegian messages naming the form fields; `events` is empty when there are errors.
+`errors` are Norwegian messages naming the form fields; `events` is empty when there are errors. Things fixed on the
+way (a «DJ»/«TDJ» prefix removed) are added to `notes`, for the bot's report.
 """
-function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.today())
+function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.today(), notes::Vector{String}=String[])
  errs=String[]; err(m)=push!(errs,m)
  get_(k)=String(strip(get(f,k,"")))
  req(k)=(v=get_(k); isempty(v) && err("«$k» må fylles ut."); v)
@@ -236,15 +249,16 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  entry,pwyc=something(prices["price_nok"],(nothing,false))
  pwyc=pwyc || _ticked(get_("Betal det du kan"))   # the checkbox; «betal det du kan, 100» in «Pris (kr)» still works
  music=something(val("Musikk"),Any[]); flyer=val("Flyer"); video=val("Video")
+ dj,djnote=_strip_dj_prefix(get_("DJ")); isnothing(djnote) || djnote in notes || push!(notes,djnote)   # «TDJ Ana» → «Ana», noted
  for (label,kind) in CAPS_FIELDS   # no all-caps or creatively capitalised text
-  s=get_(label); isempty(s) || (m=_caps_problem(label,s;kind); isnothing(m) || err(m))
+  s=label=="DJ" ? dj : get_(label); isempty(s) || (m=_caps_problem(label,s;kind); isnothing(m) || err(m))
  end
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  isempty(errs) || return (JSON.Object{String,Any}[],errs)
  slug=_slug(title); none(s)=isempty(s) ? nothing : s
  base=JSON.Object{String,Any}("id"=>"$slug-$(Dates.format(date,"yyyy-mm-dd"))","title"=>title,"types"=>typ,"status"=>"scheduled","series"=>weekly ? slug : nothing,
   "start"=>_stamp(date,st),"end"=>multi ? (isnothing(et) ? string(lastday) : _end_stamp(lastday,st,et)) : isnothing(et) ? nothing : _end_stamp(date,st,et),
-  "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>site_city()),"organizer"=>org,"dj"=>none(get_("DJ")),
+  "venue"=>JSON.Object{String,Any}("name"=>venue,"address"=>address,"city"=>site_city()),"organizer"=>org,"dj"=>none(dj),
   "teachers"=>something(val("Lærere"),Any[]),
   "price_nok"=>entry,"student_price_nok"=>prices["student_price_nok"],"class_price_nok"=>prices["class_price_nok"],
   (pwyc ? ["pay_what_you_can"=>true] : Pair{String,Bool}[])...,

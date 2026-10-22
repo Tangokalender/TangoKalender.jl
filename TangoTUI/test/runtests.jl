@@ -97,11 +97,11 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   keys!(m,:ctrl=>'a',"ktf-milonga-2027-05-2"); n=length(m.hits); @test n>1
   keys!(m,:down,:enter); e=m.events[m.hits[2]]
   @test m.mode===:browse && m.file==e[1] && has(m,"Esc tilbake til listen")
-  keys!(to!(m,"dj"),:enter,"DJ Test",:enter,:escape)
+  keys!(to!(m,"dj"),:enter,"Ana Test",:enter,:escape)
   @test m.mode===:confirm && !m.quit
   keys!(m,"s"); @test m.mode===:scope                               # save on quit asks the same question
   keys!(m,"d"); @test m.mode===:search && m.saved==[e[1]] && m.events[m.hits[m.pick]][1]==e[1] && has(m,"Lagret: ")
-  @test m.events[m.hits[m.pick]][2].dj=="DJ Test" && text(m.query)=="ktf-milonga-2027-05-2"   # reloaded, search kept
+  @test m.events[m.hits[m.pick]][2].dj=="Ana Test" && text(m.query)=="ktf-milonga-2027-05-2"   # reloaded, search kept
   keys!(m,:enter,:escape); @test m.mode===:search                   # unchanged: straight back
   keys!(m,:escape,:escape); @test Tachikoma.should_quit(m)
  end
@@ -142,7 +142,7 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   i=findfirst(x->begin xs=TK.later_in_selection(x[1],x[2],[y[1] for y in sel];root); !isempty(xs) && any(y->y[2].organizer!=x[2].organizer,xs) end,sel)
   @test !isnothing(i)
   m.pick=i; keys!(m,:enter); ev=m.before
-  keys!(to!(m,"dj"),:enter,"DJ Felles",:enter,:ctrl=>'s')
+  keys!(to!(m,"dj"),:enter,"Bo Felles",:enter,:ctrl=>'s')
   @test m.mode===:scope && !isempty(m.selskip) && all(x->x[2].organizer!=ev.organizer,m.selskip) && all(x->x[2].organizer==ev.organizer,m.seltargets)
   @test has(m,"Hoppes over, annen arrangør: $(length(m.selskip))")
   if isempty(m.seltargets)
@@ -150,9 +150,9 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
    keys!(m,"d")
   else
    skipped=m.selskip; keys!(m,"u")
-   @test m.level===:ok && all(x->TK.read_event(x[1])[1].dj=="DJ Felles",m.seltargets) && all(x->TK.read_event(x[1])[1].dj==x[2].dj,skipped)
+   @test m.level===:ok && all(x->TK.read_event(x[1])[1].dj=="Bo Felles",m.seltargets) && all(x->TK.read_event(x[1])[1].dj==x[2].dj,skipped)
   end
-  @test TK.read_event(m.file)[1].dj=="DJ Felles" && isempty(TK.validate_event_tree(root))
+  @test TK.read_event(m.file)[1].dj=="Bo Felles" && isempty(TK.validate_event_tree(root))
   # no search (opened directly): the selection isn't offered
   o=TangoTUI.Editor(TK.find_events(["series:otra"];root,from=TODAY)[1]...;root,today=TODAY)
   keys!(to!(o,"dj"),:enter,"X",:enter,:ctrl=>'s'); @test o.mode===:scope && isempty(o.seltargets) && !isempty(o.sertargets)
@@ -213,11 +213,11 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   # Esc: nothing written, back to the list
   n0=nfiles(); keys!(m,:escape); @test m.mode===:search && nfiles()==n0 && isnothing(m.rep)
   # from the form: the event as it stands there (a new DJ) is the template; the original stays as it was
-  keys!(m,:enter); f0=m.file; dj0=m.event.dj; keys!(to!(m,"dj"),:enter); m.input=TextInput(text="",focused=true); keys!(m,"DJ Gjentatt",:enter,:ctrl=>'r')
-  @test m.mode===:repeat && m.rep.template.dj=="DJ Gjentatt" && isempty(m.rep.group)
+  keys!(m,:enter); f0=m.file; dj0=m.event.dj; keys!(to!(m,"dj"),:enter); m.input=TextInput(text="",focused=true); keys!(m,"Kim Gjentatt",:enter,:ctrl=>'r')
+  @test m.mode===:repeat && m.rep.template.dj=="Kim Gjentatt" && isempty(m.rep.group)
   keys!(rto!(m,:count),:enter,"2",:enter,:ctrl=>'s')
   @test m.level===:ok && startswith(m.message,"Laget 2 arrangementer") && m.mode===:browse && length(m.saved)==2
-  @test all(f->TK.read_event(f)[1].dj=="DJ Gjentatt",m.saved) && TK.read_event(f0)[1].dj==dj0 && isempty(TK.validate_event_tree(root))
+  @test all(f->TK.read_event(f)[1].dj=="Kim Gjentatt",m.saved) && TK.read_event(f0)[1].dj==dj0 && isempty(TK.validate_event_tree(root))
   # an unsaved copy (Ctrl-K) is created on its own date too; then back to the list
   m=TangoTUI.search_editor(;root,today=TODAY); keys!(m,"series:otra"); m.pick=length(m.hits); keys!(m,:ctrl=>'k')
   m.input=TextInput(text="2027-08-02",focused=true); keys!(m,:enter,:ctrl=>'r'); keys!(rto!(m,:count),:enter,"2",:enter)
@@ -256,7 +256,7 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
   cd(dirname(tree())) do
    m=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root="events",today=TODAY)
    @test has(m,"tangoedit · events/2027/05-may/2027-05-22-ktf-milonga-2027-05-22.json")
-   keys!(to!(m,"dj"),:enter,"DJ Test",:enter,:ctrl=>'s',"d")
+   keys!(to!(m,"dj"),:enter,"Ana Test",:enter,:ctrl=>'s',"d")
    @test m.level===:ok && m.message=="Lagret: events/2027/05-may/2027-05-22-ktf-milonga-2027-05-22.json"
   end
  end

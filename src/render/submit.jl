@@ -189,8 +189,8 @@ function _legg_til_html(; title=nothing)
  cols=join(("<dt>$(_esc(c))</dt><dd>$(_esc(replace(h," *"=>"")))$(endswith(h," *") ? " <b>($(a.required))</b>" : "")</dd>" for (c,h) in _COLUMN_HELP[_lang()]),"")
  gl=haskey(_GLOSSARY,_lang()) ? "<details><summary>$(a.glossary)</summary><dl class=\"cols\">"*join(("<dt>$(_esc(c))</dt><dd>$(_esc(h))</dd>" for (c,h) in _GLOSSARY[_lang()]),"")*"</dl></details>" : ""
  ex="""<table class="ex"><tr><th>Tittel</th><th>Type</th><th>Dato</th><th>Starttid</th><th>Sluttid</th><th>Sted</th><th>Adresse</th><th>Arrangør</th><th>DJ</th><th>Pris (kr)</th><th>Lenke</th><th>Status</th></tr>
-<tr class="def"><td>Fredagsmilonga</td><td>Milonga</td><td>16.10.2026</td><td>20:00</td><td>00:30</td><td>Salen</td><td>Storgata 1, $(site_city())</td><td>Tangoklubben</td><td>DJ A</td><td>150</td><td>https://…</td><td class="blank">–</td></tr>
-<tr><td class="blank"></td><td class="blank"></td><td>23.10.2026</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td>DJ B</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+<tr class="def"><td>Fredagsmilonga</td><td>Milonga</td><td>16.10.2026</td><td>20:00</td><td>00:30</td><td>Salen</td><td>Storgata 1, $(site_city())</td><td>Tangoklubben</td><td>Ana</td><td>150</td><td>https://…</td><td class="blank">–</td></tr>
+<tr><td class="blank"></td><td class="blank"></td><td>23.10.2026</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td>Bo</td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
 <tr><td class="blank"></td><td class="blank"></td><td>30.10.2026</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td>Avlyst</td></tr></table>"""
  toc=join(("<a href=\"#$id\">$(_esc(l))</a>" for (id,l) in zip(["skjema","tabell","ki","rette","kommandolinje"],a.toc)),"")
  # the template and schemas are language-neutral and live at the site root

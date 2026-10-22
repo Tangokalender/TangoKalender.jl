@@ -56,7 +56,7 @@ end
 Events from pasted spreadsheet cells (see the file header). Every row is checked exactly like the ordinary form
 (`events_from_form`), so field rules and Norwegian messages are the same; errors are prefixed with the row number.
 """
-function events_from_table(text::AbstractString; issue_url=nothing, today::Date=Dates.today())
+function events_from_table(text::AbstractString; issue_url=nothing, today::Date=Dates.today(), notes::Vector{String}=String[])
  errs=String[]; fail()=(JSON.Object{String,Any}[],errs)
  rows=parse_table(text)
  length(rows)<2 && (push!(errs,"Tabellen må ha en rad med kolonnenavn og minst én rad med et arrangement."); return fail())
@@ -86,7 +86,7 @@ function events_from_table(text::AbstractString; issue_url=nothing, today::Date=
   mus=get(vals,"Musikk","")
   isempty(mus) || (f["Musikk"]=join(("- [X] "*strip(m) for m in split(mus,r"[,;]") if !isempty(strip(m))),"\n"))
   f["Gjentas"]="Nei"; f["Samtykke"]="- [X] ok"   # consent is ticked once in the issue form
-  ev,er=events_from_form(f; issue_url, today)
+  ev,er=events_from_form(f; issue_url, today, notes)
   append!(errs,("Rad $rowno: $m" for m in er))
   st=lowercase(strip(get(vals,"Status","")))
   if !isempty(st) && !(st in ("avlyst","cancelled","cancelado","gjennomføres","scheduled"))
@@ -109,8 +109,8 @@ end
 "Template for the table route: semicolon CSV with a UTF-8 BOM, so Excel in Norwegian locale opens it with æøå intact."
 function table_template_csv()
  rows=[TABLE_COLUMNS,
-  ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 $(site_city())","Tangoklubben","DJ A","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.","","Norsk","","Milonga every Friday."],
-  ["","","2027-01-15","","","","","","DJ B","","","","","","","","","","","","",""],
+  ["Milonga Eksempel","Milonga","2027-01-08","20:00","23:30","Kulturhuset","Storgata 1, 0155 $(site_city())","Tangoklubben","Ana","","150","100","","Tradisjonell","","","https://example.org/milonga","Milonga hver fredag.","","Norsk","","Milonga every Friday."],
+  ["","","2027-01-15","","","","","","Bo","","","","","","","","","","","","",""],
   ["","","2027-01-22","","","","","","","","","","","","","","","","Avlyst","","",""]]
  for r in rows[2:end]   # the examples: one day each, fixed prices, no Spanish text
   insert!(r,findfirst(==("Sluttdato"),TABLE_COLUMNS),""); insert!(r,findfirst(==("Betal det du kan"),TABLE_COLUMNS),"")
