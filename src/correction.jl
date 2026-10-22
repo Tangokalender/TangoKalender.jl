@@ -108,6 +108,10 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
   if label=="DJ"   # «TDJ Ana» → «Ana», noted
    s,djnote=_strip_dj_prefix(s); isnothing(djnote) || djnote in notes || push!(notes,djnote)
   end
+  c0=findfirst(x->x[1]==label,CAPS_FIELDS)   # written entirely in capitals: stored with normal capitalisation, noted
+  if !isnothing(c0) && !isempty(s) && s!="-"
+   s,n=_caps_normalize(label,s;kind=CAPS_FIELDS[c0][2]); isnothing(n) || n in notes || push!(notes,n)
+  end
   (isempty(s) || s==cur[fid]) && continue
   if s=="-"
    label in REQUIRED_LABELS ? err("«$label» kan ikke fjernes.") : !isempty(cur[fid]) && (ch[label]=nothing)

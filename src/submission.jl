@@ -148,8 +148,21 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
   at=multi ? "[$(k-1)] " : ""
   st=_local(x["start"]); isnothing(st) && (err("$(at)«start» er ikke en gyldig dato."); continue)
   d,t=st; d<today && err("$(at)«start» ($d) har allerede vært.")
+  note!(n)=isnothing(n) || n in notes || push!(notes,n)
   if get(x,"dj",nothing) isa AbstractString   # «TDJ Ana» → «Ana», noted
-   x["dj"],djnote=_strip_dj_prefix(x["dj"]); isnothing(djnote) || djnote in notes || push!(notes,djnote)
+   x["dj"],djnote=_strip_dj_prefix(x["dj"]); note!(djnote)
+  end
+  # written entirely in capitals: stored with normal capitalisation, noted
+  norm(lbl,v,kind)=v isa AbstractString && !isempty(strip(v)) ? ((y,n)=_caps_normalize(lbl,v;kind); note!(n); y) : v
+  for (k2,kind) in (("title",:title),("description",:text),("organizer",:title),("dj",:name)); haskey(x,k2) && (x[k2]=norm(k2,x[k2],kind)); end
+  if get(x,"venue",nothing) isa AbstractDict
+   for k2 in ("name","address"); haskey(x["venue"],k2) && (x["venue"][k2]=norm("venue.$k2",x["venue"][k2],:title)); end
+  end
+  get(x,"teachers",nothing) isa AbstractVector && (x["teachers"]=[norm("teachers",t,:name) for t in x["teachers"]])
+  if get(x,"translations",nothing) isa AbstractDict
+   for (l,tt) in x["translations"]; tt isa AbstractDict || continue
+    for (k2,kind) in (("title",:title),("description",:text)); haskey(tt,k2) && (tt[k2]=norm("translations.$l.$k2",tt[k2],kind)); end
+   end
   end
   vn=get(x,"venue",nothing); vn isa AbstractDict || (vn=Dict{String,Any}())
   for (k2,tv,kind) in (("organizer",get(x,"organizer",nothing),:title),("venue.name",get(vn,"name",nothing),:title),

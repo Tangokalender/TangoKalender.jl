@@ -114,7 +114,8 @@ function set_field(e::Event, f::FormField, s::AbstractString)
  k=="dj" && (s=first(_strip_dj_prefix(s)))   # the field is already called DJ: «TDJ Ana» → «Ana»
  kind=k in ("title","other_title","es_title","organizer","venue.name","venue.address") ? :title :
   k in ("description","other_description","es_description") ? :text : k in ("dj","teachers") ? :name : :none
- if kind!==:none && !isempty(s)   # the capitals check
+ if kind!==:none && !isempty(s)   # the capitals check: all capitals are normalised, creative mixed case refused
+  s=first(_caps_normalize(f.label,s;kind))
   m=_caps_problem(f.label,s;kind); isnothing(m) || throw(ArgumentError(m))
  end
  f.kind in (:choice,:multi) && return set_field(e,f,String[v for (v,l) in f.choices if any(x->lowercase(strip(x)) in (lowercase(v),lowercase(l)),split(s,','))])

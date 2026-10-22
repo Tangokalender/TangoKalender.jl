@@ -1553,25 +1553,29 @@ end
  @test isnothing(C("Beskrivelse","Se https://www.instagram.com/LOCATANGO og @LOCA_TANGO, #TANGOOSLO.";kind=:text))   # links, handles, tags
  @test isnothing(C("Beskrivelse","MiLonga med DJ ESA.";kind=:text))                                    # descriptions: only the share
  @test all(e->isnothing(C("Tittel",e["title"])),load_events(TREE))                                    # every title in the test copy of the Oslo data
- # the routes: form (and so the spreadsheet), JSON, corrections, the editors' form
+ # the routes: all capitals are stored with normal capitalisation and noted; creative mixed case is refused
  f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
- _,er=TK.events_from_form(merge(f,Dict("Tittel"=>"NOCHE LOCA!","Tittel (spansk)"=>"NoChE lOcA","Beskrivelse"=>"KOM OG DANS MED OSS I KVELD!"));today=T)
- @test any(occursin("«Tittel» har for mange",m) for m in er) && any(occursin("«Tittel (spansk)»",m) for m in er) && any(occursin("«Beskrivelse» har for mange",m) for m in er)
- tab="Tittel\tType\tDato\tStarttid\tSted\tAdresse\tArrangør\tLenke\nMilonga\tMilonga\t2026-11-14\t20:00\tS\tGate 1\tOrg\thttps://x.org\nMILONGA LOCA\t\t2026-11-21\t\t\t\t\t\n"
- _,er=TK.events_from_table(tab;today=T); @test length(er)==1 && occursin("Rad 3",only(er)) && occursin("«Milonga Loca»",only(er))
- j=JSON.json([Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"S","address"=>"A"),"organizer"=>"O","link"=>"https://x.org"),
+ _,er=TK.events_from_form(merge(f,Dict("Tittel"=>"NOCHE LOCA!","Tittel (spansk)"=>"NoChE lOcA"));today=T)
+ @test length(er)==1 && startswith(only(er),"«Tittel (spansk)»")          # mixed case: still refused
+ notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("Tittel"=>"NOCHE LOCA!","Beskrivelse"=>"KOM OG DANS MED OSS I KVELD! VI SEES."));today=T,notes)
+ @test isempty(er) && only(ev)["title"]=="Noche Loca!" && only(ev)["description"]=="Kom og dans med oss i kveld! Vi sees."
+ @test "«Tittel»: «NOCHE LOCA!» er lagret som «Noche Loca!» – skriv gjerne med vanlige store og små bokstaver neste gang." in notes && any(startswith(n,"«Beskrivelse» var skrevet med bare store") for n in notes)
+ @test occursin("**Merk:**",TK._issue_report(ev,["f.json"],String[];notes))
+ notes=String[]; tab="Tittel\tType\tDato\tStarttid\tSted\tAdresse\tArrangør\tLenke\nMILONGA LOCA\tMilonga\t2026-11-14\t20:00\tS\tGate 1\tOrg\thttps://x.org\n\t\t2026-11-21\t\t\t\t\t\n"
+ ev,er=TK.events_from_table(tab;today=T,notes); @test isempty(er) && all(e->e["title"]=="Milonga Loca",ev) && length(notes)==1   # one note for the repeated row
+ notes=String[]; j=JSON.json([Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"S","address"=>"A"),"organizer"=>"O","link"=>"https://x.org"),
               Dict("title"=>"MILONGA","types"=>["milonga"],"start"=>"2026-11-21T20:00","venue"=>Dict("name"=>"S","address"=>"A"),"organizer"=>"O","link"=>"https://x.org",
                    "translations"=>Dict("en"=>Dict("title"=>"ThIS iS iT")))])
- _,er=TK.events_from_json(j;today=T); @test any(startswith(m,"[1] «title»") for m in er) && any(occursin("«translations.en.title»",m) for m in er) && !any(startswith(m,"[0]") for m in er)   # numbered from 0, as the route's other messages
+ _,er=TK.events_from_json(j;today=T,notes); @test length(er)==1 && startswith(only(er),"[1] «translations.en.title»") && length(notes)==1   # numbered from 0
  mktempdir() do root
   x=merge(only(first(TK.events_from_form(f;today=T))),Dict("id"=>"x-2026-11-14","title"=>"OLD SHOUTING TITLE")); save_event_tree([x],root)
-  fix(d)=TK.apply_correction(merge(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok"),d),root;today=T)
-  u,er,_=fix(Dict("DJ"=>"Ny DJ")); @test isempty(er) && u[1][2]["title"]=="OLD SHOUTING TITLE"       # an unchanged title isn't checked
-  _,er,_=fix(Dict("Tittel"=>"NEW SHOUTING")); @test any(occursin("«Tittel» har for mange",m) for m in er)
-  u,er,_=fix(Dict("Tittel"=>"Old Shouting Title")); @test isempty(er) && u[1][2]["title"]=="Old Shouting Title"   # and fixing it is fine
+  fix(d;notes=String[])=TK.apply_correction(merge(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok"),d),root;today=T,notes)
+  u,er,_=fix(Dict("DJ"=>"Ny DJ")); @test isempty(er) && u[1][2]["title"]=="OLD SHOUTING TITLE"       # an unchanged title isn't touched
+  n=String[]; u,er,_=fix(Dict("Tittel"=>"NEW SHOUTING");notes=n); @test isempty(er) && u[1][2]["title"]=="New Shouting" && length(n)==1
+  _,er,_=fix(Dict("Tittel"=>"NeW sHoUtInG")); @test any(startswith(m,"«Tittel»") for m in er)
  end
  ev=TK.Event(id="x-2026-11-14",title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
- @test_throws ArgumentError TK.set_field(ev,TK._field("title"),"MILONGA LOCA")
+ @test TK.set_field(ev,TK._field("title"),"MILONGA LOCA").title=="Milonga Loca"
  @test_throws ArgumentError TK.set_field(ev,TK._field("es_title"),"MiLoNgA")
  @test TK.set_field(ev,TK._field("title"),"Milonga ESA").title=="Milonga ESA"
 end
@@ -1629,23 +1633,26 @@ end
  @test all(e->all(isnothing,(C("Arrangør",something(e["organizer"],"x")),C("Sted",something(get(something(e["venue"],Dict()),"name",nothing),"x")))),load_events(TREE))
  # the routes
  f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
- _,er=TK.events_from_form(merge(f,Dict("Arrangør"=>"TANGO KLUBBEN","Sted"=>"SENTRALEN","Adresse"=>"ØVRE SLOTTSGATE 3","DJ"=>"ANA GARCIA","Lærere"=>"ANA GARCIA, KIM LEE"));today=T)
- @test all(l->any(m->startswith(m,"«$l»"),er),("Arrangør","Sted","Adresse","DJ","Lærere"))
+ notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("Arrangør"=>"TANGO KLUBBEN","Sted"=>"SENTRALEN","Adresse"=>"ØVRE SLOTTSGATE 3","DJ"=>"TDJ ANA DE LA ROSA","Lærere"=>"ANA GARCIA, KIM LEE"));today=T,notes)
+ e=only(ev); @test isempty(er) && e["organizer"]=="Tango Klubben" && e["venue"]["name"]=="Sentralen" && e["venue"]["address"]=="Øvre Slottsgate 3"
+ @test e["dj"]=="Ana de la Rosa" && e["teachers"]==["Ana Garcia","Kim Lee"] && length(notes)==6           # DJ: the prefix, then the capitals
+ _,er=TK.events_from_form(merge(f,Dict("Arrangør"=>"TaNgO kLuBbEn"));today=T); @test any(m->startswith(m,"«Arrangør»"),er)
  @test isempty(TK.events_from_form(merge(f,Dict("DJ"=>"Ana DiStefano"));today=T)[2])
  j=JSON.json(Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-11-14T20:00","venue"=>Dict("name"=>"SENTRALEN","address"=>"ØVRE SLOTTSGATE 3"),
   "organizer"=>"TANGO KLUBBEN","link"=>"https://x.org","dj"=>"ANA GARCIA","teachers"=>["KIM LEE OLSEN","Ana DiStefano"]))
- _,er=TK.events_from_json(j;today=T)
- @test all(k->any(m->startswith(m,"«$k»"),er),("organizer","venue.name","venue.address","dj","teachers")) && count(m->startswith(m,"«teachers»"),er)==1
+ notes=String[]; ev,er=TK.events_from_json(j;today=T,notes); e=only(ev)
+ @test isempty(er) && e["organizer"]=="Tango Klubben" && e["venue"]["name"]=="Sentralen" && e["dj"]=="Ana Garcia" && e["teachers"]==["Kim Lee Olsen","Ana DiStefano"] && length(notes)==5
  mktempdir() do root
   x=merge(only(first(TK.events_from_form(f;today=T))),Dict("id"=>"x-2026-11-14","organizer"=>"OLD SHOUTING CLUB")); save_event_tree([x],root)
   fix(d)=TK.apply_correction(merge(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok"),d),root;today=T)
   @test isempty(fix(Dict("DJ"=>"Ny DJ"))[2])                                                             # unchanged fields aren't checked
-  @test any(m->startswith(m,"«Sted» har for mange"),fix(Dict("Sted"=>"NYTT STED"))[2]) && any(m->startswith(m,"«Arrangør»"),fix(Dict("Arrangør"=>"NEW SHOUTING CLUB"))[2])
+  u,er,_=fix(Dict("Sted"=>"NYTT STED")); @test isempty(er) && u[1][2]["venue"]["name"]=="Nytt Sted"
+  @test any(m->startswith(m,"«Arrangør»"),fix(Dict("Arrangør"=>"NeW sHoUtInG cLuB"))[2])
  end
  ev=TK.Event(id="x-2026-11-14",title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
- @test_throws ArgumentError TK.set_field(ev,TK._field("organizer"),"TANGO KLUBBEN")
- @test_throws ArgumentError TK.set_field(ev,TK._field("venue.name"),"SENTRALEN")
- @test_throws ArgumentError TK.set_field(ev,TK._field("dj"),"ANA GARCIA")
+ @test TK.set_field(ev,TK._field("organizer"),"TANGO KLUBBEN").organizer=="Tango Klubben" && TK.set_field(ev,TK._field("venue.name"),"SENTRALEN").venue.name=="Sentralen"
+ @test TK.set_field(ev,TK._field("dj"),"TDJ ANA GARCIA").dj=="Ana Garcia"
+ @test_throws ArgumentError TK.set_field(ev,TK._field("organizer"),"TaNgO kLuBbEn")
  @test TK.set_field(ev,TK._field("dj"),"Ana DiStefano").dj=="Ana DiStefano" && TK.set_field(ev,TK._field("teachers"),"Ana DiStefano, Kim LeBlanc").teachers==["Ana DiStefano","Kim LeBlanc"]
 end
 @testset "DJ: a «DJ»/«TDJ» prefix is removed, with a note" begin
@@ -1654,7 +1661,7 @@ end
  @test P("Djordje")=="Djordje" && P("DJ")=="DJ" && P("Ana og DJ Bo")=="Ana og DJ Bo" && isnothing(last(TK._strip_dj_prefix("Ana")))   # a name, nothing left, or later in the text
  f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
  notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("DJ"=>"TDJ ANA GARCIA"));today=T,notes)
- @test any(occursin("«DJ» har for mange",m) for m in er) && occursin("«Ana Garcia»",only(er))          # the capitals check sees the name without the prefix
+ @test isempty(er) && only(ev)["dj"]=="Ana Garcia" && length(notes)==2                              # the prefix, then the capitals
  notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("DJ"=>"Tdj Ana"));today=T,notes)
  @test isempty(er) && only(ev)["dj"]=="Ana" && only(notes)=="«DJ»: «Tdj Ana» er lagret som «Ana» – feltet heter allerede DJ, så «DJ»/«TDJ» foran navnet trengs ikke."
  r=TK._issue_report(ev,["f.json"],String[];notes); @test occursin("**Merk:**\n- «DJ»: «Tdj Ana» er lagret som «Ana»",r)

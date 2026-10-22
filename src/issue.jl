@@ -104,6 +104,30 @@ function _strip_dj_prefix(s::AbstractString)
  name=String(strip(m[1]))
  (name,"«DJ»: «$(strip(s))» er lagret som «$name» – feltet heter allerede DJ, så «DJ»/«TDJ» foran navnet trengs ikke.")
 end
+"Every word capitalised, small words («de», «og», «la» …) in lower case after the first: «ANA DE LA ROSA» → «Ana de la Rosa»."
+function _word_case(s::AbstractString)
+ n=Ref(0)
+ replace(s,r"\p{L}+"=>function(w)
+  n[]+=1; cs=collect(lowercase(w))
+  n[]>1 && String(cs) in _SMALL_WORDS ? String(cs) : string(uppercase(cs[1]),cs[2:end]...)
+ end)
+end
+"Sentence case: lower case, with a capital at the start and after «.», «!», «?» or a line break."
+_sentence_case(s::AbstractString)=replace(lowercase(s),r"(^|[.!?]\s+|\n\s*)(\p{L})"=>m->m[1:end-1]*uppercase(m[end:end]))
+"""
+    _caps_normalize(label, text; kind=:title) -> (text, note or nothing)
+
+A value written entirely in capitals that `_caps_problem` would refuse is stored with normal capitalisation instead
+(`_word_case`; descriptions, `kind=:text`, in `_sentence_case`), and `note` says so for the bot's report. Anything else
+is returned unchanged (short capitals such as «KTW 2027» pass anyway; mixed case like «ThIS iS» is still refused).
+"""
+function _caps_normalize(label::AbstractString, text::AbstractString; kind::Symbol=:title)
+ s=String(strip(text))
+ (any(isletter,s) && !any(islowercase,s) && !isnothing(_caps_problem(label,s;kind))) || return (s,nothing)
+ fixed=kind===:text ? _sentence_case(s) : _word_case(s)
+ (fixed,kind===:text ? "«$label» var skrevet med bare store bokstaver og er lagret med vanlige store og små bokstaver." :
+  "«$label»: «$s» er lagret som «$fixed» – skriv gjerne med vanlige store og små bokstaver neste gang.")
+end
 "Text fields checked by `_caps_problem` in the forms: label => kind (`:title`, `:name`, `:text`)."
 const CAPS_FIELDS=["Tittel"=>:title,"Tittel (andre språk)"=>:title,"Tittel (spansk)"=>:title,
  "Arrangør"=>:title,"Sted"=>:title,"Adresse"=>:title,"DJ"=>:name,"Lærere"=>:name,
@@ -214,6 +238,14 @@ way (a «DJ»/«TDJ» prefix removed) are added to `notes`, for the bot's report
 """
 function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.today(), notes::Vector{String}=String[])
  errs=String[]; err(m)=push!(errs,m)
+ note!(n)=isnothing(n) || n in notes || push!(notes,n)
+ # fixed on the way, with a note: a «DJ»/«TDJ» prefix, then values written entirely in capitals
+ f=Dict{String,String}(String(k)=>String(v) for (k,v) in f)
+ f["DJ"],djnote=_strip_dj_prefix(get(f,"DJ","")); note!(djnote)
+ for (label,kind) in CAPS_FIELDS
+  haskey(f,label) || continue
+  f[label],n=_caps_normalize(label,f[label];kind); note!(n)
+ end
  get_(k)=String(strip(get(f,k,"")))
  req(k)=(v=get_(k); isempty(v) && err("«$k» må fylles ut."); v)
  val(k;required=false)=(s=required ? req(k) : get_(k); isempty(s) ? nothing : ((v,e)=_parse_field(k,s); isnothing(e) || err(e); v))
@@ -249,9 +281,9 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  entry,pwyc=something(prices["price_nok"],(nothing,false))
  pwyc=pwyc || _ticked(get_("Betal det du kan"))   # the checkbox; «betal det du kan, 100» in «Pris (kr)» still works
  music=something(val("Musikk"),Any[]); flyer=val("Flyer"); video=val("Video")
- dj,djnote=_strip_dj_prefix(get_("DJ")); isnothing(djnote) || djnote in notes || push!(notes,djnote)   # «TDJ Ana» → «Ana», noted
- for (label,kind) in CAPS_FIELDS   # no all-caps or creatively capitalised text
-  s=label=="DJ" ? dj : get_(label); isempty(s) || (m=_caps_problem(label,s;kind); isnothing(m) || err(m))
+ dj=get_("DJ")
+ for (label,kind) in CAPS_FIELDS   # creatively capitalised text is refused (all capitals were normalised above)
+  s=get_(label); isempty(s) || (m=_caps_problem(label,s;kind); isnothing(m) || err(m))
  end
  isempty(_checked(get_("Samtykke"))) && err("«Samtykke» må krysses av.")
  isempty(errs) || return (JSON.Object{String,Any}[],errs)
