@@ -1679,3 +1679,12 @@ end
  ev=TK.Event(id="x-2026-11-14",title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
  @test TK.set_field(ev,TK._field("dj"),"TDJ Ana").dj=="Ana"
 end
+@testset "list lines: the columns line up whatever the id's length" begin
+ TK=TangoKalender
+ ev(id)=TK.Event(id=id,title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00",venue=TK.Venue(name="Sentralen"))
+ col(e,w)=sum(textwidth(t) for (t,_) in TK.line_segs(e;width=w)[1:4])   # where the venue column starts
+ for w in (80,140,200)
+  @test col(ev("m-2026-11-14"),w)==col(ev("colgadas-volcadas-soltadas-tango-fantasia-week-1-2026-11-14"),w)
+ end
+ @test endswith(TK.line_segs(ev("colgadas-volcadas-soltadas-tango-fantasia-week-1-2026-11-14");width=80)[end][1],"week-1-2026-11-14")   # the id is never cut
+end

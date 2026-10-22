@@ -34,8 +34,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 01.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="77">
@@ -43,8 +43,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 08.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="93">
@@ -52,8 +52,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 15.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="109">
@@ -186,8 +186,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 01.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="77">
@@ -195,8 +195,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 08.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="93">
@@ -205,8 +205,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 15.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="109">
@@ -2180,8 +2180,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 01.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="77">
@@ -2189,8 +2189,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 08.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="93">
@@ -2199,8 +2199,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 15.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="109">
@@ -2208,8 +2208,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 12.01.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-12</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-12</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="125">
@@ -2217,8 +2217,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 19.01.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-19</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-19</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="141">
@@ -2226,8 +2226,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 26.01.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-26</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-26</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="157">
@@ -2235,8 +2235,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 02.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-02</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-02</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="173">
@@ -2244,8 +2244,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 09.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-09</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-09</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="189">
@@ -2253,8 +2253,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 16.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-16</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-16</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="205">
@@ -2262,8 +2262,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 23.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-23</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-23</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="221">
@@ -2271,8 +2271,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 02.03.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-02</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-02</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="237">
@@ -2280,8 +2280,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 09.03.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-09</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-09</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="253">
@@ -2289,8 +2289,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 16.03.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-16</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-16</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="269">
@@ -2383,8 +2383,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 01.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-01</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="77">
@@ -2392,8 +2392,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 08.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-08</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="93">
@@ -2402,8 +2402,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 15.12.26 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2026-12-15</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="109">
@@ -2411,8 +2411,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 12.01.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-12</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-12</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="125">
@@ -2420,8 +2420,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 19.01.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-19</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-19</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="141">
@@ -2429,8 +2429,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 26.01.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-26</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-01-26</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="157">
@@ -2438,8 +2438,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 02.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-02</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-02</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="173">
@@ -2447,8 +2447,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 09.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-09</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-09</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="189">
@@ -2456,8 +2456,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 16.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-16</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-16</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="205">
@@ -2465,8 +2465,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 23.02.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-23</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-02-23</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="221">
@@ -2474,8 +2474,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 02.03.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-02</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-02</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="237">
@@ -2483,8 +2483,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 09.03.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-09</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-09</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="253">
@@ -2492,8 +2492,8 @@ text{font-family:'MesloLGS NF','MesloLGM NF','JetBrains Mono','Menlo','DejaVu Sa
     <tspan x="24" textLength="160" lengthAdjust="spacingAndGlyphs" fill="#87d7ff" font-weight="bold" stroke="#87d7ff" stroke-width="0.4">tir 16.03.27 18:30  </tspan>
     <tspan x="184" textLength="128" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">Kurs            </tspan>
     <tspan x="312" textLength="96" lengthAdjust="spacingAndGlyphs" fill="#afffff" font-weight="bold" stroke="#afffff" stroke-width="0.4">Tirsdagskurs</tspan>
-    <tspan x="408" textLength="360" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                         Eksempelsalen       </tspan>
-    <tspan x="768" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-16</tspan>
+    <tspan x="408" textLength="336" lengthAdjust="spacingAndGlyphs" fill="#d0d0d0">                       Eksempelsalen      </tspan>
+    <tspan x="744" textLength="184" lengthAdjust="spacingAndGlyphs" fill="#6c6c6c">tirsdagskurs-2027-03-16</tspan>
     <tspan x="952" textLength="8" lengthAdjust="spacingAndGlyphs" fill="#5fafff">│</tspan>
   </text>
   <text y="269">

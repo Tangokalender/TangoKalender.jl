@@ -130,12 +130,15 @@ function card_lines(e::Event; before::Union{Nothing,Event}=nothing, width::Int=8
  push!(lines,[Seg[("╰─ ",:shadow)];_hl(_footer,e,before,:shadow)])
  lines
 end
+"Room kept for the id at the end of a list line (`line_segs`); the columns before it don't depend on the id's length."
+const _ID_W=30
 "The list line as segments (see `event_line`)."
 function line_segs(e::Event; width::Int=80)
  p=_parse_dt(e.start); d=_ymd(e.start)
  when=!isnothing(p) && p[2] ? "$(_wd3(p[1])) $(_two(day(p[1]))).$(_two(month(p[1]))).$(_two(year(p[1])%100)) $(_hm(p[1]))" :
   !isnothing(d) ? "$(_wd3(d)) $(_two(day(d))).$(_two(month(d))).$(_two(year(d)%100))" : e.start
- rest=max(width-20-16-4-textwidth(e.id),50)   # title and venue share what's left; long ids may wrap
+ rest=max(width-20-16-4-_ID_W,50)   # title and venue share what's left: the same on every line, so the columns line up;
+                                   # the id comes last (a longer one runs on, a shorter one leaves space), never cut
  tw=(rest*2)÷3; vw=rest-tw
  Seg[(_pad(when,20),:tangokalender_date),(_pad(_short(_types_label(e),15),16),:shadow),
      (_short(e.title,tw),_cancelled(e) ? :tangokalender_cancelled : :bold),(_pad("",tw-textwidth(_short(e.title,tw)))*"  ",:default),   # pad outside the strikethrough
