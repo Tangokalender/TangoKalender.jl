@@ -21,13 +21,15 @@ Options, roughly in order of effort:
    signed delivery to followers, or run/join a Gancio or Mobilizon instance and import `kalender.ics`.
    More setup and running cost.
 
-## Spanish event text (undecided)
+## Spanish as the main text language (undecided)
 
-The site is in Norwegian, English and Spanish (see `src/i18n.jl`), but event titles and descriptions can only be
-entered in Norwegian or English. Spanish pages show English text when there is any, otherwise the original.
-The schema already accepts `translations.es`; offering it means a «Español» option in «Tekstspråk» (`_parse_lang`,
-the issue forms) and «andre språk» fields that can hold more than one language. Also worth considering: a native
-speaker proofreading the Spanish (rioplatense) interface text.
+Spanish titles and descriptions can be entered as an alternative text since 1.7.0: «Tittel (spansk)» and
+«Beskrivelse (spansk)» in the new-event and correction forms and the spreadsheet, `translations.es` in the JSON
+route, and the `es_title`/`es_description` fields in TangoTUI. Spanish pages show them, falling back to English and
+then the original. What's left is Spanish as the event's *main* text language: «Tekstspråk» is Norsk/English only
+(`lang` is `nb`/`en` in the schema), so an «Español» option would need a schema change, `_parse_lang`, the issue
+forms and a check of the text fallbacks on the Norwegian and English pages. Also worth considering: a native speaker
+proofreading the Spanish (rioplatense) interface text.
 
 ## TangoTUI in English and Spanish
 
