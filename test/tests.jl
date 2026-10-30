@@ -1196,7 +1196,7 @@ end
   s=String(take!(out)); @test occursin("\"class_price_nok\": 260",s) && !occursin("\"class_price_nok\": 200",s) && occursin("dry run",s) && snap()==before
   @test TK.edit_main(["kurs","--root=$d","--json","--preview"];io=out,err=devnull)==2
   @test TK.edit_main(["kurs","status=foo","--root=$d","--from=2026-10-10"];io=out,err=devnull)==1
-  @test TK.edit_main(["kurs","nope=1","--root=$d"];io=out,err=devnull)==2
+  @test TK.edit_main(["kurs","nope=1","--root=$d","--from=2026-10-10"];io=out,err=devnull)==2   # pinned: without --from the events are past by now
   @test TK.edit_main(["edit","kurs","--root=$d","--all"];io=out)==0 && occursin("3 events",String(take!(out)))   # `tangoedit edit …`
   @test TK.edit_main(["--root=$d"];io=out,err=devnull)==2
   @test TK.edit_main(["kurs","--from=10.10.2026","--root=$d"];io=out,err=devnull)==2
@@ -1687,4 +1687,14 @@ end
   @test col(ev("m-2026-11-14"),w)==col(ev("colgadas-volcadas-soltadas-tango-fantasia-week-1-2026-11-14"),w)
  end
  @test endswith(TK.line_segs(ev("colgadas-volcadas-soltadas-tango-fantasia-week-1-2026-11-14");width=80)[end][1],"week-1-2026-11-14")   # the id is never cut
+end
+@testset "spreadsheet without the heading row" begin
+ TK=TangoKalender; T=Date(2026,10,1)
+ rowsonly="Kurs for lett øvet\tKurs\t2026-11-04\t17:00\tSal\tGate 1\tOrg\thttps://x.org\nKurs for lett øvet\t\t2026-11-11\t\t\t\t\t\n"
+ _,er=TK.events_from_table(rowsonly;today=T)
+ @test length(er)==1 && startswith(only(er),"Første rad må være kolonnenavnene") && occursin("$(TK.site_url())/legg-til.html#tabell",only(er))
+ @test !occursin("Ukjent kolonne",only(er))                                                            # not one message per cell
+ _,er=TK.events_from_table("Kurs for lett øvet\tKurs\t2026-11-04";today=T); @test startswith(only(er),"Første rad må være kolonnenavnene")   # a single row too
+ _,er=TK.events_from_table("Tittel\tTypo\tDato\nMilonga\tMilonga\t2026-11-04";today=T)                 # headings with one typo: the old message
+ @test only(er)=="Ukjent kolonne «Typo». Gyldige kolonner: $(join(TK.TABLE_COLUMNS,", "))."
 end

@@ -59,6 +59,12 @@ Events from pasted spreadsheet cells (see the file header). Every row is checked
 function events_from_table(text::AbstractString; issue_url=nothing, today::Date=Dates.today(), notes::Vector{String}=String[])
  errs=String[]; fail()=(JSON.Object{String,Any}[],errs)
  rows=parse_table(text)
+ # no known column name in the first row: the heading row is missing (the events were pasted without it)
+ if !isempty(rows) && !any(h->haskey(_COLUMN_BY_KEY,_colkey(h)),rows[1])
+  push!(errs,"Første rad må være kolonnenavnene (Tittel, Type, Dato …). Det ser ut som overskriftsraden mangler – "*
+   "lim inn på nytt med den øverst. Kolonnenavnene står i malen: $(site_url())/$ADD_PAGE#tabell")
+  return fail()
+ end
  length(rows)<2 && (push!(errs,"Tabellen må ha en rad med kolonnenavn og minst én rad med et arrangement."); return fail())
  head=rows[1]; cols=String[]
  for h in head
