@@ -22,6 +22,7 @@ tangokalender init-site bergen --slug=bergen --city=Bergen \
 | `.github/ISSUE_TEMPLATE/` | The submission and correction forms, filled in with the site's address and city. |
 | `.github/dependabot.yml` | Weekly updates of the workflow versions. |
 | `assets/og-image.png` | Link-preview image (a placeholder; see below). |
+| `assets/icons/` | Browser-tab icon and the icons for a phone's home screen (placeholders; see below). |
 | `README.md` | These steps, for the people running the repository. |
 
 Then install the pinned package once and commit everything, including `Manifest.toml`:
@@ -52,6 +53,9 @@ Push a commit or run the *Pages* workflow by hand; the site appears at `site_url
 - Set `[map] center` in `site.toml` to the city centre (`[lat, lon]`), so the map view opens in the right place.
 - Draw the link-preview image with the city name: `julia <path to TangoKalender>/bin/make_og_image.jl` in the data
   repository writes `assets/og-image.png` (it reads `site.toml`).
+- Draw the icons the same way: `julia <path to TangoKalender>/bin/make_icons.jl` writes `assets/icons/`. The browser
+  tab shows a «T»; a phone that adds the site to its home screen shows «Tango» over the city name. Builds copy them to
+  the site root together with `site.webmanifest`.
 - Texts that mention the city use it automatically. To change a text, override it under `[texts]` (see
   [`site.toml`](@ref site-config)).
 

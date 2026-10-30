@@ -46,6 +46,7 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
  site_url = $(_toml_str(rstrip(site_url,'/')))
  repo_url = $(_toml_str(rstrip(repo_url,'/')))
  og_image = "assets/og-image.png"   # redraw for this city: julia <TangoKalender>/bin/make_og_image.jl
+ icons = "assets/icons"   # favicon and home-screen icons; redraw for this city: julia <TangoKalender>/bin/make_icons.jl
 
  [map]   # shown when no event has a map position
  center = [59.9139, 10.7522]   # TODO: the city centre (lat, lon)
@@ -129,6 +130,7 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
  """)
  append!(files,_with_site(()->write_templates(dir),site))
  w(joinpath("assets","og-image.png"),read(OG_IMAGE_FILE))
+ for f in ICON_FILES; w(joinpath("assets","icons",f),read(joinpath(ICONS_DIR,f))); end
  w(".gitignore","_site/\npublic/\n")
  w("README.md","""
  # $(name)
@@ -152,7 +154,8 @@ function init_site(dir::AbstractString; slug::AbstractString, city::AbstractStri
  3. Labels: `nytt-arrangement`, `rettelse` and `trenger-retting`.
  4. Branch protection on `main`: require the **Validate** check; give editors the Write role.
  5. `julia --project=. -e 'using Pkg; Pkg.instantiate()'` and commit `Manifest.toml`.
- 6. Set `[map] center` in `site.toml`, and redraw `assets/og-image.png` with the package's `bin/make_og_image.jl`.
+ 6. Set `[map] center` in `site.toml`, and redraw `assets/og-image.png` and `assets/icons/` with the package's
+    `bin/make_og_image.jl` and `bin/make_icons.jl`.
  7. After changing the package version, rerun `julia --project=. -m TangoKalender templates` to update the issue forms.
  """)
  files

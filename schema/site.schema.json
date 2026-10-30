@@ -13,6 +13,7 @@
         "site_url": {"type": "string", "pattern": "^https?://[^/]+(/[^?#]*)?$", "description": "Where the site is published (may include a path), e.g. https://tango.oslo.no or https://example.github.io/bergen."},
         "repo_url": {"type": "string", "pattern": "^https://github\\.com/[^/]+/[^/]+/?$", "description": "The data repo with the issue forms."},
         "og_image": {"type": "string", "minLength": 1, "description": "Link-preview image (1200×630 PNG), relative to site.toml. Default: the package's generic image."},
+        "icons": {"type": "string", "minLength": 1, "description": "Folder with the favicon and home-screen icons drawn by bin/make_icons.jl, relative to site.toml. Default: the package's generic set."},
         "map": {
             "type": "object", "additionalProperties": false,
             "properties": {

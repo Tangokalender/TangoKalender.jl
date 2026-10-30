@@ -17,6 +17,8 @@ Settings for one city's site (`site.toml`):
 - `countrycodes` (and optional `viewbox`, "lon1,lat1,lon2,lat2"): Nominatim search limits for `geocode`.
 - `og_image`: link-preview image file (absolute path; `site.toml` gives it relative to itself), `nothing` = the
   package's generic image.
+- `icons`: folder with the favicon and home-screen icons (`ICON_FILES`, drawn by `bin/make_icons.jl`; absolute path,
+  relative to `site.toml` there), `nothing` = the package's generic set.
 - `texts`: per language (`nb`/`en`/`es`), UI strings that replace the package's `_T` entries.
 """
 Base.@kwdef struct SiteConfig
@@ -30,6 +32,7 @@ Base.@kwdef struct SiteConfig
  countrycodes::String="no"
  viewbox::Union{Nothing,String}=nothing
  og_image::Union{Nothing,String}=nothing
+ icons::Union{Nothing,String}=nothing
  texts::Dict{String,Dict{String,String}}=Dict{String,Dict{String,String}}()
 end
 """
@@ -55,11 +58,12 @@ function load_site(file::AbstractString=SITE_FILE)
  t=TOML.parsefile(file)
  issue=JSONSchema.validate(JSONSchema.Schema(JSON.parsefile(SITE_SCHEMA_FILE)),JSON.parse(JSON.json(t)))
  isnothing(issue) || throw(ArgumentError("$file: $(_issue_message(t,issue))"))
- m=get(t,"map",Dict()); g=get(t,"geocode",Dict()); og=get(t,"og_image",nothing)
+ m=get(t,"map",Dict()); g=get(t,"geocode",Dict()); og=get(t,"og_image",nothing); ic=get(t,"icons",nothing)
  SiteConfig(slug=t["slug"],name=t["name"],city=t["city"],site_url=rstrip(t["site_url"],'/'),repo_url=rstrip(t["repo_url"],'/'),
   map_center=Tuple(Float64.(get(m,"center",[59.9139,10.7522]))),map_zoom=get(m,"zoom",12),
   countrycodes=get(g,"countrycodes","no"),viewbox=get(g,"viewbox",nothing),
   og_image=isnothing(og) ? nothing : normpath(joinpath(dirname(abspath(file)),og)),
+  icons=isnothing(ic) ? nothing : normpath(joinpath(dirname(abspath(file)),ic)),
   texts=Dict{String,Dict{String,String}}(l=>Dict{String,String}(k=>string(v) for (k,v) in d) for (l,d) in get(t,"texts",Dict())))
 end
 "The site config the CLI uses: `--site=FILE`, else `./site.toml` if it exists, else the current one."

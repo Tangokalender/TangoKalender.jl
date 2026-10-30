@@ -156,6 +156,8 @@ function _write_site(dir::AbstractString, events; today::Date=Dates.today(), kwa
  wr(TEMPLATE_CSV,table_template_csv())
  wr(EDIT_DEMO,read(EDIT_DEMO_FILE,String))   # the animated terminal on legg-til.html#kommandolinje
  cp(something(SITE[].og_image,OG_IMAGE_FILE),joinpath(dir,"og-image.png");force=true); push!(files,joinpath(dir,"og-image.png"))
+ for f in ICON_FILES; cp(joinpath(something(SITE[].icons,ICONS_DIR),f),joinpath(dir,f);force=true); push!(files,joinpath(dir,f)); end
+ wr(MANIFEST_FILE,sprint(io->(JSON.print(io,web_manifest(),2); write(io,'\n'))))
  wr(joinpath("schema","tango-event.schema.json"),_site_schema(SCHEMA_FILE))
  wr(joinpath("schema","venues.schema.json"),_site_schema(VENUES_SCHEMA_FILE))
  wr(joinpath("schema","tango-event-submission.schema.json"),sprint(io->(JSON.print(io,submission_schema(),2); write(io,'\n'))))

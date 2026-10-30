@@ -10,6 +10,7 @@ city = "Oslo"
 site_url = "https://tango.oslo.no"
 repo_url = "https://github.com/Tangokalender/tangokalender.github.io"
 og_image = "assets/og-image.png"
+icons = "assets/icons"
 
 [map]
 center = [59.9139, 10.7522]
