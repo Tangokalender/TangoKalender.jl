@@ -1135,22 +1135,19 @@ end
  icon(h,rel)=(m=match(Regex("<link rel=\"$rel\"[^>]*href=\"([^\"]+)\""),h); isnothing(m) ? nothing : m[1])
  for h in (p,i,TK.legg_til_html(),TK.om_html(lang="es"),TK.bygg_inn_html())
   @test icon(h,"icon")==TK.site_url()*"/favicon.ico" && icon(h,"apple-touch-icon")==TK.site_url()*"/apple-touch-icon.png"
-  @test icon(h,"manifest")==TK.site_url()*"/site.webmanifest" && occursin("<meta name=\"theme-color\" content=\"#872b49\">",h)
+  @test isnothing(icon(h,"manifest")) && occursin("<link rel=\"icon\" type=\"image/png\" href=\"$(TK.site_url())/icon-192.png\" sizes=\"192x192\">",h) && occursin("<meta name=\"theme-color\" content=\"#872b49\">",h)
   @test occursin("<meta name=\"apple-mobile-web-app-title\" content=\"Tango $(TK.site_city())\">",h)
  end
  @test isnothing(icon(render_events_html([ev()];view="compact",site=true,embed=true),"icon"))
  pngsize(f)=(b=read(f); @assert b[1:8]==b"\x89PNG\r\n\x1a\n"; (Int(ntoh(reinterpret(UInt32,b[17:20])[1])),Int(ntoh(reinterpret(UInt32,b[21:24])[1]))))
- for (f,n) in (("favicon-32.png",32),("apple-touch-icon.png",180),("icon-192.png",192),("icon-512.png",512),("icon-maskable-512.png",512))
+ for (f,n) in (("favicon-32.png",32),("apple-touch-icon.png",180),("icon-192.png",192),("icon-512.png",512))
   @test pngsize(joinpath(TK.ICONS_DIR,f))==(n,n)
  end
  b=read(joinpath(TK.ICONS_DIR,"favicon.ico")); @test b[1:6]==UInt8[0,0,1,0,2,0] && b[7]==16 && b[23]==32   # two PNG images, 16 and 32
  mktempdir() do d
   TK.write_site(d,[ev()];today=T)
   for f in TK.ICON_FILES; @test read(joinpath(d,f))==read(joinpath(something(TK.SITE[].icons,TK.ICONS_DIR),f)) && !isfile(joinpath(d,"en",f)); end
-  m=JSON.parsefile(joinpath(d,"site.webmanifest"))
-  @test m["name"]==TK.site_name() && m["short_name"]=="Tango $(TK.site_city())" && m["start_url"]==TK.site_url()*"/" && m["theme_color"]=="#872b49"
-  @test [x["purpose"] for x in m["icons"]]==["any","any","maskable"]
-  for x in m["icons"]; @test startswith(x["src"],TK.site_url()*"/") && isfile(joinpath(d,replace(x["src"],TK.site_url()*"/"=>""))); end
+  @test !isfile(joinpath(d,"site.webmanifest"))   # a manifest makes Chrome bookmark its start_url, losing the filters
  end
 end
 @testset "bulk edit (Event struct, tangokalender edit)" begin
@@ -1404,7 +1401,7 @@ end
  @test occursin("https://github.com/Tangokalender/bergen/issues/new?template=rett-arrangement.yml",r("arrangement/m-2026-10-16/index.html"))
  @test occursin("UID:m-2026-10-16@tango.example.no",r("kalender.ics")) && occursin("https://tango.example.no/bergen/en/arrangement/",r("en/rss.xml"))
  @test occursin("M.setView([60.39,5.32],13)",r("kart.html")) && r("og-image.png")=="png" && r("icon-192.png")=="bergen icon-192.png"
- @test JSON.parsefile(joinpath(out,"site.webmanifest"))["short_name"]=="Tango Bergen"
+ @test occursin("<meta name=\"apple-mobile-web-app-title\" content=\"Tango Bergen\">",r("index.html"))
  @test JSON.parsefile(joinpath(out,"schema","tango-event.schema.json"))["\$id"]=="https://tango.example.no/bergen/schema/tango-event.schema.json"
  @test JSON.parsefile(joinpath(out,"schema","tango-event-submission.schema.json"))["\$id"]=="https://tango.example.no/bergen/schema/tango-event-submission.schema.json"
  # nothing from Oslo leaks into Bergen's site, except the time zone (Europe/Oslo is all of Norway) and the AI example text

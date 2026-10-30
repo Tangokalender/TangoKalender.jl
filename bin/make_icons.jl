@@ -25,8 +25,8 @@ function centred(c,str,cx,y,size,col;w=Inf,bold=false)
  move_to(c,cx-e[3]/2-e[1],y); set_source_rgb(c,rgb(col)...); show_text(c,str)
 end
 """
-One icon, S×S pixels. `rounded`: transparent rounded corners (tab icons, «any» icons) instead of a full square (iOS and
-Android mask those themselves). `k` scales the motif around the centre: maskable icons keep it in the safe zone.
+One icon, S×S pixels. `rounded`: transparent rounded corners (tab and Android icons) instead of a full square (iOS rounds
+those itself). `k` scales the motif around the centre.
 """
 function icon(S;rounded,k,words)
  s=CairoARGBSurface(S,S); c=CairoContext(s)
@@ -63,4 +63,3 @@ f("favicon-32.png",png(icon(32;rounded=true,k=1.2,words=false)))
 f("apple-touch-icon.png",png(icon(180;rounded=false,k=0.95,words=true)))
 f("icon-192.png",png(icon(192;rounded=true,k=0.95,words=true)))
 f("icon-512.png",png(icon(512;rounded=true,k=0.95,words=true)))
-f("icon-maskable-512.png",png(icon(512;rounded=false,k=0.78,words=true)))

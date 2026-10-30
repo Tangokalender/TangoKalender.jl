@@ -22,23 +22,17 @@ function og_image(e)
  (og_image_url(),site_name())
 end
 # Favicon and home-screen icons: drawn per site by bin/make_icons.jl into the folder `icons` (site.toml) and copied to the
-# site root by write_site, with site.webmanifest (Android «Legg til på startskjermen»). Every page with _og_head links them.
-const ICON_FILES=["favicon.ico","favicon-32.png","apple-touch-icon.png","icon-192.png","icon-512.png","icon-maskable-512.png"]
+# site root by write_site. Every page with _og_head links them. No web manifest: with one, Chrome's «Legg til på
+# startskjermen» bookmarks its start_url (the front page) instead of the page with the visitor's filters (1.8.4).
+const ICON_FILES=["favicon.ico","favicon-32.png","apple-touch-icon.png","icon-192.png","icon-512.png"]
 const ICONS_DIR=joinpath(@__DIR__,"..","..","assets","icons-generic")   # a «T» at every size; sites set icons
-const MANIFEST_FILE="site.webmanifest"
 const THEME_COLOUR="#872b49"
 "Short name under a home-screen icon («Tango Oslo»)."
 _short_name()="Tango "*site_city()
-"The web app manifest: name, colours and the home-screen icons (absolute URLs, so every language tree shares one)."
-function web_manifest()
- i(f,s;purpose="any")=Dict("src"=>"$(site_url())/$f","sizes"=>"$(s)x$s","type"=>"image/png","purpose"=>purpose)
- Dict("name"=>site_name(),"short_name"=>_short_name(),"start_url"=>site_url()*"/","scope"=>site_url()*"/",
-  "display"=>"browser","theme_color"=>THEME_COLOUR,"background_color"=>"#f5f1eb",
-  "icons"=>[i("icon-192.png",192),i("icon-512.png",512),i("icon-maskable-512.png",512;purpose="maskable")])
-end
-"The `<head>` tags for the favicon, the iOS home-screen icon and the manifest."
+"The `<head>` tags for the favicon and the home-screen icons (iOS: apple-touch-icon; Android: the largest `icon`), absolute URLs."
 _icon_head()="<link rel=\"icon\" href=\"$(site_url())/favicon.ico\" sizes=\"32x32\"><link rel=\"icon\" type=\"image/png\" href=\"$(site_url())/favicon-32.png\" sizes=\"32x32\">"*
- "<link rel=\"apple-touch-icon\" href=\"$(site_url())/apple-touch-icon.png\"><link rel=\"manifest\" href=\"$(site_url())/$MANIFEST_FILE\">"*
+ "<link rel=\"apple-touch-icon\" href=\"$(site_url())/apple-touch-icon.png\">"*
+ "<link rel=\"icon\" type=\"image/png\" href=\"$(site_url())/icon-192.png\" sizes=\"192x192\"><link rel=\"icon\" type=\"image/png\" href=\"$(site_url())/icon-512.png\" sizes=\"512x512\">"*
  "<meta name=\"apple-mobile-web-app-title\" content=\"$(_esc(_short_name()))\"><meta name=\"theme-color\" content=\"$THEME_COLOUR\">"
 "The `<meta>` tags for a link preview (and, since every site page has them, the icon tags). All arguments are plain text; escaping happens here."
 function _og_head(; title, desc, url, image=og_image_url(), alt=site_name())

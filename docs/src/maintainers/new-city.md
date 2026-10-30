@@ -55,7 +55,7 @@ Push a commit or run the *Pages* workflow by hand; the site appears at `site_url
   repository writes `assets/og-image.png` (it reads `site.toml`).
 - Draw the icons the same way: `julia <path to TangoKalender>/bin/make_icons.jl` writes `assets/icons/`. The browser
   tab shows a «T»; a phone that adds the site to its home screen shows «Tango» over the city name. Builds copy them to
-  the site root together with `site.webmanifest`.
+  the site root.
 - Texts that mention the city use it automatically. To change a text, override it under `[texts]` (see
   [`site.toml`](@ref site-config)).
 
