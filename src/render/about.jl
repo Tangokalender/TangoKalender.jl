@@ -17,6 +17,7 @@ _about()=Dict(
 <section class="card"><h2>Slik støtter du kalenderen</h2>
 <ol><li><b>Bruk den.</b> Sjekk kalenderen når du lurer på hvor du kan danse – i dag, denne uken eller neste måned.</li>
 <li><b>Del arrangementer.</b> Hvert arrangement har sin egen side du kan dele, og filtrene ligger i lenken – del gjerne «alle milongaer denne måneden» med en venn. Du kan også abonnere på hele kalenderen i din egen kalender-app.</li>
+<li><b>Ingen app nødvendig.</b> Åpne kalenderen med filtrene du vil ha, og legg siden til på Hjem-skjermen (iPhone: Del → «Legg til på Hjem-skjerm»; Android: menyen ⋮ → «Legg til på startskjermen»). Da åpner den med det utvalget hver gang.</li>
 <li><b>Hjelp til med å holde den oppdatert.</b> Ser du et arrangement som mangler, en feil tid eller en avlysning? Det tar et par minutter å <a href="$ADD_PAGE">legge inn eller rette opp</a>. Jo flere som hjelper til, jo mer kan alle stole på kalenderen.</li>
 <li><b>Vis kalenderen på nettsiden din.</b> Klubber og arrangører kan <a href="$EMBED_PAGE">bygge inn</a> dagens eller ukens program, eller en liste med bare sine egne arrangementer.</li></ol>
 <p class="wink">Og vil noen vise sin takknemlighet ved å spandere en drink på den som står bak kalenderen på neste milonga, er det neppe noen som klager … 😉</p></section>
@@ -35,6 +36,7 @@ _about()=Dict(
 <section class="card"><h2>How to support the calendar</h2>
 <ol><li><b>Use it.</b> Check the calendar whenever you wonder where to dance – today, this week or next month.</li>
 <li><b>Share events.</b> Every event has its own page you can share, and the filters are kept in the link – share “all milongas this month” with a friend. You can also subscribe to the whole calendar in your own calendar app.</li>
+<li><b>No app needed.</b> Open the calendar with the filters you want and add the page to your home screen (iPhone: Share → “Add to Home Screen”; Android: the ⋮ menu → “Add to Home screen”). It then opens with that selection every time.</li>
 <li><b>Help keep it up to date.</b> Spotted a missing event, a wrong time or a cancellation? It takes a couple of minutes to <a href="$ADD_PAGE">add or correct it</a>. The more people who help, the more everyone can rely on the calendar.</li>
 <li><b>Show the calendar on your website.</b> Clubs and organisers can <a href="$EMBED_PAGE">embed</a> today's or this week's programme, or a list of just their own events.</li></ol>
 <p class="wink">And if anyone wants to show their appreciation by buying the person behind the calendar a drink at the next milonga, surely no one will complain … 😉</p></section>
@@ -53,6 +55,7 @@ _about()=Dict(
 <section class="card"><h2>Cómo apoyar el calendario</h2>
 <ol><li><b>Usalo.</b> Mirá el calendario cada vez que te preguntes dónde bailar: hoy, esta semana o el mes que viene.</li>
 <li><b>Compartí eventos.</b> Cada evento tiene su propia página para compartir, y los filtros quedan en el enlace: mandale a un amigo «todas las milongas de este mes». También podés suscribirte al calendario completo desde tu aplicación de calendario.</li>
+<li><b>No hace falta una app.</b> Abrí el calendario con los filtros que quieras y agregá la página a la pantalla de inicio (iPhone: Compartir → «Agregar a inicio»; Android: el menú ⋮ → «Agregar a la pantalla principal»). Así se abre siempre con esa selección.</li>
 <li><b>Ayudá a mantenerlo al día.</b> ¿Falta un evento, hay un horario equivocado o una cancelación? Lleva un par de minutos <a href="$ADD_PAGE">cargarlo o corregirlo</a>. Cuanta más gente ayude, más podemos confiar todos en el calendario.</li>
 <li><b>Mostrá el calendario en tu sitio web.</b> Clubes y organizadores pueden <a href="$EMBED_PAGE">insertar</a> el programa de hoy o de la semana, o una lista solo con sus propios eventos.</li></ol>
 <p class="wink">Y si alguien quiere mostrar su agradecimiento invitándole un trago a quien está detrás del calendario en la próxima milonga, seguro que nadie se va a quejar … 😉</p></section>

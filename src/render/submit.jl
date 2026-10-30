@@ -58,7 +58,7 @@ function _add_text()
  rel=_esc(CODE_REPO_URL*"/releases/latest"); repo=_esc(repo_url())
  Dict(
  "nb"=>(title="Legg til arrangement",
-  intro="Alle kan legge inn arrangementer. En robot sjekker innsendingen og lager et forslag som en redaktør ser over før det publiseres – du får svar som en kommentar på GitHub.",
+  intro="Alle kan legge inn og rette arrangementer – du trenger bare en gratis <a href=\"https://github.com/signup\">GitHub-konto</a>. En robot sjekker innsendingen og lager et forslag som en redaktør ser over før det publiseres – du får svar som en kommentar på GitHub.",
   toc=["Ett arrangement","Flere datoer (regneark)","Med KI","Rette opp / avlyse","For redaktører"],
   form="""<h2>Ett arrangement – eller en enkel ukentlig serie</h2><p class="when">Når: én milonga, en workshop, eller noe som gjentas likt hver uke.</p>
 <p>Fyll ut skjemaet. For faste kvelder velger du «Gjentas: Ukentlig» og siste dato; hver dato blir et eget arrangement som senere kan endres eller avlyses for seg.</p>
@@ -94,10 +94,10 @@ tangoedit series:onsdagsmilonga --from=2026-11-01 --until=2026-11-30 status=canc
 tangoedit series:onsdagsmilonga --from=2026-11-01 --until=2026-11-30 status=cancelled
 tangoedit --help""",
   privacy="""<h2>Personvern</h2><p>Bruk bare opplysninger som allerede er offentlige. Navn på DJ-er og lærere skal bare være med hvis de har godtatt det – du bekrefter dette i skjemaet. Ikke lim inn private meldinger eller personopplysninger i en KI-assistent.</p>""",
-  dev="Du trenger en (gratis) GitHub-konto for å sende inn. For utviklere og KI-agenter:",subschema="innsendingsskjema (JSON Schema)",stored="lagret format",
+  dev="For utviklere og KI-agenter:",subschema="innsendingsskjema (JSON Schema)",stored="lagret format",
   glossary="",copied="Kopiert ✓",selected="Merket – trykk Ctrl+C / ⌘C"),
  "en"=>(title="Add an event",
-  intro="Anyone can add events. A bot checks each submission and prepares a proposal that an editor reviews before it is published – you get a reply as a comment on GitHub.",
+  intro="Anyone can add and correct events – all you need is a free <a href=\"https://github.com/signup\">GitHub account</a>. A bot checks each submission and prepares a proposal that an editor reviews before it is published – you get a reply as a comment on GitHub.",
   toc=["One event","Several dates (spreadsheet)","With AI","Correct / cancel","For editors"],
   form="""<h2>One event – or a simple weekly series</h2><p class="when">For: a single milonga, a workshop, or something that repeats the same way every week.</p>
 <p>Fill in the form. For regular evenings choose «Gjentas: Ukentlig» (repeats weekly) and the last date; each date becomes an event of its own that can later be changed or cancelled separately.</p>
@@ -133,10 +133,10 @@ tangoedit series:onsdagsmilonga --from=2026-11-01 --until=2026-11-30 status=canc
 tangoedit series:onsdagsmilonga --from=2026-11-01 --until=2026-11-30 status=cancelled
 tangoedit --help""",
   privacy="""<h2>Privacy</h2><p>Only use information that is already public. Names of DJs and teachers should only be included if they have agreed to it – you confirm this in the form. Don't paste private messages or personal data into an AI assistant.</p>""",
-  dev="You need a (free) GitHub account to submit. For developers and AI agents:",subschema="submission schema (JSON Schema)",stored="stored format",
+  dev="For developers and AI agents:",subschema="submission schema (JSON Schema)",stored="stored format",
   glossary="The form fields in English",copied="Copied ✓",selected="Selected – press Ctrl+C / ⌘C"),
  "es"=>(title="Sumá un evento",
-  intro="Cualquiera puede cargar eventos. Un bot revisa cada envío y prepara una propuesta que alguien del equipo editorial revisa antes de publicarla; te respondemos con un comentario en GitHub.",
+  intro="Cualquiera puede cargar y corregir eventos: solo necesitás una <a href=\"https://github.com/signup\">cuenta gratuita de GitHub</a>. Un bot revisa cada envío y prepara una propuesta que alguien del equipo editorial revisa antes de publicarla; te respondemos con un comentario en GitHub.",
   toc=["Un evento","Varias fechas (planilla)","Con IA","Corregir / cancelar","Para editores"],
   form="""<h2>Un evento, o una serie semanal sencilla</h2><p class="when">Para: una milonga, un seminario o algo que se repite igual todas las semanas.</p>
 <p>Completá el formulario. Para las noches fijas elegí «Gjentas: Ukentlig» (se repite cada semana) y la última fecha; cada fecha queda como un evento propio que después se puede cambiar o cancelar por separado.</p>
@@ -172,7 +172,7 @@ tangoedit series:onsdagsmilonga --from=2026-11-01 --until=2026-11-30 status=canc
 tangoedit series:onsdagsmilonga --from=2026-11-01 --until=2026-11-30 status=cancelled
 tangoedit --help""",
   privacy="""<h2>Privacidad</h2><p>Usá solo información que ya sea pública. Los nombres de DJ y profesores solo pueden figurar si dieron su consentimiento; lo confirmás en el formulario. No pegues mensajes privados ni datos personales en un asistente de IA.</p>""",
-  dev="Para enviar necesitás una cuenta (gratuita) de GitHub. Para desarrolladores y agentes de IA:",subschema="esquema de envío (JSON Schema)",stored="formato guardado",
+  dev="Para desarrolladores y agentes de IA:",subschema="esquema de envío (JSON Schema)",stored="formato guardado",
   glossary="Los campos del formulario en español",copied="Copiado ✓",selected="Seleccionado: apretá Ctrl+C / ⌘C"))
 end
 const _COPY_JS=raw"""(function(){var b=document.getElementById('copy'),p=document.getElementById('prompt'),s=document.getElementById('copied');function sel(){var r=document.createRange();r.selectNodeContents(p);var g=window.getSelection();g.removeAllRanges();g.addRange(r)}b.addEventListener('click',function(){var t=p.textContent;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){s.textContent=b.getAttribute('data-copied')},function(){sel();s.textContent=b.getAttribute('data-selected')})}else{sel();s.textContent=b.getAttribute('data-selected')}setTimeout(function(){s.textContent=''},4000)})})();"""
