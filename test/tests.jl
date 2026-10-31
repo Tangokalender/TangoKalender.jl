@@ -273,6 +273,7 @@ end
   @test isempty(u) && any(occursin("Ingen endringer",m) for m in errs)
   # blank fields = unchanged, so an id alone (prefill lost) is also "no changes", never a wipe
   @test any(occursin("Ingen endringer",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-13")),root;today=T)[2])
+  @test any(occursin("Tekst i sakens tittel eller i kommentarer blir ikke lest",m) for m in TK.apply_correction(form(Dict("Arrangement-ID"=>"esa-2026-10-13")),root;today=T)[2])
   # DJ on one date
   u,errs,ch=TK.apply_correction(form(merge(prefill(esa("10-13")),Dict("DJ"=>"Gjeste-DJ"))),root;today=T)
   @test isempty(errs) && length(u)==1 && ch==[("DJ","Varierer","Gjeste-DJ")]

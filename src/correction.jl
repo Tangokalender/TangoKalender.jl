@@ -150,7 +150,8 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
  haskey(ch,"Dato") && series && err("«Dato» kan bare endres for én dato om gangen – velg «Bare denne datoen».")
  haskey(ch,"Sluttdato") && series && err("«Sluttdato» kan bare endres for én dato om gangen – velg «Bare denne datoen».")
  haskey(ch,"Dato") && ch["Dato"]<today && err("«Dato» ($(ch["Dato"])) har allerede vært.")
- isempty(errs) && isempty(ch) && err("Ingen endringer funnet. Endre feltene som er feil (tomt felt = ingen endring).")
+ isempty(errs) && isempty(ch) && err("Ingen endringer funnet. Skriv det som skal endres i feltene under «Nåværende opplysninger», for eksempel et nytt "*
+  "navn i «Tittel» (tomt felt = ingen endring). Tekst i sakens tittel eller i kommentarer blir ikke lest.")   # Oslo #104–#106
  isempty(errs) || return none
  d0=Date(first(_s(orig["start"]),10)); sid=get(orig,"series",nothing)
  targets=if series
