@@ -36,7 +36,7 @@ llm_rules()="""Pages to use (open them if you can browse; if you cannot, work fr
 
 Rules:
 - Output ONLY a JSON value that conforms to this JSON Schema, with no explanation around it: $(submission_schema_url())
-- Required in every object: "title", "types", "start", "venue" (with "name" and "address"), "organizer" and "link". Everything else may be null or left out.
+- Required in every object: "title", "types", "start", "venue" (with "name" and "address") and "organizer". Everything else may be null or left out.
 - "dj" is just the name: "Ana", not "DJ Ana" or "TDJ Ana" (the field already says DJ).
 - Write "title", "description", "organizer", the venue's name and address, "dj" and "teachers" in normal capitalisation, even if the source shouts: "Noche Loca!", not "NOCHE LOCA!"; short words such as ESA may stay in capitals. Texts entirely in capitals are converted; mixed case like "MiLoNgA" is refused.
 - "title" is the event's own name, without the organiser, venue or date: "Nybegynnerkurs i tango", not "Nybegynnerkurs i tango (Tango Puente)". The organiser goes in "organizer" and is shown next to the title. Keep a name that is the event's real name, such as "Otra Milonga" or "Kristiania Tango Festival".
@@ -47,7 +47,7 @@ Rules:
 - "music_style" (only if the source states it) is a list of: $(_musiclist()).
 - Prices are whole Norwegian kroner as integers: "price_nok" (regular entry), "student_price_nok", "class_price_nok" (the class or course part). If a price covers a whole course or several dates (e.g. 910 kr for a 6-session course), put it in "class_price_nok" on each date, leave "price_nok" null, and say what it covers in "description" (e.g. "Pris for hele kurset."). If entry is pay what you can or by donation («betal det du kan», «pay what you can», «a la gorra»), set "pay_what_you_can": true and put a suggested amount, if the source gives one, in "price_nok"; otherwise leave "pay_what_you_can" out.
 - "venue" is {"name", "address", "city"}; "city" is usually "$(site_city())".
-- "link" is the URL of the event page (for example the Facebook event). "flyer_url" and "video_url" (YouTube or Vimeo) only if such links appear in the source.
+- "link" is the URL of the event page (for example the Facebook event); leave it out if the event has none, never invent one. "flyer_url" and "video_url" (YouTube or Vimeo) only if such links appear in the source.
 - "description": 1–3 short, neutral sentences (level, entry, dress code). No marketing language. Write it in the language of the source if that is Norwegian or English, otherwise in English.
 - "lang" is the language of "title" and "description": "nb" (Norwegian) or "en" (English).
 - "translations" only if the source itself has the text in another language: {"en": {"title": …, "description": …}} for a Norwegian event (or {"nb": …} for an English one), and "es" for Spanish text, e.g. {"en": {…}, "es": {…}}. Never translate yourself.

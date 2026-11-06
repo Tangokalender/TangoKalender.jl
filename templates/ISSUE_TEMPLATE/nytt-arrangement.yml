@@ -125,7 +125,7 @@ body:
     id: pris
     attributes:
       label: Pris (kr)
-      description: Hele kroner. Er inngangen frivillig, kryss av for «Betal det du kan» under – prisen er da et forslag og kan stå tom.
+      description: Hele kroner. La feltet stå tomt hvis prisen ikke er klar ennå. Er inngangen frivillig, kryss av for «Betal det du kan» under – prisen er da et forslag og kan stå tom.
       placeholder: "150"
   - type: checkboxes
     id: betal
@@ -164,10 +164,8 @@ body:
     id: lenke
     attributes:
       label: Lenke
-      description: Arrangementets nettside eller Facebook-arrangement.
+      description: Arrangementets nettside eller Facebook-arrangement. Kan stå tom hvis arrangementet ikke har en egen side.
       placeholder: https://
-    validations:
-      required: true
   - type: textarea
     id: beskrivelse
     attributes:

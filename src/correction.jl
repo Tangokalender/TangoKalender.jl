@@ -9,7 +9,7 @@ const CORRECTION_IDS=["arrangement_id"=>"Arrangement-ID","tittel"=>"Tittel","dat
  "studentpris"=>"Studentpris (kr)","kurspris"=>"Kurspris (kr)","flyer"=>"Flyer","video"=>"Video","lenke"=>"Lenke","beskrivelse"=>"Beskrivelse",
  "tittel_annet"=>"Tittel (andre språk)","beskrivelse_annet"=>"Beskrivelse (andre språk)","tittel_es"=>"Tittel (spansk)",
  "beskrivelse_es"=>"Beskrivelse (spansk)"]
-const REQUIRED_LABELS=Set(["Tittel","Dato","Starttid","Sted","Adresse","Arrangør","Lenke"])
+const REQUIRED_LABELS=Set(["Tittel","Dato","Starttid","Sted","Adresse","Arrangør"])
 const SERIES_SCOPE="Denne og alle senere datoer i serien"
 const MAX_URL=6000
 _s(x)=isnothing(x) ? "" : string(x)
@@ -111,6 +111,11 @@ function apply_correction(f::AbstractDict, root::AbstractString; today::Date=Dat
   c0=findfirst(x->x[1]==label,CAPS_FIELDS)   # written entirely in capitals: stored with normal capitalisation, noted
   if !isnothing(c0) && !isempty(s) && s!="-"
    s,n=_caps_normalize(label,s;kind=CAPS_FIELDS[c0][2]); isnothing(n) || n in notes || push!(notes,n)
+  end
+  if label=="Pris (kr)" && _price_unknown(s)   # «TBA»: the price isn't known (any more), so it is removed
+   s=="-" || push!(notes,"«Pris (kr)»: «$s» betyr ingen pris – prisen er fjernet. Skriv beløpet når det er kjent."); s="-"
+  elseif label=="Lenke"
+   s,n=_fix_link(label,s); isnothing(n) || n in notes || push!(notes,n)
   end
   (isempty(s) || s==cur[fid]) && continue
   if s=="-"

@@ -405,11 +405,11 @@ end
  @test occursin("ukjente felt: pris. Tillatte felt: class_price_nok,",only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";pris=160)))))
  @test occursin("ukjente felt: price",only(msg(JSON.json(ev1("2026-10-21","19:00","22:00";price=1,price_nok=2)))))   # both: not guessed
  @test occursin("«[1].venue.name»",only(msg(JSON.json([ev1("2026-10-21","19:00","22:00"),ev1("2026-10-28","19:00","22:00";venue=Dict("name"=>3,"address"=>"b"))]))))
- @test occursin("mangler påkrevd felt: types, start, venue, organizer, link",only(msg("{\"title\":\"X\"}")))
+ @test occursin("mangler påkrevd felt: types, start, venue, organizer.",only(msg("{\"title\":\"X\"}")))
  # organizer is mandatory, and the rules tell the model where to find it
  noorg=ev1("2026-10-24","16:00","18:00"); delete!(noorg,"organizer")
  @test only(msg(JSON.json([noorg])))=="«[0]» mangler påkrevd felt: organizer."
- @test occursin("\"organizer\" is the group or person",TK.llm_rules()) && occursin("\"organizer\" and \"link\"",TK.llm_rules())
+ @test occursin("\"organizer\" is the group or person",TK.llm_rules()) && occursin("and \"organizer\". Everything else",TK.llm_rules()) && occursin("leave it out if the event has none, never invent one",TK.llm_rules())
  # key pages and existing events as templates, in the rules and so in both llms.txt and the copy-ready prompt
  for u in (TK.submission_schema_url(),TK.events_feed_url(),TK.events_repo_url())
   @test occursin(u,TK.llm_rules()) && occursin(u,TK.llms_txt()) && occursin(u,TK.llm_prompt())
@@ -525,7 +525,7 @@ end
  @test count("data-eid=\"c\"",c)==3 && occursin("dag 2 av 3",c) && occursin("<a href=\"arrangement/a/\">Milonga a</a>",c)
  @test occursin("class=\"on\" aria-current=\"page\">Liste</a>",c) && !occursin("id=\"sort\"",c) && occursin("href=\"rss.xml\"",c)
  @test !occursin("arrangement/",render_events_html(evs;view="compact"))                                 # no event pages outside the site
- w=render_events_html(evs;view="week",site=true)
+ w=render_events_html(evs;view="week",site=true,today=Date(2026,10,10))   # pinned: the view starts 4 weeks before the build date
  @test occursin("data-week=\"2026-W41\"",w) && occursin("id=\"uke-2026-41\"",w) && occursin("data-label=\"Uke 41 · 5.–11. okt\"",w)
  @test occursin("data-label=\"Uke 44 · 26. okt – 1. nov\"",w) && !occursin("id=\"when\"",w)                # range across months
  # a 7-column grid per week, Monday first, weekends marked, empty days get a placeholder
@@ -1700,6 +1700,43 @@ end
  end
  ev=TK.Event(id="x-2026-11-14",title="Milonga",types=["milonga"],start="2026-11-14T20:00:00+01:00")
  @test TK.set_field(ev,TK._field("dj"),"TDJ Ana").dj=="Ana"
+end
+@testset "no event page and no price yet (Oslo #121)" begin
+ TK=TangoKalender; T=Date(2026,10,1)
+ f=TK.parse_issue_form(read(joinpath(@__DIR__,"fixtures","issues","single.md"),String))
+ # «Lenke» may be empty: one-off events may have no page of their own
+ notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("Lenke"=>"","Pris (kr)"=>"TBA"));today=T,notes)
+ @test isempty(er) && isnothing(get(only(ev),"link",nothing))
+ @test isnothing(get(only(ev),"price_nok",nothing)) && only(notes)=="«Pris (kr)»: «TBA» er lagret uten pris – bruk «Rett opp» på arrangementet når prisen er kjent."
+ @test isempty(TK.validate_event(only(ev)))
+ for p in ("tba","T.B.A.","Kommer senere","ukjent","?","ikke klart ennå"=>false,"a confirmar")
+  (txt,ok)=p isa Pair ? p : (p,true)
+  @test TK._price_unknown(txt)==ok
+ end
+ @test !TK._price_unknown("") && !TK._price_unknown("150") && !TK._price_unknown("betal det du kan")
+ # a web address without https:// gets it, with a note; text that isn't an address is still refused
+ notes=String[]; ev,er=TK.events_from_form(merge(f,Dict("Lenke"=>"Aftenposten.no"));today=T,notes)
+ @test isempty(er) && only(ev)["link"]=="https://Aftenposten.no" && only(notes)=="«Lenke»: «Aftenposten.no» er lagret som «https://Aftenposten.no»."
+ @test first(TK._fix_link("Lenke","www.tango.no/milonga?x=1"))=="https://www.tango.no/milonga?x=1" && first(TK._fix_link("Lenke","https://x.org"))=="https://x.org"
+ _,er=TK.events_from_form(merge(f,Dict("Lenke"=>"se Facebook"));today=T); @test only(er)=="«Lenke» må være en nettadresse som begynner med https://."
+ # the spreadsheet (through the form) and JSON without a link
+ tab="Tittel\tType\tDato\tStarttid\tSted\tAdresse\tArrangør\tPris (kr)\nSolidaritetsmilonga\tMilonga\t2026-12-19\t20:00\tSalen\tGate 1\tOrg\tTBA\n"
+ notes=String[]; ev,er=TK.events_from_table(tab;today=T,notes); @test isempty(er) && length(ev)==1 && length(notes)==1
+ j=JSON.json(Dict("title"=>"Milonga","types"=>["milonga"],"start"=>"2026-12-19T20:00","venue"=>Dict("name"=>"S","address"=>"A"),"organizer"=>"O"))
+ ev,er=TK.events_from_json(j;today=T); @test isempty(er) && isnothing(get(only(ev),"link",nothing))
+ @test !("link" in TK.submission_schema()["definitions"]["event"]["required"])
+ # corrections: the link can be removed, «TBA» removes the price
+ mktempdir() do root
+  x=merge(only(first(TK.events_from_form(f;today=T))),Dict("id"=>"x-2026-11-14","price_nok"=>150,"link"=>"https://x.org")); save_event_tree([x],root)
+  fix(d;notes=String[])=TK.apply_correction(merge(Dict("Arrangement-ID"=>"x-2026-11-14","Samtykke"=>"- [X] ok"),d),root;today=T,notes)
+  n=String[]; u,er,_=fix(Dict("Lenke"=>"-","Pris (kr)"=>"TBA");notes=n)
+  @test isempty(er) && isnothing(get(u[1][2],"link",nothing)) && isnothing(get(u[1][2],"price_nok",nothing)) && length(n)==1
+ end
+ # pages, feeds and calendars of an event without link or price
+ e=merge(only(first(TK.events_from_form(merge(f,Dict("Lenke"=>""));today=T))),Dict("id"=>"x-2026-11-14"))
+ for out in (TK.render_event_page(e,[e];today=T),render_events_html([e];site=true),TK.event_ics(e;today=T),TK.rss_xml([e];today=T))
+  @test !occursin("nothing",out)
+ end
 end
 @testset "list lines: the columns line up whatever the id's length" begin
  TK=TangoKalender

@@ -4,7 +4,7 @@ submission_schema_url()=site_url()*"/schema/tango-event-submission.schema.json"
 const BOT_FIELDS=["id","series","source","source_url","published_date","first_seen","last_verified","crawl_timestamp","confidence","video"]
 const MAX_SUBMISSION=60
 "Required keys for submitted events (everything else may be null or left out)."
-const SUBMISSION_REQUIRED=["title","types","start","venue","organizer","link"]
+const SUBMISSION_REQUIRED=["title","types","start","venue","organizer"]   # «link» is optional: one-off events may have no page
 const _LOCALTIME="^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(Z|[+-][0-9]{2}:[0-9]{2})?)?\$"
 const TYPE_HELP=Dict("milonga"=>"social dance evening","practica"=>"practice evening","class"=>"class or course",
  "workshop"=>"workshop or seminar","outdoor"=>"open-air / outdoor event (utetango); combine with e.g. milonga",
@@ -32,7 +32,7 @@ const _DESCRIPTIONS=Dict(
  "translations"=>"Only if the source itself has the text in another language: {\"en\": {\"title\", \"description\"}} for a Norwegian event, {\"nb\": …} for an English one, and \"es\" for Spanish text. Never translate yourself; otherwise null.",
  "flyer_url"=>"Direct https URL of the event image, only if it appears in the source; otherwise null.",
  "video_url"=>"YouTube or Vimeo link from the source, or null.",
- "link"=>"URL of the event page (e.g. the Facebook event or the organiser's page).")
+ "link"=>"URL of the event page (e.g. the Facebook event or the organiser's page). Leave it out when the event has no page of its own.")
 """
     submission_schema() -> JSON.Object
 
@@ -197,7 +197,7 @@ function events_from_json(text::AbstractString; issue_url=nothing, today::Date=D
    "price_nok"=>get(x,"price_nok",nothing),"student_price_nok"=>get(x,"student_price_nok",nothing),"class_price_nok"=>get(x,"class_price_nok",nothing),
    (get(x,"pay_what_you_can",nothing)===true ? ["pay_what_you_can"=>true] : Pair{String,Bool}[])...,
    "description"=>_none(get(x,"description",nothing)),"lang"=>lang,"translations"=>_clean_translations(get(x,"translations",nothing),lang),"music_style"=>collect(something(get(x,"music_style",nothing),Any[])),
-   "flyer_url"=>_none(get(x,"flyer_url",nothing)),"video"=>video,"link"=>x["link"],
+   "flyer_url"=>_none(get(x,"flyer_url",nothing)),"video"=>video,"link"=>_none(get(x,"link",nothing)),
    "source"=>"Innsendt via KI-skjema","source_url"=>isnothing(issue_url) ? nothing : string(issue_url),"published_date"=>string(today),
    "first_seen"=>string(today),"last_verified"=>string(today),"crawl_timestamp"=>nothing,"confidence"=>1.0)
   for m in validate_event(e); err("$(at)$m"); end

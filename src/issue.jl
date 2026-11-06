@@ -104,6 +104,32 @@ function _strip_dj_prefix(s::AbstractString)
  name=String(strip(m[1]))
  (name,"«DJ»: «$(strip(s))» er lagret som «$name» – feltet heter allerede DJ, så «DJ»/«TDJ» foran navnet trengs ikke.")
 end
+"Price text meaning «not known yet» (after `_price_unknown`'s folding): stored without a price, with a note."
+const _NO_PRICE=Set(["tba","tbd","tbc","tba kr","kommer","kommer senere","kommer snart","ukjent","ikke bestemt","ikke klart",
+ "ikke avklart","ikke satt","annonseres senere","se lenke","n a","na","por confirmar","a confirmar"])
+"""
+    _price_unknown(s) -> Bool
+
+«TBA», «kommer», «ukjent», «?» … in «Pris (kr)»: the organiser doesn't know the price yet. The price is optional,
+so such entries are stored without one (Oslo #121) instead of refused.
+"""
+function _price_unknown(s::AbstractString)
+ isempty(strip(s)) && return false
+ t=strip(replace(Base.Unicode.normalize(String(s);stripmark=true,casefold=true),r"[^\p{L}\p{N}]+"=>" "))
+ isempty(t) || t in _NO_PRICE || replace(t," "=>"") in _NO_PRICE   # «T.B.A.» → «t b a» → «tba»
+end
+"""
+    _fix_link(label, s) -> (url, note or nothing)
+
+A web address without `https://` («aftenposten.no», «www.x.no/milonga») gets it added, with a note; anything else is
+returned unchanged (and refused later if it isn't a URL).
+"""
+function _fix_link(label::AbstractString, s::AbstractString)
+ t=String(strip(s))
+ (isempty(t) || occursin(r"^https?://"i,t) || !occursin(r"^(?:www\.)?[\p{L}\d-]+(?:\.[\p{L}\d-]+)*\.\p{L}{2,}(?:[/?#]\S*)?$",t)) && return (t,nothing)
+ u="https://"*t
+ (u,"«$label»: «$t» er lagret som «$u».")
+end
 "Every word capitalised, small words («de», «og», «la» …) in lower case after the first: «ANA DE LA ROSA» → «Ana de la Rosa»."
 function _word_case(s::AbstractString)
  n=Ref(0)
@@ -239,13 +265,19 @@ way (a «DJ»/«TDJ» prefix removed) are added to `notes`, for the bot's report
 function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.today(), notes::Vector{String}=String[])
  errs=String[]; err(m)=push!(errs,m)
  note!(n)=isnothing(n) || n in notes || push!(notes,n)
- # fixed on the way, with a note: a «DJ»/«TDJ» prefix, then values written entirely in capitals
+ # fixed on the way, with a note: a «DJ»/«TDJ» prefix, values written entirely in capitals, a price that isn't known
+ # yet («TBA»: stored without one) and a web address without https://
  f=Dict{String,String}(String(k)=>String(v) for (k,v) in f)
  f["DJ"],djnote=_strip_dj_prefix(get(f,"DJ","")); note!(djnote)
  for (label,kind) in CAPS_FIELDS
   haskey(f,label) || continue
   f[label],n=_caps_normalize(label,f[label];kind); note!(n)
  end
+ if _price_unknown(get(f,"Pris (kr)",""))
+  note!("«Pris (kr)»: «$(strip(f["Pris (kr)"]))» er lagret uten pris – bruk «Rett opp» på arrangementet når prisen er kjent.")
+  f["Pris (kr)"]=""
+ end
+ f["Lenke"],n=_fix_link("Lenke",get(f,"Lenke","")); note!(n)
  get_(k)=String(strip(get(f,k,"")))
  req(k)=(v=get_(k); isempty(v) && err("«$k» må fylles ut."); v)
  val(k;required=false)=(s=required ? req(k) : get_(k); isempty(s) ? nothing : ((v,e)=_parse_field(k,s); isnothing(e) || err(e); v))
@@ -258,7 +290,7 @@ function events_from_form(f::AbstractDict; issue_url=nothing, today::Date=Dates.
  end
  st=val("Starttid")
  isnothing(st) && !multi && isempty(get_("Starttid")) && err("«Starttid» må fylles ut (den kan bare stå tom for arrangementer over flere dager, med «Sluttdato»).")
- venue=req("Sted"); address=req("Adresse"); org=req("Arrangør"); link=val("Lenke";required=true)
+ venue=req("Sted"); address=req("Adresse"); org=req("Arrangør"); link=val("Lenke")   # optional: one-off events may have no page of their own (Oslo #121)
  lang=_parse_lang(get_("Tekstspråk")); isnothing(lang) && (err("«Tekstspråk» må være «Norsk» eller «English» (fikk «$(get_("Tekstspråk"))»)."); lang="nb")
  !isnothing(date) && date<today && err("«Dato» ($date) har allerede vært.")
  et=val("Sluttid")
