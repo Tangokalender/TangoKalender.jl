@@ -102,14 +102,16 @@ mutable struct Editor <: Model
  spread::Vector{Tuple{TK.FormField,Int,Union{Nothing,String}}}
  sticked::Vector{Bool}
  spick::Int
- # the editor's own clipboard (c/x copy or cut a field, v pastes; Ctrl-V while editing): a submission's value in the
- # wrong field (a link in «Flyer») is moved in two keys; kept across events. Not the terminal's clipboard.
+ # copy and paste: `clip` is the last value copied with c/x (also put on the system clipboard), pasted by v and
+ # Ctrl-V, kept across events; `pasting`/`pastebuf` collect a paste from the terminal (bracketed paste, see `_paste_mark`)
  clip::String
+ pasting::Bool
+ pastebuf::Vector{Char}
 end
 function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree)
  m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,:browse,TextInput(text=""),1,Bool[],"",:info,false,String[],
           Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false,
-          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing,WrapEditor(""),Tuple{TK.FormField,Int,Union{Nothing,String}}[],Bool[],1,"")
+          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing,WrapEditor(""),Tuple{TK.FormField,Int,Union{Nothing,String}}[],Bool[],1,"",false,Char[])
  isnothing(file) && _new_id!(m)
  m
 end
@@ -175,7 +177,29 @@ _leave!(m::Editor)=m.listing ? _to_list!(m;select=m.file) : (m.quit=true; nothin
 # ── Keys ──
 _ctrl(ev::KeyEvent,c::Char)=ev.key===:ctrl && ev.char==c
 _ch(ev::KeyEvent,c::Char)=ev.key===:char && ev.char==c
+# ── The system clipboard ──
+# Copying (c/x) goes through Tachikoma's `clipboard_copy!`: a helper program (pbcopy, wl-copy, xclip …) or the
+# terminal's OSC 52 sequence. Pasting is the terminal's own (Ctrl-Shift-V, Cmd-V, right click): `main` turns on
+# bracketed paste, so the pasted text arrives between ESC[200~ and ESC[201~ instead of as keys that would act as
+# commands (q, x …) in the field list. Tachikoma reports those two as unknown keys; the raw bytes tell which.
+"The terminal the editor runs in (set by `main`), so OSC 52 goes to it."
+const _TERM=Ref{Any}(nothing)
+_sysclip(t::AbstractString)=isnothing(_TERM[]) ? Tachikoma.clipboard_copy!(t) : Tachikoma.clipboard_copy!(_TERM[],t)
+"Puts text on the system clipboard, returns the backend (`:native`, `:osc52`, `:none`); replaced in the tests."
+const _COPY=Ref{Function}(_sysclip)
+"The raw bytes of the last key event (`Tachikoma.last_event_raw`, with raw capture on); replaced in the tests."
+const _RAW=Ref{Function}(Tachikoma.last_event_raw)
+const _PASTE_START=collect(codeunits("\e[200~")); const _PASTE_END=collect(codeunits("\e[201~"))
+"`:start`/`:stop` when `ev` is a bracketed-paste marker, else `nothing`."
+_paste_mark(ev::KeyEvent)=ev.key===:unknown ? (r=_RAW[](); r==_PASTE_START ? :start : r==_PASTE_END ? :stop : nothing) : nothing
 function update!(m::Editor, ev::KeyEvent)
+ mk=_paste_mark(ev)
+ mk===:start && (m.pasting=true; empty!(m.pastebuf); return nothing)
+ mk===:stop && (m.pasting=false; _pasted!(m,String(m.pastebuf)); return nothing)
+ if m.pasting   # the pasted text, key by key
+  ev.key===:char ? push!(m.pastebuf,ev.char) : ev.key===:enter ? push!(m.pastebuf,'\n') : ev.key===:tab ? push!(m.pastebuf,'\t') : nothing
+  return nothing
+ end
  m.mode===:search ? _search_key!(m,ev) : m.mode===:text ? _text_key!(m,ev) : m.mode===:long ? _long_key!(m,ev) : m.mode===:pick ? _pick_key!(m,ev) :
  m.mode===:confirm ? _confirm_key!(m,ev) : m.mode===:scope ? _scope_key!(m,ev) : m.mode===:repeat ? _repeat_key!(m,ev) :
  m.mode===:spread ? _spread_key!(m,ev) : _browse_key!(m,ev)
@@ -204,15 +228,19 @@ function _browse_key!(m::Editor, ev::KeyEvent)
  end
 end
 _clipshow(s)=(t=replace(s,'\n'=>' '); length(t)>40 ? first(t,39)*"…" : t)
-"c / x in the form: the field's value (as shown, e.g. «Kurs, Milonga») to the clipboard; `cut` also empties the field."
+"""
+c / x in the form: the field's value (as shown, e.g. «Kurs, Milonga») to the system clipboard and `m.clip`; `cut`
+also empties the field.
+"""
 function _copy_field!(m::Editor; cut::Bool=false)
  f=_field(m); v=TK.field_text(m.event,f)
  isempty(v) && return _say!(m,"«$(f.label)» er tomt – ingenting å kopiere.",:error)
- m.clip=v
+ m.clip=v; b=_COPY[](v)
  if cut
   _apply!(m,f.kind in (:choice,:multi) ? String[] : "") || return nothing
-  _say!(m,"Klippet ut fra «$(f.label)»: «$(_clipshow(v))». Gå til riktig felt og trykk v for å lime inn.")
- else _say!(m,"Kopiert fra «$(f.label)»: «$(_clipshow(v))». v limer inn i et annet felt.") end
+ end
+ where=b===:none ? " (fant ingen utklippstavle her – v limer inn)" : ""
+ _say!(m,"$(cut ? "Klippet ut" : "Kopiert") fra «$(f.label)»: «$(_clipshow(v))»$where. Lim inn i et annet felt med terminalens lim inn eller v.")
  nothing
 end
 "v in the form: the clipboard replaces the field's value, through the field's own checks (a link in «Pris» is refused)."
@@ -221,13 +249,28 @@ function _paste_field!(m::Editor)
  f=_field(m); _apply!(m,m.clip) && m.level!==:error && _say!(m,"Limt inn i «$(f.label)»: «$(_clipshow(m.clip))». Ctrl-S lagrer.")
  nothing
 end
-"Ctrl-V while editing a field: the clipboard at the cursor (one line in a one-line field)."
-function _paste_text!(m::Editor)
- isempty(m.clip) && return _say!(m,"Utklippstavlen er tom.",:error)
- cs=collect(m.mode===:long ? m.clip : replace(m.clip,'\n'=>' '))
- b,c=m.mode===:long ? (m.long.text,m.long.cur) : (m.input.buffer,m.input.cursor)
+"Ctrl-V while editing a field: the last copied value at the cursor."
+_paste_text!(m::Editor)=isempty(m.clip) ? _say!(m,"Utklippstavlen er tom.",:error) : _insert!(m,m.clip)
+"`s` at the cursor of the field being edited (or of the search box); one line except in a description."
+function _insert!(m::Editor, s::AbstractString)
+ cs=collect(m.mode===:long ? replace(s,'\t'=>' ') : replace(s,r"\s+"=>" "))
+ b,c=m.mode===:long ? (m.long.text,m.long.cur) : m.mode===:search ? (m.query.buffer,m.query.cursor) : (m.input.buffer,m.input.cursor)
  for (i,ch) in enumerate(cs); insert!(b,c+i,ch); end
- m.mode===:long ? (m.long.cur+=length(cs)) : (m.input.cursor+=length(cs))
+ m.mode===:long ? (m.long.cur+=length(cs)) : m.mode===:search ? (m.query.cursor+=length(cs); _filter!(m)) : (m.input.cursor+=length(cs))
+ nothing
+end
+"""
+A paste from the terminal: while editing a field (or in the search box) it goes in at the cursor; in the field list
+it replaces the current field's value, through the field's checks.
+"""
+function _pasted!(m::Editor, s::AbstractString)
+ s=strip(replace(s,"\r\n"=>"\n",'\r'=>'\n'),'\n')
+ isempty(strip(s)) && return nothing
+ if m.mode in (:text,:long,:search); _insert!(m,s)
+ elseif m.mode===:browse
+  f=_field(m); v=f.kind===:longtext ? replace(s,'\t'=>' ') : strip(replace(s,r"\s+"=>" "))
+  _apply!(m,v) && m.level!==:error && _say!(m,"Limt inn i «$(f.label)»: «$(_clipshow(v))». Ctrl-S lagrer.")
+ else _say!(m,"Lim inn i et felt: velg feltet først.",:error) end
  nothing
 end
 function _begin_edit!(m::Editor)
@@ -859,14 +902,14 @@ function _view_footer(m::Editor, rect::Rect, buf::Buffer)
  st=m.level===:error ? tstyle(:error,bold=true) : m.level===:ok ? tstyle(:success,bold=true) : tstyle(:text)
  set_string!(buf,x,rect.y+1,_short(m.message,w),st)
  keys=m.mode===:search ? "↑/↓ velg · Enter åpne · Ctrl-A $(m.past ? "bare kommende" : "også tidligere") · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc $(isempty(text(m.query)) ? "avslutt" : "tøm søket")" :
-  m.mode===:text ? "Enter lagre feltet · Tab neste · Ctrl-V lim inn · Esc avbryt" :
-  m.mode===:long ? "Enter linjeskift · Ctrl-S lagre feltet · ←/→/↑/↓ flytt · Ctrl-V lim inn · Esc avbryt" :
+  m.mode===:text ? "Enter lagre feltet · Tab neste · Esc avbryt" :
+  m.mode===:long ? "Enter linjeskift · Ctrl-S lagre feltet · ←/→/↑/↓ flytt · Esc avbryt" :
   m.mode===:pick ? "↑/↓ flytt · Mellomrom kryss av · Enter velg · Esc avbryt" :
   m.mode===:confirm ? "s lagre · f forkast · Esc fortsett" :
   m.mode===:scope ? _scope_keys(m) :
   m.mode===:repeat ? _repeat_keys(m.rep) :
   m.mode===:spread ? _spread_keys() :
-  "↑/↓ felt · Enter endre · c/x/v kopier/klipp ut/lim inn · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
+  "↑/↓ felt · Enter endre · c/x kopier/klipp ut · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
  render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(m.mode ∉ (:search,:repeat) && _isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
 end
 
@@ -891,8 +934,10 @@ repeat  copies of the matching event (the latest of its series) on the dates of 
 --all   include past events.
 
 In the form: ↑/↓ choose a field, Enter edit it (a pick list where only some values are allowed), Del clear it,
-c copy its value, x cut it, v paste into the current field (Ctrl-V while editing a field: at the cursor), so a
-value submitted in the wrong field (a link in «Flyer») moves in two keys; the clipboard is kept between events.
+c copy its value to the system clipboard, x cut it; the terminal's paste (Ctrl-Shift-V, Cmd-V, right click)
+replaces the current field's value, or goes in at the cursor while editing a field. So a value submitted in the
+wrong field (a link in «Flyer») moves with x, ↓, paste, and text edited elsewhere can be pasted back. v (Ctrl-V
+while editing) pastes the last value copied with c/x, for terminals without bracketed paste.
 Ctrl-S save, Ctrl-R repeat the event as it stands in the form, Esc back to the list. Saving writes the file (moved if the date changed); commit it with git afterwards.
 """
 function (@main)(args::Vector{String})
@@ -916,7 +961,10 @@ function _run(args::Vector{String}; today::Date=Dates.today())
  m=try editor_for(cmd,terms;root,past,today) catch err
   err isa ArgumentError || rethrow(); println(stderr,err.msg); return 1
  end
- app(m;default_bindings=false)
+ # raw capture tells the bracketed-paste markers apart; ESC[?2004h turns bracketed paste on, ESC[?2004l off again
+ Tachikoma.enable_raw_capture!()
+ try app(m;default_bindings=false,on_terminal=t->(_TERM[]=t; write(t.io,"\e[?2004h"); flush(t.io)))
+ finally print(stdout,"\e[?2004l"); _TERM[]=nothing end
  for f in m.saved; println("Lagret: $(relpath(f))"); end
  isempty(m.saved) || println("Husk å committe endringene (git add events && git commit).")
  0

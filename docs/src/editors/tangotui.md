@@ -66,8 +66,9 @@ events match, or none, it opens the list searching for them.
 | in a description | the field opens in a larger window with word wrap: Enter makes a line break, the arrow keys, Home and End move, **Ctrl-S** keeps the text, Esc cancels |
 | in a pick list | ↑ ↓ to move, Space to tick (where several are allowed), Enter to choose |
 | Del | clear the field |
-| c / x / v | **copy** the field's value, **cut** it (copy and clear), **paste** into the current field: a value submitted in the wrong field, such as the event link in «Flyer», moves with x, ↓/↑ to the right field, v. The paste goes through the field's own checks (a link isn't accepted as a price), and the clipboard is kept when you open another event. It is TangoTUI's own clipboard, not the terminal's |
-| Ctrl-V while editing a field | insert the clipboard at the cursor |
+| c / x | **copy** the field's value to the clipboard, or **cut** it (copy and clear) |
+| the terminal's paste (Ctrl-Shift-V, Cmd-V, right click) | in the field list: **replaces** the current field's value; while editing a field or in the search box: goes in at the cursor. So a value submitted in the wrong field, such as the event link in «Flyer», moves with x, ↓/↑ to the right field, paste; and text copied from a web page, or edited elsewhere, can be pasted back. A paste goes through the field's own checks (a link isn't accepted as a price) |
+| v (Ctrl-V while editing) | paste the last value copied with c/x, for terminals that don't support bracketed paste |
 | Ctrl-S | save the event |
 | Ctrl-R | repeat the event **as it stands in the form** (see [below](@ref "Repeat an event")) |
 | Ctrl-L | copy this date's values to the **later dates** of its series (see [below](@ref "Fix later dates after a one-date correction")) |
