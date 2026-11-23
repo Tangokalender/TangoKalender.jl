@@ -66,6 +66,8 @@ events match, or none, it opens the list searching for them.
 | in a description | the field opens in a larger window with word wrap: Enter makes a line break, the arrow keys, Home and End move, **Ctrl-S** keeps the text, Esc cancels |
 | in a pick list | ↑ ↓ to move, Space to tick (where several are allowed), Enter to choose |
 | Del | clear the field |
+| c / x / v | **copy** the field's value, **cut** it (copy and clear), **paste** into the current field: a value submitted in the wrong field, such as the event link in «Flyer», moves with x, ↓/↑ to the right field, v. The paste goes through the field's own checks (a link isn't accepted as a price), and the clipboard is kept when you open another event. It is TangoTUI's own clipboard, not the terminal's |
+| Ctrl-V while editing a field | insert the clipboard at the cursor |
 | Ctrl-S | save the event |
 | Ctrl-R | repeat the event **as it stands in the form** (see [below](@ref "Repeat an event")) |
 | Ctrl-L | copy this date's values to the **later dates** of its series (see [below](@ref "Fix later dates after a one-date correction")) |

@@ -260,6 +260,33 @@ to!(m,key)=(m.cursor=findfirst(f->f.key==key,m.fields); m)
    @test m.level===:ok && m.message=="Lagret: events/2027/05-may/2027-05-22-ktf-milonga-2027-05-22.json"
   end
  end
+ @testset "copy, cut and paste between fields (c/x/v, Ctrl-V while editing)" begin
+  root=tree()
+  m=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root,today=TODAY)
+  F(k)=m.fields[findfirst(f->f.key==k,m.fields)]
+  url="https://www.facebook.com/events/123456789/"
+  m.event=TK.set_field(TK.set_field(m.event,F("flyer_url"),url),F("link"),"")   # a submission with the link in «Flyer»
+  keys!(to!(m,"link"),"v"); @test m.level===:error && occursin("Utklippstavlen er tom",m.message)
+  # x cuts «Flyer», v pastes it into «Lenke»: moved in two keys
+  keys!(to!(m,"flyer_url"),"x")
+  @test m.clip==url && isnothing(m.event.flyer_url) && occursin("Klippet ut fra «Flyer»",m.message)
+  keys!(to!(m,"link"),"v"); @test m.event.link==url && occursin("Limt inn i «Lenke»",m.message)
+  # the paste goes through the field's checks: a link isn't a price, and nothing changes
+  p0=m.event.price_nok; keys!(to!(m,"price_nok"),"v"); @test m.level===:error && m.event.price_nok==p0 && m.mode===:browse
+  # c copies (the clipboard is replaced); a pick-list field copies and pastes as its labels
+  keys!(to!(m,"title"),"c"); @test m.clip==m.event.title && occursin("Kopiert fra «Tittel»",m.message)
+  keys!(to!(m,"es_title"),"v"); @test m.event.translations.es.title==m.event.title
+  m.clip="Kurs, Milonga"; keys!(to!(m,"types"),"v"); @test m.event.types==["class","milonga"]
+  keys!(to!(m,"series"),:delete,"c"); @test m.level===:error && occursin("er tomt",m.message) && m.clip=="Kurs, Milonga"
+  # Ctrl-V while editing inserts at the cursor; a one-line field gets it on one line
+  m.event=TK.set_field(m.event,F("dj"),"Bo")
+  m.clip="Ana\nTest"; keys!(to!(m,"dj"),:enter,:home,:ctrl=>'v'," ",:enter); @test m.event.dj=="Ana Test Bo"
+  keys!(to!(m,"description"),:enter,:end_key,:ctrl=>'v',:ctrl=>'s'); @test endswith(m.event.description,"Ana\nTest")
+  @test has(m,"c/x/v kopier/klipp ut/lim inn";w=180)
+  # the clipboard is kept when another event is opened
+  keys!(m,:ctrl=>'s',"d"); @test m.level===:ok && isempty(TK.validate_event_tree(root))
+  m2=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root,today=TODAY); @test m2.clip==""   # a new editor starts empty
+ end
  @testset "narrow terminal" begin
   m=TangoTUI.editor_for("edit",["ktf-milonga-2027-05-22"];root=tree(),today=TODAY)
   s=screen(m;w=72,h=30); @test any(l->occursin("Tittel",l),s) && all(l->textwidth(l)<=72,s)

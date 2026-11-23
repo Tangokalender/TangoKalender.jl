@@ -102,11 +102,14 @@ mutable struct Editor <: Model
  spread::Vector{Tuple{TK.FormField,Int,Union{Nothing,String}}}
  sticked::Vector{Bool}
  spick::Int
+ # the editor's own clipboard (c/x copy or cut a field, v pastes; Ctrl-V while editing): a submission's value in the
+ # wrong field (a link in «Flyer») is moved in two keys; kept across events. Not the terminal's clipboard.
+ clip::String
 end
 function Editor(file, e::TK.Event, keys::Vector{String}; root="events", today=Dates.today(), tree_check=TK.validate_event_tree)
  m=Editor(TK.form_fields(),root,today,tree_check,file,keys,e,e,1,0,:browse,TextInput(text=""),1,Bool[],"",:info,false,String[],
           Tuple{String,TK.Event,Vector{String}}[],String[],Int[],TextInput(text="",focused=true),false,0,false,
-          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing,WrapEditor(""),Tuple{TK.FormField,Int,Union{Nothing,String}}[],Bool[],1)
+          String[],"",TK.FormField[],_none(),_none(),_none(),_none(),:stay,nothing,WrapEditor(""),Tuple{TK.FormField,Int,Union{Nothing,String}}[],Bool[],1,"")
  isnothing(file) && _new_id!(m)
  m
 end
@@ -193,9 +196,39 @@ function _browse_key!(m::Editor, ev::KeyEvent)
  elseif _ctrl(ev,'s'); _save!(m)
  elseif _ctrl(ev,'r'); _repeat_form!(m)
  elseif _ctrl(ev,'l'); _spread!(m)
+ elseif _ch(ev,'c'); _copy_field!(m)
+ elseif _ch(ev,'x') || _ctrl(ev,'x'); _copy_field!(m;cut=true)
+ elseif _ch(ev,'v') || _ctrl(ev,'v'); _paste_field!(m)
  elseif k===:escape || _ch(ev,'q') || k===:ctrl_c
   _dirty(m) ? (m.mode=:confirm; _say!(m,"Ulagrede endringer: lagre (s), forkast (f) eller fortsett å redigere (Esc)?",:error)) : _leave!(m)
  end
+end
+_clipshow(s)=(t=replace(s,'\n'=>' '); length(t)>40 ? first(t,39)*"…" : t)
+"c / x in the form: the field's value (as shown, e.g. «Kurs, Milonga») to the clipboard; `cut` also empties the field."
+function _copy_field!(m::Editor; cut::Bool=false)
+ f=_field(m); v=TK.field_text(m.event,f)
+ isempty(v) && return _say!(m,"«$(f.label)» er tomt – ingenting å kopiere.",:error)
+ m.clip=v
+ if cut
+  _apply!(m,f.kind in (:choice,:multi) ? String[] : "") || return nothing
+  _say!(m,"Klippet ut fra «$(f.label)»: «$(_clipshow(v))». Gå til riktig felt og trykk v for å lime inn.")
+ else _say!(m,"Kopiert fra «$(f.label)»: «$(_clipshow(v))». v limer inn i et annet felt.") end
+ nothing
+end
+"v in the form: the clipboard replaces the field's value, through the field's own checks (a link in «Pris» is refused)."
+function _paste_field!(m::Editor)
+ isempty(m.clip) && return _say!(m,"Utklippstavlen er tom: c kopierer eller x klipper ut et felt først.",:error)
+ f=_field(m); _apply!(m,m.clip) && m.level!==:error && _say!(m,"Limt inn i «$(f.label)»: «$(_clipshow(m.clip))». Ctrl-S lagrer.")
+ nothing
+end
+"Ctrl-V while editing a field: the clipboard at the cursor (one line in a one-line field)."
+function _paste_text!(m::Editor)
+ isempty(m.clip) && return _say!(m,"Utklippstavlen er tom.",:error)
+ cs=collect(m.mode===:long ? m.clip : replace(m.clip,'\n'=>' '))
+ b,c=m.mode===:long ? (m.long.text,m.long.cur) : (m.input.buffer,m.input.cursor)
+ for (i,ch) in enumerate(cs); insert!(b,c+i,ch); end
+ m.mode===:long ? (m.long.cur+=length(cs)) : (m.input.cursor+=length(cs))
+ nothing
 end
 function _begin_edit!(m::Editor)
  f=_field(m)
@@ -239,6 +272,7 @@ function _long_key!(m::Editor, ev::KeyEvent)
  vert(j)=(j=clamp(j,1,length(ls)); w.cur=min(first(ls[j])-1+col,lastpos(j)))
  if k===:escape; m.mode=:browse; _say!(m,"Avbrutt.")
  elseif _ctrl(ev,'s'); _apply!(m,String(t))
+ elseif _ctrl(ev,'v'); _paste_text!(m)
  elseif k===:char; insert!(t,w.cur+1,ev.char); w.cur+=1
  elseif k===:enter; insert!(t,w.cur+1,'\n'); w.cur+=1
  elseif k===:backspace; w.cur>0 && (deleteat!(t,w.cur); w.cur-=1)
@@ -270,6 +304,7 @@ function _text_key!(m::Editor, ev::KeyEvent)
  if k===:escape; m.mode=:browse; _say!(m,"Avbrutt.")
  elseif k===:enter; _apply!(m,text(m.input))
  elseif k===:tab || k===:backtab; _apply!(m,text(m.input)) && _move!(m,k===:tab ? 1 : -1)
+ elseif _ctrl(ev,'v'); _paste_text!(m)
  else handle_key!(m.input,ev) end
 end
 function _pick_key!(m::Editor, ev::KeyEvent)
@@ -824,14 +859,14 @@ function _view_footer(m::Editor, rect::Rect, buf::Buffer)
  st=m.level===:error ? tstyle(:error,bold=true) : m.level===:ok ? tstyle(:success,bold=true) : tstyle(:text)
  set_string!(buf,x,rect.y+1,_short(m.message,w),st)
  keys=m.mode===:search ? "↑/↓ velg · Enter åpne · Ctrl-A $(m.past ? "bare kommende" : "også tidligere") · Ctrl-N nytt · Ctrl-K kopier · Ctrl-R gjenta · Esc $(isempty(text(m.query)) ? "avslutt" : "tøm søket")" :
-  m.mode===:text ? "Enter lagre feltet · Tab neste · Esc avbryt" :
-  m.mode===:long ? "Enter linjeskift · Ctrl-S lagre feltet · ←/→/↑/↓ flytt · Esc avbryt" :
+  m.mode===:text ? "Enter lagre feltet · Tab neste · Ctrl-V lim inn · Esc avbryt" :
+  m.mode===:long ? "Enter linjeskift · Ctrl-S lagre feltet · ←/→/↑/↓ flytt · Ctrl-V lim inn · Esc avbryt" :
   m.mode===:pick ? "↑/↓ flytt · Mellomrom kryss av · Enter velg · Esc avbryt" :
   m.mode===:confirm ? "s lagre · f forkast · Esc fortsett" :
   m.mode===:scope ? _scope_keys(m) :
   m.mode===:repeat ? _repeat_keys(m.rep) :
   m.mode===:spread ? _spread_keys() :
-  "↑/↓ felt · Enter endre · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
+  "↑/↓ felt · Enter endre · c/x/v kopier/klipp ut/lim inn · Ctrl-S lagre · Ctrl-R gjenta · Ctrl-L til senere datoer · Esc $(m.listing ? "tilbake til listen" : "avslutt")"
  render(StatusBar(left=[Span(" "*keys,tstyle(:text_bright))],right=[Span(m.mode ∉ (:search,:repeat) && _isnew(m) ? "nytt " : "",tstyle(:warning))]),Rect(x,rect.y+2,w,1),buf)
 end
 
@@ -856,6 +891,8 @@ repeat  copies of the matching event (the latest of its series) on the dates of 
 --all   include past events.
 
 In the form: ↑/↓ choose a field, Enter edit it (a pick list where only some values are allowed), Del clear it,
+c copy its value, x cut it, v paste into the current field (Ctrl-V while editing a field: at the cursor), so a
+value submitted in the wrong field (a link in «Flyer») moves in two keys; the clipboard is kept between events.
 Ctrl-S save, Ctrl-R repeat the event as it stands in the form, Esc back to the list. Saving writes the file (moved if the date changed); commit it with git afterwards.
 """
 function (@main)(args::Vector{String})
